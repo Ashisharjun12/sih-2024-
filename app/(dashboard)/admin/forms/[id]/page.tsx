@@ -26,6 +26,7 @@ import {
   DollarSign,
   Activity,
   Info,
+  BanknoteIcon,
 } from "lucide-react";
 
 interface FormSubmission {
@@ -448,7 +449,7 @@ export default function FormDetailPage() {
         </FormSection>
 
         {/* Financial Details */}
-        <FormSection title="Financial Information" icon={DollarSign}>
+        <FormSection title="Financial Information" icon={BanknoteIcon}>
           {renderFinancialDetails(submission?.formData)}
         </FormSection>
 

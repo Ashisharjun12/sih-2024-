@@ -863,6 +863,203 @@ export default function StartupRegistrationForm() {
                           />
                         </div>
                       </div>
+
+                      {/* Financial Details */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Financial Details</h3>
+                        
+                        {/* Bank Details */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="financialDetails.bankDetails.bankName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Bank Name</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="financialDetails.bankDetails.branch"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Branch</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="financialDetails.bankDetails.accountNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Account Number</FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="password" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Financial Status */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="financialDetails.annualTurnover"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Annual Turnover (₹)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    type="number" 
+                                    onChange={(e) => field.onChange(Number(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="financialDetails.fundingStatus"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Funding Status</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select funding status" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="bootstrapped">Bootstrapped</SelectItem>
+                                    <SelectItem value="seed">Seed Funded</SelectItem>
+                                    <SelectItem value="seriesA">Series A</SelectItem>
+                                    <SelectItem value="seriesB">Series B</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="financialDetails.amountRaised"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Amount Raised (₹)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    type="number" 
+                                    onChange={(e) => field.onChange(Number(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Business Activities */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Business Activities</h3>
+                        <FormField
+                          control={form.control}
+                          name="businessActivities.missionAndVision"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mission and Vision</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  {...field} 
+                                  placeholder="Describe your startup's mission and vision"
+                                  className="min-h-[100px]"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Additional Information */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Additional Information</h3>
+                        
+                        <FormField
+                          control={form.control}
+                          name="additionalInfo.website"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Website</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="url" placeholder="https://" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Social Media */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="additionalInfo.socialMedia.linkedIn"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>LinkedIn</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="LinkedIn URL" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="additionalInfo.socialMedia.twitter"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Twitter</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Twitter URL" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="additionalInfo.socialMedia.facebook"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Facebook</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Facebook URL" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     // Step 2: Legal & Documents
@@ -1071,7 +1268,6 @@ export default function StartupRegistrationForm() {
                                   <SelectItem value="Marketing">Marketing Strategy</SelectItem>
                                   <SelectItem value="Financial">Financial Planning</SelectItem>
                                   <SelectItem value="Leadership">Leadership Development</SelectItem>
-                                  <SelectItem value="Industry">Industry Specific</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormDescription>
@@ -1103,7 +1299,6 @@ export default function StartupRegistrationForm() {
                                   <SelectItem value="PE">Private Equity</SelectItem>
                                   <SelectItem value="Corporate">Corporate Investors</SelectItem>
                                   <SelectItem value="Government">Government Funding</SelectItem>
-                                  <SelectItem value="Accelerator">Accelerator Programs</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormDescription>
