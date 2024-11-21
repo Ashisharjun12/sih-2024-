@@ -76,6 +76,19 @@ const steps = [
   },
 ];
 
+const revenueModelOptions = [
+  { value: "Subscription", label: "Subscription Based" },
+  { value: "SaaS", label: "Software as a Service" },
+  { value: "Product_Sales", label: "Product Sales" },
+  { value: "Service_Based", label: "Service Based" },
+  { value: "Marketplace", label: "Marketplace" },
+  { value: "Advertising", label: "Advertising" },
+  { value: "Freemium", label: "Freemium" },
+  { value: "Licensing", label: "Licensing" },
+  { value: "Commission_Based", label: "Commission Based" },
+  { value: "Other", label: "Other" },
+];
+
 export default function StartupRegistrationForm() {
   const { data: session } = useSession();
   const { toast } = useToast();
@@ -84,6 +97,7 @@ export default function StartupRegistrationForm() {
   const [files, setFiles] = useState<Record<string, FileData>>({});
   const [showCustomIndustry, setShowCustomIndustry] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showCustomRevenueModel, setShowCustomRevenueModel] = useState(false);
 
   const form = useForm<z.infer<typeof startupFormSchema>>({
     resolver: zodResolver(startupFormSchema),
@@ -1060,6 +1074,65 @@ export default function StartupRegistrationForm() {
                           />
                         </div>
                       </div>
+
+                      {/* Revenue Model */}
+                      <FormField
+                        control={form.control}
+                        name="startupDetails.revenueModel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Revenue Model</FormLabel>
+                            <div className="space-y-4">
+                              <Select
+                                onValueChange={(value) => {
+                                  setShowCustomRevenueModel(value === "Other");
+                                  field.onChange(value);
+                                }}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select revenue model" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {revenueModelOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              {showCustomRevenueModel && (
+                                <FormField
+                                  control={form.control}
+                                  name="startupDetails.customRevenueModel"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input 
+                                          {...field}
+                                          placeholder="Please specify your revenue model"
+                                          onChange={(e) => {
+                                            field.onChange(e.target.value);
+                                            form.setValue('startupDetails.revenueModel', e.target.value);
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              )}
+                            </div>
+                            <FormDescription>
+                              Choose how your startup generates revenue
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   ) : (
                     // Step 2: Legal & Documents
@@ -1421,6 +1494,7 @@ export default function StartupRegistrationForm() {
                         )}
                       </Button>
                     )}
+                    
                   </div>
                 </motion.div>
               </form>
