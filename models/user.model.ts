@@ -20,13 +20,7 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Startup",
   },
-  notifications:[
-    {
-      _id: mongoose.Schema.Types.ObjectId,
-      title: String,
-      message: String,
-    }
-  ]
+  
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
