@@ -157,6 +157,17 @@ const startupSchema = new mongoose.Schema({
       secure_url: String,
     }],
   },
+  allIPR: [{
+    ipr: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'IPR',
+    },
+    iprProffessional: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'IPRProffessional',
+    },
+    message: String
+  }],
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);

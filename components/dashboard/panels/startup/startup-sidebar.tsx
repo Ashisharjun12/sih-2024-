@@ -83,6 +83,11 @@ const sidebarItems = [
     href: "/startup/settings",
     icon: Settings,
   },
+  {
+    title: "IPR",
+    href: "/startup/ipr",
+    icon: FileText,
+  },
 ];
 
 export function StartupSidebar({ className }: SidebarProps) {
