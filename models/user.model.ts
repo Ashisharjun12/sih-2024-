@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Startup",
   },
+  
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);

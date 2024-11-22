@@ -26,6 +26,7 @@ import {
   DollarSign,
   Activity,
   Info,
+  BanknoteIcon,
 } from "lucide-react";
 
 interface FormSubmission {
@@ -65,6 +66,8 @@ interface FormSubmission {
       msmeRegistration?: string;
       founders: any[];
       equitySplits: any[];
+      customIndustry?: string;
+      customRevenueModel?: string;
     };
     businessActivities: {
       missionAndVision: string;
@@ -234,11 +237,30 @@ export default function FormDetailPage() {
   const handleAction = async (action: "approve" | "reject") => {
     try {
       setProcessing(true);
-      const response = await fetch(`/api/admin/forms/${params.id}/${action}`, {
-        method: 'POST',
-      });
+
+      const userEmail = submission?.formData.owner.email;
       
-      if (!response.ok) throw new Error();
+      const response = await fetch(
+        `/api/admin/forms/${params.id}/${action}`, 
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            reason: action === "reject" ? "Your application does not meet our current requirements. Please try again." : undefined,
+            userEmail,
+            formType: submission?.formType,
+            userName: submission?.formData.owner.fullName
+          }),
+        }
+      );
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to ${action} application`);
+      }
 
       toast({
         title: "Success",
@@ -247,9 +269,10 @@ export default function FormDetailPage() {
 
       router.push("/admin/forms");
     } catch (error) {
+      console.error("Action error:", error);
       toast({
         title: "Error",
-        description: `Failed to ${action} application`,
+        description: error instanceof Error ? error.message : `Failed to ${action} application`,
         variant: "destructive",
       });
     } finally {
@@ -432,8 +455,18 @@ export default function FormDetailPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Revenue Model</p>
-              <p className="text-base font-medium">{submission?.formData.startupDetails.revenueModel}</p>
+              <p className="text-base font-medium">
+                {submission?.formData.startupDetails.revenueModel === "Other" 
+                  ? submission?.formData.startupDetails.customRevenueModel 
+                  : submission?.formData.startupDetails.revenueModel}
+              </p>
             </div>
+            {submission?.formData.startupDetails.customIndustry && (
+              <div>
+                <p className="text-sm text-muted-foreground">Custom Industry</p>
+                <p className="text-base font-medium">{submission?.formData.startupDetails.customIndustry}</p>
+              </div>
+            )}
           </div>
         </FormSection>
 
@@ -448,7 +481,7 @@ export default function FormDetailPage() {
         </FormSection>
 
         {/* Financial Details */}
-        <FormSection title="Financial Information" icon={DollarSign}>
+        <FormSection title="Financial Information" icon={BanknoteIcon}>
           {renderFinancialDetails(submission?.formData)}
         </FormSection>
 
@@ -494,17 +527,20 @@ export default function FormDetailPage() {
 
         {/* Action Buttons */}
         {submission?.status === "pending" && (
-          <div className="flex justify-end gap-4">
+          <motion.div 
+            className="flex justify-end gap-4 sticky bottom-6 p-4 rounded-xl border backdrop-blur-sm bg-background/95 shadow-lg"
+          >
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleAction("reject")}
               disabled={processing}
+              className="hover:bg-destructive hover:text-destructive-foreground"
             >
               {processing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
               ) : (
-                <XCircle className="h-4 w-4 mr-2" />
+                <XCircle className="h-5 w-5 mr-2" />
               )}
               Reject Application
             </Button>
@@ -512,15 +548,16 @@ export default function FormDetailPage() {
               size="lg"
               onClick={() => handleAction("approve")}
               disabled={processing}
+              className="bg-primary hover:bg-primary/90"
             >
               {processing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
               ) : (
-                <CheckCircle className="h-4 w-4 mr-2" />
+                <CheckCircle className="h-5 w-5 mr-2" />
               )}
               Approve Application
             </Button>
-          </div>
+          </motion.div>
         )}
       </motion.div>
     </div>
