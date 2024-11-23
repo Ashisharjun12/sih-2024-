@@ -4,6 +4,21 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectDB } from "@/lib/db";
 import IPR from "@/models/ipr.model";
 import Startup from "@/models/startup.model";
+import IPRProfessional from "@/models/ipr-professional.model";
+import { Types } from "mongoose";
+
+interface IPRDocument extends Document {
+    title: string;
+    description: string;
+    type: string;
+    filingDate: Date;
+    status: string;
+    relatedDocuments: Array<{
+        public_id: string;
+        secure_url: string;
+    }>;
+    transactionHash: string;
+}
 
 // GET endpoint to fetch all IPRs for a startup
 export async function GET() {
@@ -15,16 +30,10 @@ export async function GET() {
 
         await connectDB();
 
-        // Debug session info
-        console.log("Session user:", session.user);
-
-        // Find the startup and populate their IPRs
-        const startup = await Startup.findOne({ 
-            userId: session.user.id  // This might be the issue - check if it's _id instead of id
+        // Find the startup
+        const startup = await Startup.findOne({
+            userId: session.user.id
         });
-
-        // Debug startup query
-        console.log("Startup query result:", startup);
 
         if (!startup) {
             return NextResponse.json({ error: "Startup not found" }, { status: 404 });
@@ -34,24 +43,27 @@ export async function GET() {
         const populatedStartup = await Startup.findById(startup._id)
             .populate({
                 path: 'allIPR.ipr',
-                model: 'IPR'
+                model: IPR
             })
             .populate({
-                path: 'allIPR.iprProffessional',
-                model: 'IPRProffessional',
+                path: 'allIPR.iprProfessional',
+                model: IPRProfessional,
                 select: 'name email'
             });
+        
+        console.log(populatedStartup)
 
-        // Extract IPRs from the startup
-        const iprs = populatedStartup.allIPR.map((item: { 
-            ipr: any; 
-            iprProffessional: { name: string; email: string } | null;
+        // Extract IPRs from the startup with proper typing
+        const iprs = populatedStartup.allIPR.map((item: {
+            ipr: IPRDocument;
+            iprProfessional: { name: string; email: string } | null;
             message: string;
         }) => ({
-            ...item.ipr.toObject(),
-            iprProfessional: item.iprProffessional,
+            ipr: item.ipr,
+            iprProfessional: item.iprProfessional,
             message: item.message
         }));
+        console.log("iprs", iprs);
 
         return NextResponse.json(iprs);
 

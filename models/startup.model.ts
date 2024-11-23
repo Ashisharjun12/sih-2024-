@@ -162,13 +162,13 @@ const startupSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'IPR',
     },
-    iprProffessional: {
+    iprProfessional: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'IPRProffessional',
+      ref: 'User',
     },
     message: String
   }],
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);
-export default Startup; 
+export default Startup;

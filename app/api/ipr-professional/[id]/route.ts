@@ -25,12 +25,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         await connectDB();
 
         const { id } = await params;
+        console.log("id", id);
 
         // Find IPR
         const ipr = await IPR.findById(id);
         if (!ipr) {
             return NextResponse.json({ error: "IPR not found" }, { status: 404 });
         }
+        console.log("ipr", ipr);
 
         // Parse request body
         const { message, status }: IPRUpdate = await req.json();
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         // Find the IPR in owner's allIPR array
         const iprIndex = owner.allIPR.findIndex(
             (item: { ipr: Types.ObjectId }) =>
-                item.ipr.toString() === params.id
+                item.ipr.toString() === id
         );
 
         if (iprIndex === -1) {
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         // Update the IPR professional assignment
         owner.allIPR[iprIndex] = {
             ...owner.allIPR[iprIndex],
-            iprProffessional: new Types.ObjectId(session.user.id),
+            iprProfessional: new Types.ObjectId(session.user.id),
             message: message || ""
         };
 
@@ -99,12 +101,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         }
 
         await connectDB();
+        const { id } = await params;
 
-        if (!Types.ObjectId.isValid(params.id)) {
+        if (!Types.ObjectId.isValid(id)) {
             return NextResponse.json({ error: "Invalid IPR ID" }, { status: 400 });
         }
 
-        const ipr = await IPR.findById(params.id);
+        const ipr = await IPR.findById(id);
         if (!ipr) {
             return NextResponse.json({ error: "IPR not found" }, { status: 404 });
         }
@@ -113,10 +116,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         let owner;
         if (ipr.ownerType === 'Startup') {
             owner = await Startup.findById(ipr.owner)
-                .populate('allIPR.iprProffessional', 'name email');
+                .populate('allIPR.iprProfessional', 'name email');
         } else if (ipr.ownerType === 'Researcher') {
             owner = await Researcher.findById(ipr.owner)
-                .populate('allIPR.iprProffessional', 'name email');
+                .populate('allIPR.iprProfessional', 'name email');
         }
 
         if (!owner) {

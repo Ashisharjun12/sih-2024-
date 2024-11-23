@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { IPR } from "@/types/ipr";
+import Link from "next/link";
 
 interface IPRWithProfessional extends IPR {
   iprProfessional?: {
@@ -31,24 +32,28 @@ interface IPRWithProfessional extends IPR {
 
 const IPRPage = () => {
   const [iprs, setIprs] = useState<IPRWithProfessional[]>([]);
-  const [selectedIPR, setSelectedIPR] = useState<IPRWithProfessional | null>(null);
+  const [selectedIPR, setSelectedIPR] = useState<IPRWithProfessional | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchIPRs();
+    
   }, []);
 
   const fetchIPRs = async () => {
     try {
-      const response = await fetch('/api/startup/ipr');
+      const response = await fetch("/api/startup/ipr");
       if (!response.ok) {
-        throw new Error('Failed to fetch IPRs');
+        throw new Error("Failed to fetch IPRs");
       }
       const data = await response.json();
+      console.log("data", data);
       setIprs(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch IPRs');
+      setError(err instanceof Error ? err.message : "Failed to fetch IPRs");
     } finally {
       setLoading(false);
     }
@@ -79,9 +84,11 @@ const IPRPage = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Intellectual Property Rights</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          File New IPR
+        <Button asChild>
+          <Link href="/startup/ipr/create">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            File New IPR
+          </Link>
         </Button>
       </div>
 
@@ -92,29 +99,25 @@ const IPRPage = () => {
             <TableHead>Type</TableHead>
             <TableHead>Filing Date</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Professional</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {iprs.map((ipr) => (
             <TableRow
-              key={ipr._id}
+              key={ipr.ipr._id}
               className="cursor-pointer hover:bg-gray-100"
               onClick={() => setSelectedIPR(ipr)}
             >
-              <TableCell>{ipr.title}</TableCell>
-              <TableCell>{ipr.type}</TableCell>
-              <TableCell>{format(new Date(ipr.filingDate), "PP")}</TableCell>
+              <TableCell>{ipr.ipr.title}</TableCell>
+              <TableCell>{ipr.ipr.type}</TableCell>
+              <TableCell>{format(new Date(ipr.ipr.filingDate), "PP")}</TableCell>
               <TableCell>
                 <Badge
                   variant="secondary"
-                  className={getStatusColor(ipr.status)}
+                  className={getStatusColor(ipr.ipr.status)}
                 >
-                  {ipr.status}
+                  {ipr.ipr.status}
                 </Badge>
-              </TableCell>
-              <TableCell>
-                {ipr.iprProfessional?.name || 'Not Assigned'}
               </TableCell>
             </TableRow>
           ))}
@@ -125,38 +128,40 @@ const IPRPage = () => {
       <Dialog open={!!selectedIPR} onOpenChange={() => setSelectedIPR(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedIPR?.title}</DialogTitle>
+            <DialogTitle>{selectedIPR?.ipr.title}</DialogTitle>
           </DialogHeader>
           <div className="mt-4 space-y-4">
             <div>
               <h3 className="font-semibold">Description</h3>
-              <p className="text-gray-600">{selectedIPR?.description}</p>
+              <p className="text-gray-600">{selectedIPR?.ipr.description}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold">Type</h3>
-                <p className="text-gray-600">{selectedIPR?.type}</p>
+                <p className="text-gray-600">{selectedIPR?.ipr.type}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Filing Date</h3>
                 <p className="text-gray-600">
                   {selectedIPR &&
-                    format(new Date(selectedIPR.filingDate), "PP")}
+                    format(new Date(selectedIPR.ipr.filingDate), "PP")}
                 </p>
               </div>
               <div>
                 <h3 className="font-semibold">Status</h3>
                 <Badge
                   variant="secondary"
-                  className={selectedIPR ? getStatusColor(selectedIPR.status) : undefined}
+                  className={
+                    selectedIPR ? getStatusColor(selectedIPR.ipr.status) : undefined
+                  }
                 >
-                  {selectedIPR?.status}
+                  {selectedIPR?.ipr.status}
                 </Badge>
               </div>
               <div>
                 <h3 className="font-semibold">Transaction Hash</h3>
                 <p className="text-gray-600 truncate">
-                  {selectedIPR?.transactionHash}
+                  {selectedIPR?.ipr.transactionHash}
                 </p>
               </div>
             </div>
@@ -164,7 +169,8 @@ const IPRPage = () => {
               <div>
                 <h3 className="font-semibold">IPR Professional</h3>
                 <p className="text-gray-600">
-                  {selectedIPR.iprProfessional.name} ({selectedIPR.iprProfessional.email})
+                  {selectedIPR.iprProfessional.name} (
+                  {selectedIPR.iprProfessional.email})
                 </p>
                 {selectedIPR.message && (
                   <p className="text-gray-600 mt-2">
@@ -176,7 +182,7 @@ const IPRPage = () => {
             <div>
               <h3 className="font-semibold">Related Documents</h3>
               <div className="mt-2">
-                {selectedIPR?.relatedDocuments.map((doc, index) => (
+                {selectedIPR?.ipr.relatedDocuments.map((doc, index) => (
                   <a
                     key={index}
                     href={doc.secure_url}

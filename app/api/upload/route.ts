@@ -22,7 +22,6 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const fileType = formData.get('fileType') as string;
 
     if (!file) {
       return NextResponse.json(
@@ -36,29 +35,21 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes);
     const fileBase64 = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Configure upload options based on file type
-    const uploadOptions = {
-      folder: 'startup_docs',
-      resource_type: file.type.includes('pdf') ? 'raw' : 'auto',
-      public_id: `${fileType}_${Date.now()}`,
-      format: file.type.includes('pdf') ? 'pdf' : undefined,
-    };
+    // Set resource type based on file type
+    const resourceType = file.type.includes('pdf') ? 'raw' : 'auto';
 
     // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(fileBase64, uploadOptions);
-
-    // Create viewable URL for PDFs
-    const viewableUrl = file.type.includes('pdf')
-      ? `https://docs.google.com/viewer?url=${encodeURIComponent(result.secure_url)}&embedded=true`
-      : result.secure_url;
+    const result = await cloudinary.uploader.upload(fileBase64, {
+      folder: 'ipr_docs',
+      resource_type: resourceType,
+      public_id: `ipr_${Date.now()}`,
+    });
 
     return NextResponse.json({
       public_id: result.public_id,
       secure_url: result.secure_url,
-      viewable_url: viewableUrl,
-      originalName: file.name,
-      fileType: file.type,
     });
+    
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
