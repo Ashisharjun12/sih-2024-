@@ -150,7 +150,7 @@ export default function ResearcherDetailPage() {
     const fetchFormDetails = async () => {
       try {
         console.log("Fetching researcher details for ID:", params.id);
-        const response = await fetch(`/api/admin/forms/researcherDetails/${params.id}`);
+        const response = await fetch(`/api/admin/forms/${params.id}`);
         console.log("Response status:", response.status);
         
         const data = await response.json();

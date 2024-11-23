@@ -220,7 +220,7 @@
 
     const fetchFormDetails = async () => {
       try {
-        const response = await fetch(`/api/admin/forms/startupformDetails/${params.id}`);
+        const response = await fetch(`/api/admin/forms/${params.id}`);
         if (!response.ok) throw new Error("Failed to fetch form details");
         const data = await response.json();
         setSubmission(data.submission);
