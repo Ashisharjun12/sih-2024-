@@ -29,6 +29,13 @@ import {
   Download,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FormSubmission {
   _id: string;
@@ -42,12 +49,27 @@ interface FormSubmission {
   files?: Record<string, { secure_url: string; originalName: string }>;
 }
 
+// Add this function to handle dynamic routing
+const getDetailsRoute = (formType: string, submissionId: string) => {
+  const routes = {
+    startup: `/admin/forms/startup/${submissionId}`,
+    researcher: `/admin/forms/researcher/${submissionId}`,
+    investor: `/admin/forms/investor/${submissionId}`,
+    mentor: `/admin/forms/mentor/${submissionId}`,
+    // Add more roles as needed
+  };
+  
+  return routes[formType as keyof typeof routes] || `/admin/forms/${submissionId}`;
+};
+
 export default function AdminFormsPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [formSubmissions, setFormSubmissions] = useState<FormSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [formTypeFilter, setFormTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchFormSubmissions();
@@ -125,6 +147,28 @@ export default function AdminFormsPage() {
     );
   };
 
+  const formTypes = [
+    { value: "all", label: "All Types" },
+    { value: "startup", label: "Startup" },
+    { value: "researcher", label: "Researcher" },
+    { value: "investor", label: "Investor" },
+    { value: "mentor", label: "Mentor" },
+    // Add more roles as needed
+  ];
+
+  const statusTypes = [
+    { value: "all", label: "All Status" },
+    { value: "pending", label: "Pending" },
+    { value: "approved", label: "Approved" },
+    { value: "rejected", label: "Rejected" }
+  ];
+
+  const filteredSubmissions = formSubmissions.filter(submission => {
+    const matchesFormType = formTypeFilter === "all" || submission.formType === formTypeFilter;
+    const matchesStatus = statusFilter === "all" || submission.status === statusFilter;
+    return matchesFormType && matchesStatus;
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -137,8 +181,92 @@ export default function AdminFormsPage() {
     <div className="p-8">
       <Card>
         <CardHeader>
-          <CardTitle>Role Applications</CardTitle>
+          <div className="flex flex-col space-y-4">
+            <CardTitle>Role Applications</CardTitle>
+            
+            <div className="flex flex-wrap gap-4 mt-4">
+              <div className="w-[200px]">
+                <Select
+                  value={formTypeFilter}
+                  onValueChange={setFormTypeFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Form Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[200px]">
+                <Select
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFormTypeFilter("all");
+                  setStatusFilter("all");
+                }}
+              >
+                Reset Filters
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm font-medium text-muted-foreground">Total</div>
+                  <div className="text-2xl font-bold">{formSubmissions.length}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm font-medium text-muted-foreground">Pending</div>
+                  <div className="text-2xl font-bold">
+                    {formSubmissions.filter(s => s.status === "pending").length}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm font-medium text-muted-foreground">Approved</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formSubmissions.filter(s => s.status === "approved").length}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm font-medium text-muted-foreground">Rejected</div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {formSubmissions.filter(s => s.status === "rejected").length}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </CardHeader>
+
         <CardContent>
           <Table>
             <TableHeader>
@@ -151,7 +279,7 @@ export default function AdminFormsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {formSubmissions.map((submission) => (
+              {filteredSubmissions.map((submission) => (
                 <TableRow key={submission._id}>
                   <TableCell>
                     <div className="flex flex-col">
@@ -175,7 +303,11 @@ export default function AdminFormsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
+<<<<<<< HEAD
+                          onClick={() => router.push(getDetailsRoute(submission.formType, submission._id))}
+=======
                           onClick={() => router.push(`/admin/forms/${submission.formType}/${submission._id}`)}
+>>>>>>> c692cade63db327f995b681c139bb32c82c59c0f
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details

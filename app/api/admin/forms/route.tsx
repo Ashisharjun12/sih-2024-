@@ -3,7 +3,10 @@ import { connectDB } from "@/lib/db";
 import FormSubmission from "@/models/form-submission.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+<<<<<<< HEAD:app/api/admin/forms/route.tsx
+=======
 
+>>>>>>> c692cade63db327f995b681c139bb32c82c59c0f:app/api/admin/forms/route.ts
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -30,7 +33,7 @@ export async function GET() {
     console.error("Error fetching form submissions:", error);
     return NextResponse.json(
       { error: "Failed to fetch form submissions" }, 
-      { status: 500 }
-    );
-  }
-} 
+      { status: 500 }
+    );
+  }
+}
