@@ -157,7 +157,18 @@ const startupSchema = new mongoose.Schema({
       secure_url: String,
     }],
   },
+  allIPR: [{
+    ipr: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'IPR',
+    },
+    iprProfessional: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    message: String
+  }],
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);
-export default Startup; 
+export default Startup;

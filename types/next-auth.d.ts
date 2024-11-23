@@ -16,6 +16,7 @@ declare module "next-auth" {
     role?: string
     image?: string
   }
+
 }
 
 declare module "next-auth/jwt" {
@@ -25,3 +26,4 @@ declare module "next-auth/jwt" {
     picture?: string
   }
 } 
+

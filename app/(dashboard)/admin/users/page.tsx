@@ -21,8 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
-import { 
+import {
   Search,
   Users,
   UserCheck,
@@ -54,10 +53,8 @@ const roleColors: Record<string, string> = {
 };
 
 export default function UsersPage() {
-  const { data: session } = useSession();
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [stats, setStats] = useState({
@@ -83,40 +80,41 @@ export default function UsersPage() {
         description: "Failed to fetch users",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const updateStats = (userList: User[]) => {
     setStats({
       total: userList.length,
-      active: userList.filter(user => user.role !== "user").length,
-      pending: userList.filter(user => user.role === "user").length,
+      active: userList.filter((user) => user.role !== "user").length,
+      pending: userList.filter((user) => user.role === "user").length,
       blocked: 0, // Implement if you have a blocked status
     });
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   const getAvatarFallback = (user: User) => {
     if (!user.name) return "?";
-    
+
     // Get initials from name
     const names = user.name.split(" ");
     if (names.length === 0) return "?";
-    
+
     if (names.length === 1) {
       return names[0].charAt(0).toUpperCase();
     }
 
     // Get first letter of first and last name
-    return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase();
+    return `${names[0].charAt(0)}${names[names.length - 1].charAt(
+      0
+    )}`.toUpperCase();
   };
 
   return (
@@ -196,10 +194,7 @@ export default function UsersPage() {
                   prefix={<Search className="h-4 w-4 text-muted-foreground" />}
                 />
               </div>
-              <Select
-                value={roleFilter}
-                onValueChange={setRoleFilter}
-              >
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
@@ -211,7 +206,9 @@ export default function UsersPage() {
                   <SelectItem value="mentor">Mentor</SelectItem>
                   <SelectItem value="funding-agency">Funding Agency</SelectItem>
                   <SelectItem value="policy-maker">Policy Maker</SelectItem>
-                  <SelectItem value="ipr-professional">IPR Professional</SelectItem>
+                  <SelectItem value="ipr-professional">
+                    IPR Professional
+                  </SelectItem>
                   <SelectItem value="user">Pending</SelectItem>
                 </SelectContent>
               </Select>
@@ -237,20 +234,23 @@ export default function UsersPage() {
                     <TableCell className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 bg-primary/10">
                         {user.image ? (
-                          <AvatarImage 
-                            src={user.image} 
+                          <AvatarImage
+                            src={user.image}
                             alt={user.name || "User avatar"}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = target.parentElement?.querySelector('[data-fallback]');
+                              target.style.display = "none";
+                              const fallback =
+                                target.parentElement?.querySelector(
+                                  "[data-fallback]"
+                                );
                               if (fallback) {
-                                fallback.setAttribute('style', 'display: flex');
+                                fallback.setAttribute("style", "display: flex");
                               }
                             }}
                           />
                         ) : null}
-                        <AvatarFallback 
+                        <AvatarFallback
                           data-fallback
                           className="bg-primary/10 text-primary font-medium"
                           delayMs={0}
@@ -268,7 +268,9 @@ export default function UsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={roleColors[user.role] || roleColors.user}>
+                      <Badge
+                        className={roleColors[user.role] || roleColors.user}
+                      >
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </Badge>
                     </TableCell>
@@ -285,4 +287,4 @@ export default function UsersPage() {
       </div>
     </div>
   );
-} 
+}

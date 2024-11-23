@@ -303,7 +303,11 @@ export default function AdminFormsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
+<<<<<<< HEAD
                           onClick={() => router.push(getDetailsRoute(submission.formType, submission._id))}
+=======
+                          onClick={() => router.push(`/admin/forms/${submission.formType}/${submission._id}`)}
+>>>>>>> c692cade63db327f995b681c139bb32c82c59c0f
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
