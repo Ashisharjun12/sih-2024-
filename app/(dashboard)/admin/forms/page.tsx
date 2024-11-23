@@ -49,18 +49,23 @@ interface FormSubmission {
   files?: Record<string, { secure_url: string; originalName: string }>;
 }
 
-// Add this function to handle dynamic routing
-const getDetailsRoute = (formType: string, submissionId: string) => {
-  const routes = {
-    startup: `/admin/forms/startup/${submissionId}`,
-    researcher: `/admin/forms/researcher/${submissionId}`,
-    investor: `/admin/forms/investor/${submissionId}`,
-    mentor: `/admin/forms/mentor/${submissionId}`,
-    // Add more roles as needed
-  };
+// // Add this function to handle dynamic routing
+// const getDetailsRoute = (formType: string, submissionId: string) => {
+//   console.log("formType",formType);
+//   alert(formType);  
+//   const routes = {
+//     startup: `/admin/forms/startup/${submissionId}`,
+//     researcher: `/admin/forms/researcher/${submissionId}`,
+//     investor: `/admin/forms/investor/${submissionId}`,
+//     mentor: `/admin/forms/mentor/${submissionId}`,
+//     iprProfessional: `/admin/forms/ipr-professional/${submissionId}`,
+   
+//     // Add more roles as needed
+//   };
   
-  return routes[formType as keyof typeof routes] || `/admin/forms/${submissionId}`;
-};
+  
+//   return routes[formType as keyof typeof routes] || `/admin/forms/${submissionId}`;
+// };
 
 export default function AdminFormsPage() {
   const { toast } = useToast();
@@ -303,11 +308,7 @@ export default function AdminFormsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-<<<<<<< HEAD
-                          onClick={() => router.push(getDetailsRoute(submission.formType, submission._id))}
-=======
                           onClick={() => router.push(`/admin/forms/${submission.formType}/${submission._id}`)}
->>>>>>> c692cade63db327f995b681c139bb32c82c59c0f
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
