@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import StartupDashboard from "@/components/dashboard/panels/startup/startup-dashboard";
+
 
 export default async function StartupPage() {
   const session = await getServerSession(authOptions);
@@ -14,5 +14,5 @@ export default async function StartupPage() {
     redirect("/");
   }
 
-  return <StartupDashboard />;
-} 
+  return <div>Startup Dashboard</div>;
+}
