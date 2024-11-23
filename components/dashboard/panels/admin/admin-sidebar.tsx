@@ -41,8 +41,8 @@ const sidebarItems = [
     icon: Users,
   },
   {
-    title: "Startups",
-    href: "/admin/startups",
+    title: "Startup",
+    href: "/admin/startup",
     icon: Building2,
   },
   {
