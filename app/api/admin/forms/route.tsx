@@ -3,8 +3,7 @@ import { connectDB } from "@/lib/db";
 import FormSubmission from "@/models/form-submission.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
@@ -30,7 +29,7 @@ export async function GET(request: Request) {
     console.error("Error fetching form submissions:", error);
     return NextResponse.json(
       { error: "Failed to fetch form submissions" }, 
-      { status: 500 }
-    );
-  }
-} 
+      { status: 500 }
+    );
+  }
+}
