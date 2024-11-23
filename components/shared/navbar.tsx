@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import {
   Rocket,
   Microscope,
@@ -23,7 +22,6 @@ import {
   Banknote,
   UserCog,
   Search,
-  Users,
   LogOut,
   Settings,
   User,
@@ -48,7 +46,7 @@ const roleApplications = [
   {
     title: "Apply as IPR Professional",
     description: "Register as IPR expert",
-    href: "/forms/ipr",
+    href: "/forms/iprprofessional",
     icon: Scale,
   },
   {
@@ -83,10 +81,9 @@ const roleRoutes = {
 
 export default function Navbar() {
   const { data: session, status } = useSession();
-  const router = useRouter();
 
   const handleSignIn = async () => {
-    const result = await signIn("google", { 
+    await signIn("google", { 
       callbackUrl: session?.user?.role ? roleRoutes[session.user.role as keyof typeof roleRoutes]?.path : '/' 
     });
   };

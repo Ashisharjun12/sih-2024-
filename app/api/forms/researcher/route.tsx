@@ -18,14 +18,13 @@ export async function POST(request: Request) {
     await connectDB();
 
     const formData = await request.json();
+    console.log("Received researcher form data:", formData); // Debug log
 
     // Extract file data
     const files = {
+      profilePicture: formData.files?.profilePicture,
+      cv: formData.files?.cv,
       identityProof: formData.files?.identityProof,
-      businessPlan: formData.files?.businessPlan,
-      pitchDeck: formData.files?.pitchDeck,
-      financialProjections: formData.files?.financialProjections,
-      incorporationCertificate: formData.files?.incorporationCertificate,
     };
 
     // Remove files from formData to avoid duplication
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
     // Create form submission
     const submission = await FormSubmission.create({
       userId: session.user.id,
-      formType: "startup",
+      formType: "researcher", // Changed to researcher
       formData: restFormData,
       status: "pending",
       userEmail: session.user.email,
@@ -43,18 +42,19 @@ export async function POST(request: Request) {
       submittedAt: new Date(),
     });
 
-    console.log("Created submission:", submission); // Debug log
+    console.log("Created researcher submission:", submission); // Debug log
 
     return NextResponse.json({ 
       success: true, 
-      message: "Form submitted successfully",
+      message: "Researcher form submitted successfully",
       submission 
     });
+
   } catch (error) {
-    console.error("Form submission error:", error);
+    console.error("Researcher form submission error:", error);
     return NextResponse.json(
-      { error: "Failed to submit form" }, 
+      { error: "Failed to submit researcher form" }, 
       { status: 500 }
     );
   }
-} 
+}

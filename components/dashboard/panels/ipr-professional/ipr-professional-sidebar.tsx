@@ -10,11 +10,7 @@ import {
   Shield,
   Search,
   Settings,
-  BookOpen,
   FileCheck,
-  GraduationCap,
-  Scale,
-  Globe
 } from "lucide-react";
 
 const iprProfessionalLinks = [
@@ -29,39 +25,19 @@ const iprProfessionalLinks = [
     icon: Shield,
   },
   {
-    title: "Trademark Reviews",
+    title: "Trademark Applications",
     href: "/ipr-professional/trademarks",
     icon: FileCheck,
   },
   {
-    title: "IP Search",
-    href: "/ipr-professional/search",
+    title: "Copyright Applications",
+    href: "/ipr-professional/copyrights",
     icon: Search,
   },
   {
-    title: "Legal Documents",
-    href: "/ipr-professional/documents",
+    title: "Trade Secret Applications",
+    href: "/ipr-professional/tradesecrets",
     icon: FileText,
-  },
-  {
-    title: "IP Education",
-    href: "/ipr-professional/education",
-    icon: GraduationCap,
-  },
-  {
-    title: "Compliance",
-    href: "/ipr-professional/compliance",
-    icon: Scale,
-  },
-  {
-    title: "Global IP",
-    href: "/ipr-professional/global",
-    icon: Globe,
-  },
-  {
-    title: "Resources",
-    href: "/ipr-professional/resources",
-    icon: BookOpen,
   },
   {
     title: "Settings",
@@ -76,7 +52,9 @@ export function IPRProfessionalSidebar() {
   return (
     <div className="flex flex-col gap-4 py-4">
       <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-lg font-semibold">IPR Professional Dashboard</h2>
+        <h2 className="mb-2 px-4 text-lg font-semibold">
+          IPR Professional Dashboard
+        </h2>
         <div className="space-y-1">
           {iprProfessionalLinks.map((link) => {
             const Icon = link.icon;
@@ -101,4 +79,4 @@ export function IPRProfessionalSidebar() {
       </div>
     </div>
   );
-} 
+}
