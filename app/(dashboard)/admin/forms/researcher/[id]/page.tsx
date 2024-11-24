@@ -114,26 +114,30 @@ export default function ResearcherDetailPage() {
   const handleAction = async (action: "approve" | "reject") => {
     try {
       setProcessing(true);
-      const response = await fetch(`/api/admin/forms/${params.id}/status`, {
-        method: "PATCH",
+      const response = await fetch(`/api/admin/forms/researcherDetails/${params.id}/${action}`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: action }),
+        body: JSON.stringify({
+          reason: action === "reject" ? "Application rejected by admin" : undefined
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to ${action} application`);
+      }
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || `Failed to ${action} application`);
-      }
-
       toast({
         title: "Success",
-        description: `Application ${action}ed successfully`,
+        description: data.message || `Application ${action}ed successfully`,
       });
 
       router.push("/admin/forms");
+      router.refresh();
     } catch (error) {
       console.error("Action error:", error);
       toast({
@@ -286,7 +290,7 @@ export default function ResearcherDetailPage() {
             </div>
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-2">Expertise Areas</h4>
-              {submission?.formData.researchDetails.expertiseAreas.length > 0 ? (
+              {submission?.formData.researchDetails.expertiseAreas && submission.formData.researchDetails.expertiseAreas.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {submission.formData.researchDetails.expertiseAreas.map((area, index) => (
                     <Badge key={index} variant="secondary">{area}</Badge>
@@ -298,9 +302,9 @@ export default function ResearcherDetailPage() {
             </div>
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-2">Ongoing Projects</h4>
-              {submission?.formData.researchDetails.ongoingProjects.length > 0 ? (
+              {submission?.formData.researchDetails.ongoingProjects && submission.formData.researchDetails.ongoingProjects.length > 0 ? (
                 <div className="space-y-2">
-                  {submission.formData.researchDetails.ongoingProjects.map((project, index) => (
+                  {submission?.formData.researchDetails.ongoingProjects.map((project, index) => (
                     <p key={index} className="bg-muted p-2 rounded">{project}</p>
                   ))}
                 </div>
