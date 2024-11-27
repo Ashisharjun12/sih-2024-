@@ -4,7 +4,10 @@ import Startup from "@/models/startup.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { projectid: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -17,20 +20,29 @@ export async function GET(request: Request) {
 
     await connectDB();
 
-    // Find all startups associated with the user
-    const startups = await Startup.find({ userId: session.user.id })
-      .select("startupDetails businessActivities additionalInfo createdAt")
-      .sort({ createdAt: -1 });
+    const startup = await Startup.findOne({
+      _id: params.projectid,
+      userId: session.user.id
+    }).lean();
+
+    if (!startup) {
+      return NextResponse.json(
+        { error: "Startup not found" }, 
+        { status: 404 }
+      );
+    }
+
+    console.log("Startup data from DB:", JSON.stringify(startup, null, 2));
 
     return NextResponse.json({ 
       success: true,
-      startups
+      startup
     });
 
   } catch (error) {
-    console.error("Error fetching startups:", error);
+    console.error("Error fetching startup details:", error);
     return NextResponse.json(
-      { error: "Failed to fetch startups" }, 
+      { error: "Failed to fetch startup details" }, 
       { status: 500 }
     );
   }

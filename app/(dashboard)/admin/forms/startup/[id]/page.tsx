@@ -242,7 +242,7 @@
         const userEmail = submission?.formData.owner.email;
         
         const response = await fetch(
-          `/api/admin/forms/${params.id}/${action}`, 
+          `/api/admin/forms/startup/${params.id}/${action}`, 
           {
             method: 'POST',
             headers: {

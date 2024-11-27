@@ -68,16 +68,6 @@ const startupSchema = new mongoose.Schema({
     directors: [directorSchema],
     ownershipPercentage: { type: Number, required: true },
   },
-  financialDetails: {
-    bankDetails: {
-      bankName: { type: String, required: true },
-      branch: { type: String, required: true },
-      accountNumber: { type: String, required: true },
-    },
-    annualTurnover: { type: Number },
-    fundingStatus: { type: String },
-    amountRaised: { type: Number },
-  },
   businessActivities: {
     missionAndVision: { type: String, required: true },
     intellectualProperty: [{
