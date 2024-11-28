@@ -268,7 +268,7 @@
           description: `Application ${action}ed successfully`,
         });
 
-        router.push("/admin/forms");
+        // router.push("/admin/forms");
       } catch (error) {
         console.error("Action error:", error);
         toast({

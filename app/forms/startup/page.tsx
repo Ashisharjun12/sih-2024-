@@ -251,9 +251,10 @@ export default function StartupRegistrationForm() {
       });
 
       // Wait for 2 seconds before redirecting
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      
+      // setTimeout(() => {
+      //   router.push("/");
+      // }, 2000);
 
     } catch (error: any) {
       console.error("Form submission error:", error);
