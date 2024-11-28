@@ -11,7 +11,7 @@ const researcherSchema = new mongoose.Schema({
   personalInfo: {
     name: { type: String, required: true },
     email: {
-      address: { type: String, required: true, unique: true },
+      address: { type: String, required: true },
       verified: { type: Boolean, default: false }
     },
     phone: {

@@ -251,9 +251,10 @@ export default function StartupRegistrationForm() {
       });
 
       // Wait for 2 seconds before redirecting
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      
+      // setTimeout(() => {
+      //   router.push("/");
+      // }, 2000);
 
     } catch (error: any) {
       console.error("Form submission error:", error);
@@ -871,119 +872,6 @@ export default function StartupRegistrationForm() {
                                     Add Another Equity Split
                                   </Button>
                                 </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Financial Details */}
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Financial Details</h3>
-                        
-                        {/* Bank Details */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="financialDetails.bankDetails.bankName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Bank Name</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="financialDetails.bankDetails.branch"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Branch</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="financialDetails.bankDetails.accountNumber"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Account Number</FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="password" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        {/* Financial Status */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="financialDetails.annualTurnover"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Annual Turnover (₹)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    {...field} 
-                                    type="number" 
-                                    onChange={(e) => field.onChange(Number(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="financialDetails.fundingStatus"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Funding Status</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select funding status" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="bootstrapped">Bootstrapped</SelectItem>
-                                    <SelectItem value="seed">Seed Funded</SelectItem>
-                                    <SelectItem value="seriesA">Series A</SelectItem>
-                                    <SelectItem value="seriesB">Series B</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="financialDetails.amountRaised"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Amount Raised (₹)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    {...field} 
-                                    type="number" 
-                                    onChange={(e) => field.onChange(Number(e.target.value))}
-                                  />
-                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}

@@ -5,7 +5,7 @@ import { connectDB } from "@/lib/db";
 import FormSubmission from "@/models/form-submission.model";
 import IPRProfessional from "@/models/ipr-professional.model";
 import User from "@/models/user.model";
-// import { sendMail } from "@/lib/mail";
+import { sendEmail, getApprovalEmailTemplate, getRejectionEmailTemplate } from "@/lib/utils/email";
 
 interface RequestBody {
   reason?: string;
@@ -55,30 +55,34 @@ export async function POST(
       });
 
       // Send approval email
-    //   await sendMail({
-    //     to: body.userEmail,
-    //     subject: "IPR Professional Application Approved",
-    //     html: `
-    //       <h1>Congratulations ${body.userName}!</h1>
-    //       <p>Your application to become an IPR Professional has been approved.</p>
-    //       <p>You can now log in to your account with your new role and start reviewing IPR applications.</p>
-    //       <p>Thank you for joining our platform!</p>
-    //     `
-    //   });
+      await sendEmail({
+        to: body.userEmail,
+        subject: "IPR Professional Application Approved",
+        html: getApprovalEmailTemplate(body.userName, "IPR Professional")
+      });
     } else {
       // Send rejection email
-    //   await sendMail({
-    //     to: body.userEmail,
-    //     subject: "IPR Professional Application Status",
-    //     html: `
-    //       <h1>Dear ${body.userName},</h1>
-    //       <p>We regret to inform you that your IPR Professional application has been rejected.</p>
-    //       ${body.reason ? `<p>Reason: ${body.reason}</p>` : ''}
-    //       <p>You may submit a new application after addressing the concerns.</p>
-    //       <p>Thank you for your interest in our platform.</p>
-    //     `
-    //   });
+      await sendEmail({
+        to: body.userEmail,
+        subject: "IPR Professional Application Status Update",
+        html: getRejectionEmailTemplate(body.userName, "IPR Professional")
+      });
     }
+
+    // Create notification
+    const notification = {
+      title: action === "approve" ? "Application Approved" : "Application Rejected",
+      message: action === "approve"
+        ? "Your IPR Professional application has been approved"
+        : `Your application was rejected. ${body.reason || 'Please contact support for more information.'}`,
+      type: action === "approve" ? "success" : "error",
+      createdAt: new Date()
+    };
+
+    // Add notification to user
+    await User.findByIdAndUpdate(submission.userId, {
+      $push: { notifications: notification }
+    });
 
     return NextResponse.json({
       success: true,

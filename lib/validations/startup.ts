@@ -80,16 +80,6 @@ export const startupFormSchema = z.object({
     cinNumber: z.string().optional(),
     msmeRegistration: z.string().optional(),
   }).optional(),
-  financialDetails: z.object({
-    bankDetails: z.object({
-      bankName: z.string().optional(),
-      branch: z.string().optional(),
-      accountNumber: z.string().optional(),
-    }).optional(),
-    annualTurnover: z.number().optional(),
-    fundingStatus: z.string().optional(),
-    amountRaised: z.number().optional(),
-  }).optional(),
   businessActivities: z.object({
     missionAndVision: z.string().optional(),
     intellectualProperty: z.array(z.object({

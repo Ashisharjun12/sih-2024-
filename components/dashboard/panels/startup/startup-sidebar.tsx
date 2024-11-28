@@ -49,8 +49,8 @@ const sidebarItems = [
     icon: LineChart,
   },
   {
-    title: "Startup",
-    href: "/startup/startup",
+    title: "Projects",
+    href: "/startup/projects",
     icon: Building2,
   },
   {

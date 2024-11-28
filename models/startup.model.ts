@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+
 const founderSchema = new mongoose.Schema({
   name: { type: String, required: true },
   role: { type: String, required: true },
@@ -67,16 +68,6 @@ const startupSchema = new mongoose.Schema({
     equitySplits: [equitySplitSchema],
     directors: [directorSchema],
     ownershipPercentage: { type: Number, required: true },
-  },
-  financialDetails: {
-    bankDetails: {
-      bankName: { type: String, required: true },
-      branch: { type: String, required: true },
-      accountNumber: { type: String, required: true },
-    },
-    annualTurnover: { type: Number },
-    fundingStatus: { type: String },
-    amountRaised: { type: Number },
   },
   businessActivities: {
     missionAndVision: { type: String, required: true },
