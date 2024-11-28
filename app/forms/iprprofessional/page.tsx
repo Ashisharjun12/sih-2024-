@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ interface FormData {
   name: string;
   email: string;
   certifications: FileUpload[];
+  walletAddress?: string;
 }
 
 const IPRProfessionalForm = () => {
@@ -30,16 +32,16 @@ const IPRProfessionalForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
     certifications: [],
+    walletAddress: "",
   });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -52,12 +54,12 @@ const IPRProfessionalForm = () => {
 
     setIsUploading(true);
     const files = Array.from(e.target.files);
-    
+
     try {
       for (const file of files) {
         const formData = new FormData();
         formData.append("file", file);
-        
+
         const response = await fetch("/api/upload", {
           method: "POST",
           body: formData,
@@ -68,9 +70,9 @@ const IPRProfessionalForm = () => {
         }
 
         const uploadedFile: FileUpload = await response.json();
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          certifications: [...prev.certifications, uploadedFile]
+          certifications: [...prev.certifications, uploadedFile],
         }));
       }
 
@@ -81,7 +83,10 @@ const IPRProfessionalForm = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload certifications",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to upload certifications",
         variant: "destructive",
       });
     } finally {
@@ -92,13 +97,63 @@ const IPRProfessionalForm = () => {
     }
   };
 
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      toast({
+        title: "MetaMask Not Found",
+        description: "Please install MetaMask browser extension",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsConnecting(true);
+
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+
+      if (accounts.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          walletAddress: accounts[0],
+        }));
+
+        toast({
+          title: "Success",
+          description: "Wallet connected successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to connect wallet",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    console.log("formData", formData);
+
+
     if (formData.certifications.length === 0) {
       toast({
         title: "Error",
         description: "Please upload at least one certification",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.walletAddress) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
         variant: "destructive",
       });
       return;
@@ -122,14 +177,18 @@ const IPRProfessionalForm = () => {
 
       toast({
         title: "Success",
-        description: "Your IPR professional application has been submitted successfully",
+        description:
+          "Your IPR professional application has been submitted successfully",
       });
 
       router.push("/");
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit application",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to submit application",
         variant: "destructive",
       });
     } finally {
@@ -137,7 +196,7 @@ const IPRProfessionalForm = () => {
     }
   };
 
-  const isFormDisabled = isSubmitting || isUploading;
+  const isFormDisabled = isSubmitting || isUploading || isConnecting;
 
   return (
     <div className="container max-w-2xl py-8">
@@ -145,7 +204,8 @@ const IPRProfessionalForm = () => {
         <CardHeader>
           <CardTitle>IPR Professional Application</CardTitle>
           <CardDescription>
-            Apply to become an IPR professional and help manage intellectual property rights
+            Apply to become an IPR professional and help manage intellectual
+            property rights
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -178,7 +238,9 @@ const IPRProfessionalForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="certifications">Professional Certifications</Label>
+              <Label htmlFor="certifications">
+                Professional Certifications
+              </Label>
               <Input
                 id="certifications"
                 name="certifications"
@@ -189,14 +251,21 @@ const IPRProfessionalForm = () => {
                 disabled={isFormDisabled}
               />
               {isUploading && (
-                <p className="text-sm text-yellow-600">Uploading certifications...</p>
+                <p className="text-sm text-yellow-600">
+                  Uploading certifications...
+                </p>
               )}
               {formData.certifications.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-sm font-medium">Uploaded Certifications:</p>
+                  <p className="text-sm font-medium">
+                    Uploaded Certifications:
+                  </p>
                   <ul className="list-disc list-inside">
                     {formData.certifications.map((cert, index) => (
-                      <li key={cert.public_id} className="text-sm text-gray-600">
+                      <li
+                        key={cert.public_id}
+                        className="text-sm text-gray-600"
+                      >
                         <a
                           href={cert.secure_url}
                           target="_blank"
@@ -212,11 +281,33 @@ const IPRProfessionalForm = () => {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label>Wallet Connection</Label>
+              {formData.walletAddress ? (
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-gray-600">
+                    {`${formData.walletAddress}`}
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={connectWallet}
+                  disabled={isFormDisabled}
+                  className="w-full"
+                >
+                  {isConnecting ? "Connecting..." : "Connect MetaMask"}
+                </Button>
+              )}
+            </div>
+
             <div className="flex gap-4">
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isFormDisabled || formData.certifications.length === 0}
+                disabled={
+                  isFormDisabled || formData.certifications.length === 0
+                }
               >
                 {isSubmitting ? "Submitting..." : "Submit Application"}
               </Button>

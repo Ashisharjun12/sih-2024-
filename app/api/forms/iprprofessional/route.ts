@@ -18,7 +18,6 @@ export async function POST(request: Request) {
     await connectDB();
 
     const formData = await request.json();
-    console.log("Received form data:", formData); // Debug log
 
     // Extract file data
     const files = {

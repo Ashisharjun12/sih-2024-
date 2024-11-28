@@ -58,13 +58,13 @@ const CreateIPRPage = () => {
 
     setIsUploading(true);
     const files = Array.from(e.target.files);
-    
+
     try {
       // Upload files one by one
       for (const file of files) {
         const formData = new FormData();
         formData.append("file", file);
-        
+
         const response = await fetch("/api/upload", {
           method: "POST",
           body: formData,
@@ -75,7 +75,7 @@ const CreateIPRPage = () => {
         }
 
         const uploadedFile: FileUpload = await response.json();
-        setDocuments(prev => [...prev, uploadedFile]);
+        setDocuments((prev) => [...prev, uploadedFile]);
       }
 
       toast({
@@ -85,7 +85,8 @@ const CreateIPRPage = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload documents",
+        description:
+          error instanceof Error ? error.message : "Failed to upload documents",
         variant: "destructive",
       });
     } finally {
@@ -186,18 +187,6 @@ const CreateIPRPage = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="transactionHash">Transaction Hash</Label>
-          <Input
-            id="transactionHash"
-            name="transactionHash"
-            value={formData.transactionHash}
-            onChange={handleInputChange}
-            required
-            placeholder="Enter blockchain transaction hash"
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="documents">Related Documents</Label>
           <Input
             id="documents"
@@ -214,9 +203,14 @@ const CreateIPRPage = () => {
               <p className="text-sm font-medium">Uploaded Documents:</p>
               <ul className="list-disc list-inside">
                 {documents.map((doc, index) => (
-                  <Link href={doc.secure_url} key={doc.public_id} className="text-sm text-gray-600">
-                    Document {index + 1}
-                  </Link>
+                  <li key={doc.public_id}>
+                    <Link
+                      href={doc.secure_url}
+                      className="text-sm text-gray-600"
+                    >
+                      Document {index + 1}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>

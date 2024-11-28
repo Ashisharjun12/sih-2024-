@@ -28,8 +28,6 @@ export async function POST(
     await connectDB();
 
     const { formId, action } = params;
-    const body: RequestBody = await req.json();
-
     // Find the form submission
     const submission = await FormSubmission.findById(formId);
     if (!submission) {
@@ -46,6 +44,7 @@ export async function POST(
         name: submission.formData.name,
         email: submission.formData.email,
         userId: submission.userId,
+        metaMaskAccount: submission.formData.walletAddress,
         certifications: submission.formData.certifications,
       });
       await iprProfessional.save();

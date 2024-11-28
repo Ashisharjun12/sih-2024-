@@ -15,6 +15,10 @@ const iprProfessionalSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    metaMaskAccount: {
+        type: String,
+        required: true
+    },
     certifications: [{
         public_id: String,
         secure_url: String,

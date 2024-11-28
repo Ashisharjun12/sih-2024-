@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { 
-  CheckCircle, 
-  XCircle, 
+import {
+  CheckCircle,
+  XCircle,
   FileText,
   Download,
   Loader2,
@@ -38,13 +38,7 @@ interface FormSubmission {
   };
 }
 
-const CertificationCard = ({ 
-  url,
-  index,
-}: { 
-  url: string;
-  index: number;
-}) => (
+const CertificationCard = ({ url, index }: { url: string; index: number }) => (
   <Card>
     <CardHeader className="border-b bg-muted">
       <div className="flex items-center gap-2">
@@ -58,7 +52,7 @@ const CertificationCard = ({
           variant="outline"
           size="sm"
           className="w-full"
-          onClick={() => window.open(url, '_blank')}
+          onClick={() => window.open(url, "_blank")}
         >
           <Eye className="h-4 w-4 mr-2" />
           View
@@ -68,7 +62,7 @@ const CertificationCard = ({
           size="sm"
           className="w-full"
           onClick={() => {
-            const a = document.createElement('a');
+            const a = document.createElement("a");
             a.href = url;
             a.download = `certification-${index + 1}`;
             document.body.appendChild(a);
@@ -84,7 +78,15 @@ const CertificationCard = ({
   </Card>
 );
 
-const FormSection = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) => (
+const FormSection = ({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) => (
   <Card className="mb-6">
     <CardHeader>
       <div className="flex items-center gap-2">
@@ -96,10 +98,16 @@ const FormSection = ({ title, icon: Icon, children }: { title: string; icon: Rea
   </Card>
 );
 
-const InfoItem = ({ label, value }: { label: string; value: string | undefined }) => (
+const InfoItem = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | undefined;
+}) => (
   <div className="space-y-1">
     <label className="text-sm font-medium text-muted-foreground">{label}</label>
-    <p className="text-base">{value || 'Not provided'}</p>
+    <p className="text-base">{value || "Not provided"}</p>
   </div>
 );
 
@@ -128,7 +136,10 @@ export default function IPRProfessionalDetailPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch form details",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch form details",
         variant: "destructive",
       });
     } finally {
@@ -139,19 +150,23 @@ export default function IPRProfessionalDetailPage() {
   const handleAction = async (action: "approve" | "reject") => {
     try {
       setProcessing(true);
-      
+
       const response = await fetch(
-        `/api/admin/forms/ipr-professional/${params.id}/${action}`, 
+        `/api/admin/forms/ipr-professional/${params.id}/${action}`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ 
-            reason: action === "reject" ? "Your application does not meet our requirements." : undefined,
+          body: JSON.stringify({
+            reason:
+              action === "reject"
+                ? "Your application does not meet our requirements."
+                : undefined,
             userEmail: submission?.userEmail,
             formType: submission?.formType,
-            userName: submission?.userName
+            userName: submission?.userName,
+            
           }),
         }
       );
@@ -170,7 +185,10 @@ export default function IPRProfessionalDetailPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : `Failed to ${action} application`,
+        description:
+          error instanceof Error
+            ? error.message
+            : `Failed to ${action} application`,
         variant: "destructive",
       });
     } finally {
@@ -198,7 +216,9 @@ export default function IPRProfessionalDetailPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold mb-2">IPR Professional Application</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              IPR Professional Application
+            </h1>
             <div className="space-y-1">
               <p className="text-muted-foreground">
                 Submitted by {submission.userName} ({submission.userEmail})
@@ -226,7 +246,10 @@ export default function IPRProfessionalDetailPage() {
         <FormSection title="Personal Information" icon={User}>
           <div className="grid grid-cols-2 gap-6">
             <InfoItem label="Full Name" value={submission.formData.name} />
-            <InfoItem label="Professional Email" value={submission.formData.email} />
+            <InfoItem
+              label="Professional Email"
+              value={submission.formData.email}
+            />
           </div>
         </FormSection>
 
@@ -245,9 +268,7 @@ export default function IPRProfessionalDetailPage() {
 
         {/* Action Buttons */}
         {submission.status === "pending" && (
-          <motion.div 
-            className="flex justify-end gap-4 sticky bottom-6 p-4 rounded-xl border backdrop-blur-sm bg-background/95 shadow-lg"
-          >
+          <motion.div className="flex justify-end gap-4 sticky bottom-6 p-4 rounded-xl border backdrop-blur-sm bg-background/95 shadow-lg">
             <Button
               variant="outline"
               size="lg"

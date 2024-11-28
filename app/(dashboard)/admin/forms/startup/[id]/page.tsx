@@ -241,7 +241,7 @@ export default function FormDetailPage() {
       const userEmail = submission?.formData.owner.email;
       
       const response = await fetch(
-        `/api/admin/forms/${params.id}/${action}`, 
+        `/api/admin/forms/startup/${params.id}/${action}`, 
         {
           method: 'POST',
           headers: {
@@ -255,8 +255,10 @@ export default function FormDetailPage() {
           }),
         }
       );
+      
 
       const data = await response.json();
+      console.log("data", data);
       
       if (!response.ok) {
         throw new Error(data.error || `Failed to ${action} application`);

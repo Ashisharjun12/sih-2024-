@@ -4,8 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectDB } from "@/lib/db";
 import IPR from "@/models/ipr.model";
 import Startup from "@/models/startup.model";
-import IPRProfessional from "@/models/ipr-professional.model";
-import { Types } from "mongoose";
+import User from "@/models/user.model";
 
 interface IPRDocument extends Document {
     title: string;
@@ -17,7 +16,6 @@ interface IPRDocument extends Document {
         public_id: string;
         secure_url: string;
     }>;
-    transactionHash: string;
 }
 
 // GET endpoint to fetch all IPRs for a startup
@@ -47,11 +45,10 @@ export async function GET() {
             })
             .populate({
                 path: 'allIPR.iprProfessional',
-                model: IPRProfessional,
+                model: User,
                 select: 'name email'
             });
         
-        console.log(populatedStartup)
 
         // Extract IPRs from the startup with proper typing
         const iprs = populatedStartup.allIPR.map((item: {
@@ -63,7 +60,6 @@ export async function GET() {
             iprProfessional: item.iprProfessional,
             message: item.message
         }));
-        console.log("iprs", iprs);
 
         return NextResponse.json(iprs);
 
@@ -103,15 +99,6 @@ export async function POST(req: NextRequest) {
             status: 'Pending',
             filingDate: new Date(),
         });
-
-        // Validate the IPR data
-        const validationError = newIPR.validateSync();
-        if (validationError) {
-            return NextResponse.json(
-                { error: "Validation Error", details: validationError.errors },
-                { status: 400 }
-            );
-        }
 
         // Save the IPR
         await newIPR.save();

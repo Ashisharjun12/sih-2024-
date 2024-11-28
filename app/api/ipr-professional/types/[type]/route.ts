@@ -13,9 +13,10 @@ export async function GET(
     try {
         // Check authentication and role
         const session = await getServerSession(authOptions);
-        // if (!session || session.user.role !== "iprProfessional") {
-        //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        // }
+        if (!session || session.user.role !== "iprProfessional") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
 
         await connectDB();
         const type = await params.type;

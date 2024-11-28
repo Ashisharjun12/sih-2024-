@@ -40,7 +40,6 @@ const IPRPage = () => {
 
   useEffect(() => {
     fetchIPRs();
-    
   }, []);
 
   const fetchIPRs = async () => {
@@ -106,11 +105,16 @@ const IPRPage = () => {
             <TableRow
               key={ipr.ipr._id}
               className="cursor-pointer hover:bg-gray-100"
-              onClick={() => setSelectedIPR(ipr)}
+              onClick={() => {
+                setSelectedIPR(ipr);
+                console.log(ipr);
+              }}
             >
               <TableCell>{ipr.ipr.title}</TableCell>
               <TableCell>{ipr.ipr.type}</TableCell>
-              <TableCell>{format(new Date(ipr.ipr.filingDate), "PP")}</TableCell>
+              <TableCell>
+                {format(new Date(ipr.ipr.filingDate), "PP")}
+              </TableCell>
               <TableCell>
                 <Badge
                   variant="secondary"
@@ -152,7 +156,9 @@ const IPRPage = () => {
                 <Badge
                   variant="secondary"
                   className={
-                    selectedIPR ? getStatusColor(selectedIPR.ipr.status) : undefined
+                    selectedIPR
+                      ? getStatusColor(selectedIPR.ipr.status)
+                      : undefined
                   }
                 >
                   {selectedIPR?.ipr.status}
@@ -160,9 +166,13 @@ const IPRPage = () => {
               </div>
               <div>
                 <h3 className="font-semibold">Transaction Hash</h3>
-                <p className="text-gray-600 truncate">
-                  {selectedIPR?.ipr.transactionHash}
-                </p>
+                <Link
+                  href={`https://sepolia.etherscan.io/tx/${selectedIPR?.ipr.transactionHash}#eventlog`}
+                  className="text-gray-600"
+                  target="_blank"
+                >
+                  {selectedIPR?.ipr.transactionHash.slice(0, 10)}...
+                </Link>
               </div>
             </div>
             {selectedIPR?.iprProfessional && (

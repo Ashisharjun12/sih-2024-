@@ -44,7 +44,9 @@ const IPRSchema = new mongoose.Schema({
     ],
     transactionHash: {
         type: String,
-        required: true,
+        required: function (this: { status: string }) {
+            return this.status === 'Accepted' || this.status === 'Rejected';
+        }
     }
 }, { timestamps: true });
 

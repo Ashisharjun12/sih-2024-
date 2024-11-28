@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ethers } from "ethers";
 import {
   Table,
   TableBody,
@@ -20,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import React from "react";
+import { initializeEthers } from "@/app/web3/function";
 
 interface IPROwner {
   _id: string;
@@ -29,7 +30,7 @@ interface IPROwner {
   email: string;
 }
 
-interface TradeSecret {
+interface Tradesecret {
   _id: string;
   title: string;
   description: string;
@@ -45,41 +46,111 @@ interface TradeSecret {
   message?: string;
 }
 
-const TradeSecretsPage = () => {
-  const [tradeSecrets, setTradeSecrets] = useState<TradeSecret[]>([]);
-  const [selectedTradeSecret, setSelectedTradeSecret] = useState<TradeSecret | null>(null);
+const TradesecretsPage = () => {
+  const [tradesecrets, setTradesecrets] = useState<Tradesecret[]>([]);
+  const [selectedTradesecret, setSelectedTradesecret] =
+    useState<Tradesecret | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [contract, setContract] = useState<ethers.Contract | null>(null);
+  const [transactionInProgress, setTransactionInProgress] = useState(false);
+
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTradeSecrets();
+    fetchTradesecrets();
+    checkWalletConnection();
+    if (window.ethereum) {
+      (async () => {
+        const currentContract = await initializeEthers(window.ethereum);
+        setContract(currentContract);
+      })();
+    }
   }, []);
 
-  const fetchTradeSecrets = async () => {
+  const checkWalletConnection = async () => {
+    if (window.ethereum) {
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.listAccounts();
+        if (accounts.length > 0) {
+          setIsWalletConnected(true);
+          setWalletAddress(accounts[0].address);
+        }
+      } catch (error) {
+        console.error("Error checking wallet connection:", error);
+      }
+    }
+  };
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      toast({
+        title: "MetaMask Not Found",
+        description: "Please install MetaMask browser extension",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const response = await fetch("/api/ipr-professional/types/trade_secrets");
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+
+      // Initialize contract
+      const currentContract = await initializeEthers(window.ethereum);
+      setContract(currentContract);
+
+      if (accounts.length > 0) {
+        setIsWalletConnected(true);
+        setWalletAddress(accounts[0]);
+        toast({
+          title: "Success",
+          description: "Wallet connected successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error("Wallet connection error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to connect wallet",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchTradesecrets = async () => {
+    try {
+      const response = await fetch("/api/ipr-professional/types/tradesecrets");
       if (!response.ok) {
-        throw new Error("Failed to fetch trade secrets");
+        throw new Error("Failed to fetch tradesecrets");
       }
       const data = await response.json();
-      setTradeSecrets(data);
+      setTradesecrets(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch trade secrets");
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch tradesecrets"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
-    if (!selectedTradeSecret) return;
+    if (!selectedTradesecret || !contract) return;
 
     setIsSubmitting(true);
+    setTransactionInProgress(true);
+
     try {
+      // First update the status in database
       const response = await fetch(
-        `/api/ipr-professional/${selectedTradeSecret._id}`,
+        `/api/ipr-professional/${selectedTradesecret._id}`,
         {
           method: "POST",
           headers: {
@@ -93,30 +164,83 @@ const TradeSecretsPage = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update trade secret status");
+        throw new Error("Failed to update tradesecret status");
       }
 
-      toast({
-        title: "Success",
-        description: `Trade Secret ${status.toLowerCase()} successfully`,
-      });
+      const data = await response.json();
 
-      await fetchTradeSecrets();
-      setSelectedTradeSecret(null);
+      // Then handle blockchain transaction
+      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+      const title = data.ipr.title;
+      const ownerId = BigInt(
+        parseInt(data.ipr.owner.details._id.toString(), 16)
+      ).toString();
+      try {
+        let transaction;
+        if (status === "Accepted") {
+          transaction = await contract.acceptPatent(id, title, ownerId);
+        } else {
+          transaction = await contract.rejectPatent(id, title, ownerId);
+        }
+
+        // Show transaction pending toast
+        toast({
+          title: "Transaction Pending",
+          description:
+            "Please wait while the transaction is being processed...",
+        });
+
+        // Wait for transaction confirmation
+        const receipt = await transaction.wait();
+
+        // Update transaction hash in database
+        await fetch(
+          `/api/ipr-professional/${selectedTradesecret._id}/transactionHash`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              transactionHash: receipt.hash,
+            }),
+          }
+        );
+
+        toast({
+          title: "Success",
+          description: `Trademark ${status.toLowerCase()} successfully. Transaction confirmed!`,
+        });
+      } catch (error: any) {
+        if (error.code === "ACTION_REJECTED") {
+          toast({
+            title: "Transaction Rejected",
+            description: "You rejected the transaction in MetaMask",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      await fetchTradesecrets();
+      setSelectedTradesecret(null);
       setMessage("");
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update status",
+        description: error.message || "Failed to update status",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
+      setTransactionInProgress(false);
     }
   };
 
-  const getStatusColor = (status: TradeSecret["status"]) => {
+  const getStatusColor = (status: Tradesecret["status"]) => {
     switch (status) {
       case "Pending":
         return "bg-yellow-500";
@@ -152,117 +276,175 @@ const TradeSecretsPage = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tradeSecrets.map((tradeSecret) => (
-            <TableRow key={tradeSecret._id}>
-              <TableCell>{tradeSecret.title}</TableCell>
+          {tradesecrets.map((tradesecret) => (
+            <TableRow key={tradesecret._id}>
+              <TableCell>{tradesecret.title}</TableCell>
               <TableCell>
-                {tradeSecret.ownerType === "Startup"
-                  ? tradeSecret.owner.startupName
-                  : tradeSecret.owner.name}
+                {tradesecret.ownerType === "Startup"
+                  ? tradesecret.owner.startupName
+                  : tradesecret.owner.name}
               </TableCell>
-              <TableCell>{format(new Date(tradeSecret.filingDate), "PP")}</TableCell>
+              <TableCell>
+                {format(new Date(tradesecret.filingDate), "PP")}
+              </TableCell>
               <TableCell>
                 <Badge
                   variant="secondary"
-                  className={getStatusColor(tradeSecret.status)}
+                  className={getStatusColor(tradesecret.status)}
                 >
-                  {tradeSecret.status}
+                  {tradesecret.status}
                 </Badge>
               </TableCell>
               <TableCell>
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedTradeSecret(tradeSecret)}
-                  disabled={tradeSecret.status !== "Pending"}
-                >
-                  Review
-                </Button>
+                {tradesecret.status === "Pending" ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedTradesecret(tradesecret)}
+                  >
+                    Review
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setSelectedTradesecret(tradesecret)}
+                  >
+                    View
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      {/* Trade Secret Review Dialog */}
+      {/* Trademark Review Dialog */}
       <Dialog
-        open={!!selectedTradeSecret}
-        onOpenChange={() => setSelectedTradeSecret(null)}
+        open={!!selectedTradesecret}
+        onOpenChange={() => setSelectedTradesecret(null)}
       >
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedTradeSecret?.title}</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4 space-y-4">
-            <div>
-              <h3 className="font-semibold">Description</h3>
-              <p className="text-gray-600">{selectedTradeSecret?.description}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold">Owner</h3>
-                <p className="text-gray-600">
-                  {selectedTradeSecret?.ownerType === "Startup"
-                    ? selectedTradeSecret.owner.startupName
-                    : selectedTradeSecret?.owner.name}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {selectedTradeSecret?.owner.email}
-                </p>
+          {isWalletConnected ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedTradesecret?.title}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <h3 className="font-semibold">Description</h3>
+                  <p className="text-gray-600">
+                    {selectedTradesecret?.description}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold">Owner</h3>
+                    <p className="text-gray-600">
+                      {selectedTradesecret?.ownerType === "Startup"
+                        ? selectedTradesecret.owner.startupName
+                        : selectedTradesecret?.owner.name}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {selectedTradesecret?.owner.email}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Filing Date</h3>
+                    <p className="text-gray-600">
+                      {selectedTradesecret &&
+                        format(new Date(selectedTradesecret.filingDate), "PP")}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Related Documents</h3>
+                  <div className="mt-2">
+                    {selectedTradesecret?.relatedDocuments.map((doc, index) => (
+                      <a
+                        key={doc.public_id}
+                        href={doc.secure_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline block"
+                      >
+                        Document {index + 1}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold">Wallet Address</h3>
+                  <p className="text-gray-600">{walletAddress}</p>
+                </div>
+
+                {selectedTradesecret?.status === "Pending" ? (
+                  <>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Review Message</h3>
+                      <Textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Enter your review message..."
+                        rows={4}
+                      />
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                      <Button
+                        onClick={() => handleStatusUpdate("Accepted")}
+                        className="flex-1 bg-green-500 hover:bg-green-600"
+                        disabled={
+                          isSubmitting || !message || transactionInProgress
+                        }
+                      >
+                        {transactionInProgress ? "Processing..." : "Accept"}
+                      </Button>
+                      <Button
+                        onClick={() => handleStatusUpdate("Rejected")}
+                        className="flex-1 bg-red-500 hover:bg-red-600"
+                        disabled={
+                          isSubmitting || !message || transactionInProgress
+                        }
+                      >
+                        {transactionInProgress ? "Processing..." : "Reject"}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {selectedTradesecret?.transactionHash && (
+                      <div className="space-y-2">
+                        <h3 className="font-semibold">Transaction Hash</h3>
+                        <a
+                          href={`https://sepolia.etherscan.io/tx/${selectedTradesecret.transactionHash}#eventlog`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline break-all"
+                        >
+                          {selectedTradesecret.transactionHash}
+                        </a>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-              <div>
-                <h3 className="font-semibold">Filing Date</h3>
-                <p className="text-gray-600">
-                  {selectedTradeSecret &&
-                    format(new Date(selectedTradeSecret.filingDate), "PP")}
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Connect Wallet</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col items-center justify-center p-6 space-y-4">
+                <p className="text-center text-gray-600">
+                  Please connect your MetaMask wallet to review tradesecret
+                  applications
                 </p>
+                <Button onClick={connectWallet}>Connect MetaMask</Button>
               </div>
-            </div>
-            <div>
-              <h3 className="font-semibold">Related Documents</h3>
-              <div className="mt-2">
-                {selectedTradeSecret?.relatedDocuments.map((doc, index) => (
-                  <a
-                    key={doc.public_id}
-                    href={doc.secure_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline block"
-                  >
-                    Document {index + 1}
-                  </a>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold">Review Message</h3>
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Enter your review message..."
-                rows={4}
-              />
-            </div>
-            <div className="flex gap-4 pt-4">
-              <Button
-                onClick={() => handleStatusUpdate("Accepted")}
-                className="flex-1 bg-green-500 hover:bg-green-600"
-                disabled={isSubmitting || !message}
-              >
-                Accept
-              </Button>
-              <Button
-                onClick={() => handleStatusUpdate("Rejected")}
-                className="flex-1 bg-red-500 hover:bg-red-600"
-                disabled={isSubmitting || !message}
-              >
-                Reject
-              </Button>
-            </div>
-          </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
   );
 };
 
-export default TradeSecretsPage;
+export default TradesecretsPage;

@@ -6,6 +6,7 @@ import Startup from "@/models/startup.model";
 import Researcher from "@/models/researcher.model";
 import IPR from "@/models/ipr.model";
 import { Types } from "mongoose";
+import User from "@/models/user.model";
 
 interface IPRUpdate {
     ipfsID: string;
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     try {
         // Check authentication and role
         const session = await getServerSession(authOptions);
-        if (!session || session.user.role !== "ipr_professional") {
+        if (!session || session.user.role !== "iprProfessional") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -25,14 +26,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         await connectDB();
 
         const { id } = await params;
-        console.log("id", id);
 
         // Find IPR
         const ipr = await IPR.findById(id);
         if (!ipr) {
             return NextResponse.json({ error: "IPR not found" }, { status: 404 });
         }
-        console.log("ipr", ipr);
 
         // Parse request body
         const { message, status }: IPRUpdate = await req.json();
@@ -48,7 +47,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         if (!owner) {
             return NextResponse.json({ error: `${ipr.ownerType} not found` }, { status: 404 });
         }
-
         // Find the IPR in owner's allIPR array
         const iprIndex = owner.allIPR.findIndex(
             (item: { ipr: Types.ObjectId }) =>
@@ -59,18 +57,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             return NextResponse.json({ error: "IPR reference not found in owner's records" }, { status: 404 });
         }
 
+
+        const { ipr: iprId, _id } = owner.allIPR[iprIndex];
+        const user = await User.findById(session?.user?.id);
+
         // Update the IPR professional assignment
         owner.allIPR[iprIndex] = {
-            ...owner.allIPR[iprIndex],
-            iprProfessional: new Types.ObjectId(session.user.id),
+            ipr: iprId,
+            _id: _id,
+            iprProfessional: user._id,
             message: message || ""
         };
-
-        // Save changes
-        await owner.save();
-
+        
+        console.log("owner", owner);
+        console.log("ipr", ipr);
         ipr.status = status;
+        ipr.transactionHash = "WAITING";
         await ipr.save();
+        await owner.save();
 
         return NextResponse.json({
             message: "IPR professional assigned successfully",
@@ -95,10 +99,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 // GET endpoint to fetch IPR details
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
+
         const session = await getServerSession(authOptions);
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+
 
         await connectDB();
         const { id } = await params;
