@@ -27,6 +27,7 @@ import {
   MoreVertical,
   Loader2,
   Download,
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -36,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DeleteModal } from "@/components/ui/delete-modal";
 
 interface FormSubmission {
   _id: string;
@@ -75,6 +77,8 @@ export default function AdminFormsPage() {
   const [processing, setProcessing] = useState(false);
   const [formTypeFilter, setFormTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [formToDelete, setFormToDelete] = useState<string>("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFormSubmissions();
@@ -173,6 +177,41 @@ export default function AdminFormsPage() {
     const matchesStatus = statusFilter === "all" || submission.status === statusFilter;
     return matchesFormType && matchesStatus;
   });
+
+  const handleDelete = (submissionId: string) => {
+    setFormToDelete(submissionId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const response = await fetch(`/api/admin/forms/delete?id=${formToDelete}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete form submission');
+      }
+
+      // Update the forms list
+      setFormSubmissions(formSubmissions.filter(form => form._id !== formToDelete));
+      
+      toast({
+        title: "Success",
+        description: "Form submission deleted successfully",
+      });
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete form submission",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteModalOpen(false);
+      setFormToDelete('');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -300,49 +339,63 @@ export default function AdminFormsPage() {
                     {new Date(submission.submittedAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => router.push(`/admin/forms/${submission.formType}/${submission._id}`)}
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/admin/forms/${submission.formType}/${submission._id}`)}
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+
+                      {submission.files && Object.entries(submission.files).map(([key, file]) => (
+                        <Button
+                          key={key}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(file.secure_url, '_blank')}
+                          title={`View ${key}`}
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        {submission.files && Object.entries(submission.files).map(([key, file]) => (
-                          <DropdownMenuItem
-                            key={key}
-                            onClick={() => window.open(file.secure_url, '_blank')}
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      ))}
+
+                      {submission.status === "pending" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAction(submission._id, "approve")}
+                            disabled={processing}
+                            className="text-green-600 hover:text-green-700"
+                            title="Approve"
                           >
-                            <Download className="h-4 w-4 mr-2" />
-                            View {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </DropdownMenuItem>
-                        ))}
-                        {submission.status === "pending" && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => handleAction(submission._id, "approve")}
-                              disabled={processing}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Approve
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleAction(submission._id, "reject")}
-                              disabled={processing}
-                              className="text-red-600"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAction(submission._id, "reject")}
+                            disabled={processing}
+                            className="text-red-600 hover:text-red-700"
+                            title="Reject"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(submission._id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -350,6 +403,12 @@ export default function AdminFormsPage() {
           </Table>
         </CardContent>
       </Card>
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        formId={formToDelete}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 } 
