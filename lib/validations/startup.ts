@@ -67,14 +67,19 @@ export const startupFormSchema = z.object({
     revenueModel: z.string().optional(),
     incorporationDate: z.string().optional(),
     founders: z.array(z.object({
-      name: z.string().optional(),
-      role: z.string().optional(),
-      contactDetails: z.string().optional(),
-    })).optional(),
+      name: z.string(),
+      role: z.string(),
+      contactDetails: z.string()
+    })).default([]),
+    directors: z.array(z.object({
+      name: z.string(),
+      role: z.string(),
+      contactDetails: z.string()
+    })).default([]),
     equitySplits: z.array(z.object({
-      ownerName: z.string().optional(),
-      equityPercentage: z.number().optional(),
-    })).optional(),
+      ownerName: z.string(),
+      equityPercentage: z.number()
+    })).default([]),
     gstNumber: z.string().optional(),
     panNumber: z.string().optional(),
     cinNumber: z.string().optional(),
@@ -90,17 +95,17 @@ export const startupFormSchema = z.object({
   legalAndCompliance: z.object({
     gstin: z.string().optional(),
     licenses: z.array(z.object({
-      type: z.string().optional(),
-      number: z.string().optional(),
-      validUntil: z.string().optional(),
-    })).optional(),
+      type: z.string(),
+      number: z.string(),
+      validUntil: z.string()
+    })).default([]),
     certifications: z.array(z.object({
-      type: z.string().optional(),
-      certificationNumber: z.string().optional(),
-      issuingAuthority: z.string().optional(),
-      validUntil: z.string().optional(),
-      certificationDetails: z.string().optional(),
-    })).optional(),
+      type: z.string(),
+      certificationNumber: z.string(),
+      issuingAuthority: z.string(),
+      validUntil: z.string(),
+      certificationDetails: z.string()
+    })).default([]),
     auditorDetails: z.object({
       name: z.string().optional(),
       firm: z.string().optional(),
@@ -110,7 +115,7 @@ export const startupFormSchema = z.object({
     }).optional(),
   }).optional(),
   supportAndNetworking: z.object({
-    supportRequested: z.array(z.string()).optional(),
+    supportRequested: z.array(z.string()).default([]),
     mentorshipPrograms: z.string().optional(),
     potentialInvestors: z.string().optional(),
   }).optional(),
