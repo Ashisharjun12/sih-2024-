@@ -119,6 +119,11 @@ export default function StartupRegistrationForm() {
       businessActivities: {
         missionAndVision: "",
       },
+      supportAndNetworking: {
+        supportRequested: [],
+        mentorshipPrograms: "",
+        potentialInvestors: "",
+      },
     },
   });
 
@@ -185,16 +190,7 @@ export default function StartupRegistrationForm() {
 
   const onSubmit = async (data: z.infer<typeof startupFormSchema>) => {
     try {
-      console.log("Form Data:", {
-        startupDetails: data.startupDetails,
-        businessActivities: data.businessActivities,
-        legalAndCompliance: data.legalAndCompliance,
-        supportAndNetworking: data.supportAndNetworking,
-        additionalInfo: data.additionalInfo
-      });
-
-      console.log("Files Data:", files);
-
+      console.log("Form Data:", data);
       setIsSubmitting(true);
 
       if (!session?.user) {
@@ -225,12 +221,32 @@ export default function StartupRegistrationForm() {
         userName: session.user.name,
       };
 
-      console.log("Final Form Data to be submitted:", formData);
+      console.log("Submitting form data:", formData);
+
+      // Submit to the create route instead of forms route
+      const response = await fetch("/api/startup/projects/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit form");
+      }
+
+      const result = await response.json();
+      console.log("Submission result:", result);
 
       toast({
         title: "Success!",
-        description: "Form data logged to console.",
+        description: "Your startup registration has been submitted for review.",
       });
+
+      // Redirect after successful submission
+      // router.push("/startup/projects");
 
     } catch (error: any) {
       console.error("Form submission error:", error);
@@ -935,9 +951,11 @@ export default function StartupRegistrationForm() {
                               <Select
                                 onValueChange={(value) => {
                                   const currentSupports = field.value || [];
-                                  field.onChange([...currentSupports, { type: value, description: '' }]);
+                                  if (!currentSupports.includes(value)) {
+                                    field.onChange([...currentSupports, value]);
+                                  }
                                 }}
-                                value={field.value?.[0]?.type || ""}
+                                value={field.value?.[0] || ""}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -956,20 +974,20 @@ export default function StartupRegistrationForm() {
                                 </SelectContent>
                               </Select>
                               <div className="flex flex-wrap gap-2 mt-2">
-                                {field.value?.map((support, index) => (
+                                {(field.value || []).map((support, index) => (
                                   <Badge 
                                     key={index}
                                     variant="secondary"
                                     className="flex items-center gap-1"
                                   >
-                                    {support.type}
+                                    {support}
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
                                       className="h-4 w-4 p-0 hover:bg-transparent"
                                       onClick={() => {
-                                        const newValue = field.value?.filter((_, i) => i !== index);
+                                        const newValue = (field.value || []).filter((_, i) => i !== index);
                                         field.onChange(newValue);
                                       }}
                                     >

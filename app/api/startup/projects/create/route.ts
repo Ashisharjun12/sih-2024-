@@ -3,12 +3,14 @@ import { connectDB } from "@/lib/db";
 import FormSubmission from "@/models/form-submission.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import Startup from "@/models/startup.model";
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
+      console.log("Unauthorized: No session found");
       return NextResponse.json(
         { error: "Unauthorized" }, 
         { status: 401 }
@@ -17,88 +19,59 @@ export async function POST(request: Request) {
 
     await connectDB();
 
+    // Get existing startup to get owner details
+    const userStartup = await Startup.findOne({ userId: session.user.id });
+    console.log("User's startup found:", userStartup);
+
+    // Get form data
     const formData = await request.json();
+    console.log("Form data received:", formData);
 
-    console.log("Received form data:", formData);
-
-    // Add personal details and common fields
-    const enrichedFormData = {
-      ...formData,
-      owner: {
-        fullName: session.user.name,
-        email: session.user.email,
-        userId: session.user.id,
-        phone: "",
-        businessAddress: {
-          physicalAddress: "",
-          city: "",
-          state: "",
-          pincode: "",
-        },
-        dateOfBirth: "",
-        gender: "Male",
-        identityProof: {
-          type: "Aadhar",
-          number: "",
-        },
-      },
-      // Add any missing fields with default values
-      businessActivities: {
-        ...formData.businessActivities,
-        intellectualProperty: formData.businessActivities?.intellectualProperty || [],
-      },
-      legalAndCompliance: {
-        ...formData.legalAndCompliance,
-        licenses: formData.legalAndCompliance?.licenses || [],
-        certifications: formData.legalAndCompliance?.certifications || [],
-        auditorDetails: {
-          name: "",
-          firm: "",
-          contact: "",
-          email: "",
-          registrationNumber: "",
-          ...formData.legalAndCompliance?.auditorDetails,
-        },
-      },
-      supportAndNetworking: {
-        ...formData.supportAndNetworking,
-        supportRequested: formData.supportAndNetworking?.supportRequested || [],
-        mentorshipPrograms: formData.supportAndNetworking?.mentorshipPrograms || "",
-        potentialInvestors: formData.supportAndNetworking?.potentialInvestors || "",
-      },
-      additionalInfo: {
-        ...formData.additionalInfo,
-        website: formData.additionalInfo?.website || "",
-        socialMedia: {
-          linkedIn: "",
-          twitter: "",
-          facebook: "",
-          ...formData.additionalInfo?.socialMedia,
-        },
-      },
-      files: formData.files || {},
-    };
-
-    console.log("Enriched form data:", enrichedFormData);
-
-    // Create form submission
-    const submission = await FormSubmission.create({
+    // Create submission data with owner details from existing startup
+    const submissionData = {
       userId: session.user.id,
       formType: "startup",
-      formData: enrichedFormData,
+      formData: {
+        owner: userStartup?.owner || {
+          fullName: session.user.name,
+          email: session.user.email,
+          phone: "",
+          businessAddress: {
+            physicalAddress: "",
+            city: "",
+            state: "",
+            pincode: "",
+          },
+          dateOfBirth: "",
+          gender: "Male",
+          identityProof: {
+            type: "Aadhar",
+            number: "",
+          },
+        },
+        startupDetails: formData.startupDetails,
+        businessActivities: formData.businessActivities,
+        legalAndCompliance: formData.legalAndCompliance,
+        supportAndNetworking: formData.supportAndNetworking,
+        additionalInfo: formData.additionalInfo,
+      },
       status: "pending",
-      userEmail: session.user.email     ,
+      userEmail: session.user.email,
       userName: session.user.name,
-      files: enrichedFormData.files,
+      files: formData.files || {},
       submittedAt: new Date(),
-      updatedAt: new Date(),
       metadata: {
         submissionType: "new_startup",
         source: "startup_dashboard"
       }
-    });
+    };
 
-    console.log("Created submission:", submission);
+    console.log("Creating submission with data:", submissionData);
+
+    // Create form submission
+    const submission = await FormSubmission.create(submissionData);
+
+    console.log("Created form submission:", submission);
 
     return NextResponse.json({ 
       success: true,
@@ -107,9 +80,12 @@ export async function POST(request: Request) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error("Error submitting startup registration:", error);
+    console.error("Error in form submission:", error);
     return NextResponse.json(
-      { error: "Failed to submit startup registration" }, 
+      { 
+        error: "Failed to submit startup registration",
+        details: error instanceof Error ? error.message : "Unknown error"
+      }, 
       { status: 500 }
     );
   }
