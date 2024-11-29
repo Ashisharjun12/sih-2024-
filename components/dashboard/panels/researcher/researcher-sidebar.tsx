@@ -90,6 +90,11 @@ const sidebarItems = [
     href: "/researcher/settings",
     icon: Settings,
   },
+  {
+    title: "IPR",
+    href: "/researcher/ipr",
+    icon: FileText,
+  },
 ];
 
 export function ResearcherSidebar({ className }: SidebarProps) {
@@ -99,7 +104,9 @@ export function ResearcherSidebar({ className }: SidebarProps) {
     <div className={cn("pb-12 min-h-screen", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold">Researcher Dashboard</h2>
+          <h2 className="mb-2 px-4 text-lg font-semibold">
+            Researcher Dashboard
+          </h2>
           <ScrollArea className="h-[calc(100vh-10rem)] px-2">
             <div className="space-y-1">
               {sidebarItems.map((item) => (
@@ -121,4 +128,4 @@ export function ResearcherSidebar({ className }: SidebarProps) {
       </div>
     </div>
   );
-} 
+}

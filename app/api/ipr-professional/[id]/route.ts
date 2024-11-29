@@ -69,8 +69,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             message: message || ""
         };
         
-        console.log("owner", owner);
-        console.log("ipr", ipr);
         ipr.status = status;
         ipr.transactionHash = "WAITING";
         await ipr.save();

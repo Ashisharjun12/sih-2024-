@@ -19,10 +19,10 @@ const researcherSchema = new mongoose.Schema({
       verified: { type: Boolean, default: false }
     },
     uniqueId: {
-      type: { 
-        type: String, 
+      type: {
+        type: String,
         enum: ["AADHAR", "PAN", "PASSPORT"],
-        required: true 
+        required: true
       },
       number: { type: String, required: true }
     },
@@ -81,7 +81,20 @@ const researcherSchema = new mongoose.Schema({
       default: "BOTH"
     },
     willingToMentor: { type: Boolean, default: false }
-  }
+  },
+
+  // 6. All IPR
+  allIPR: [{
+    ipr: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'IPR',
+    },
+    iprProfessional: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    message: String
+  }],
 }, { timestamps: true });
 
 const Researcher = mongoose.models.Researcher || mongoose.model("Researcher", researcherSchema);

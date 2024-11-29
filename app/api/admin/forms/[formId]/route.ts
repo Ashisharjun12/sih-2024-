@@ -21,23 +21,11 @@ export async function GET(
 
         await connectDB();
 
-<<<<<<< HEAD
-
         const submission = await FormSubmission.findById(params.formId);
 
         if (!submission) {
             return NextResponse.json(
                 { error: "Form submission not found" },
-=======
-        console.log("Fetching IPR Professional form with ID:", params.formId); // Debug log
-
-        const submission = await FormSubmission.findById(params.formId);
-        console.log("Found submission:", submission); // Debug log
-
-        if (!submission) {
-            return NextResponse.json(
-                { error: "IPR Professional form submission not found" },
->>>>>>> a16f09f081627cacc78e5db774e59a8be56f34de
                 { status: 404 }
             );
         }
@@ -47,15 +35,9 @@ export async function GET(
             submission
         });
     } catch (error) {
-<<<<<<< HEAD
         console.error("Error fetching form details:", error);
         return NextResponse.json(
             { error: "Failed to fetch form details" },
-=======
-        console.error("Error fetching IPR Professional form details:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch IPR Professional form details" },
->>>>>>> a16f09f081627cacc78e5db774e59a8be56f34de
             { status: 500 }
         );
     }

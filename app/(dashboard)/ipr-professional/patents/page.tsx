@@ -129,6 +129,7 @@ const PatentsPage = () => {
         throw new Error("Failed to fetch patents");
       }
       const data = await response.json();
+      console.log("data", data);
       setPatents(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch patents");
