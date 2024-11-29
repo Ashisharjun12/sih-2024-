@@ -63,18 +63,13 @@ const PatentsPage = () => {
   useEffect(() => {
     fetchPatents();
     checkWalletConnection();
-    if (window.ethereum) {
-      (async () => {
-        const currentContract = await initializeEthers(window.ethereum);
-        setContract(currentContract);
-      })();
-    }
   }, []);
 
   const checkWalletConnection = async () => {
-    if (window.ethereum) {
+    const { ethereum } = window;
+    if (ethereum) {
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const provider = new ethers.BrowserProvider(ethereum);
         const accounts = await provider.listAccounts();
         if (accounts.length > 0) {
           setIsWalletConnected(true);

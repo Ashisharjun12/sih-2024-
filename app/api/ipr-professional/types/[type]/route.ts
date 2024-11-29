@@ -19,7 +19,7 @@ export async function GET(
 
         await connectDB();
         const type = await params.type;
-        
+
         // Validate IPR type
         const validTypes = ['patents', 'trademarks', 'copyrights', 'trade_secrets'];
         if (!validTypes.includes(type)) {
