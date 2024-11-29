@@ -102,32 +102,15 @@ export default function StartupRegistrationForm() {
   const form = useForm<z.infer<typeof startupFormSchema>>({
     resolver: zodResolver(startupFormSchema),
     defaultValues: {
-      owner: {
-        fullName: session?.user?.name || "",
-        email: session?.user?.email || "",
-        phone: "",
-        businessAddress: {
-          physicalAddress: "",
-          city: "",
-          state: "",
-          pincode: "",
-        },
-        dateOfBirth: "",
-        gender: "Male",
-        identityProof: {
-          type: "Aadhar",
-          number: "",
-        },
-      },
       startupDetails: {
         startupName: "",
         industry: "",
         stage: "Ideation",
         businessModel: "B2B",
         revenueModel: "Subscription",
-        founders: [{ name: "", role: "", contactDetails: "" }],
+        founders: [{ name: session?.user?.name || "", role: "Founder", contactDetails: session?.user?.email || "" }],
         directors: [{ name: "", role: "", contactDetails: "" }],
-        equitySplits: [{ ownerName: "", equityPercentage: 0 }],
+        equitySplits: [{ ownerName: session?.user?.name || "", equityPercentage: 100 }],
         gstNumber: "",
         panNumber: "",
         cinNumber: "",
@@ -202,6 +185,16 @@ export default function StartupRegistrationForm() {
 
   const onSubmit = async (data: z.infer<typeof startupFormSchema>) => {
     try {
+      console.log("Form Data:", {
+        startupDetails: data.startupDetails,
+        businessActivities: data.businessActivities,
+        legalAndCompliance: data.legalAndCompliance,
+        supportAndNetworking: data.supportAndNetworking,
+        additionalInfo: data.additionalInfo
+      });
+
+      console.log("Files Data:", files);
+
       setIsSubmitting(true);
 
       if (!session?.user) {
@@ -232,29 +225,12 @@ export default function StartupRegistrationForm() {
         userName: session.user.name,
       };
 
-      // Submit form
-      const response = await fetch("/api/forms/startup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit form");
-      }
+      console.log("Final Form Data to be submitted:", formData);
 
       toast({
         title: "Success!",
-        description: "Your startup registration form has been submitted successfully.",
+        description: "Form data logged to console.",
       });
-
-      // Wait for 2 seconds before redirecting
-      
-      // setTimeout(() => {
-      //   router.push("/");
-      // }, 2000);
 
     } catch (error: any) {
       console.error("Form submission error:", error);
@@ -335,207 +311,6 @@ export default function StartupRegistrationForm() {
                   {currentStep === 1 ? (
                     // Step 1: Basic Information
                     <div className="space-y-4">
-                      {/* Owner Information */}
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Owner Information</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="owner.fullName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Full Name</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="owner.email"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Email</FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="email" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="owner.phone"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Phone</FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="tel" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="owner.gender"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Gender</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select gender" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="Male">Male</SelectItem>
-                                    <SelectItem value="Female">Female</SelectItem>
-                                    <SelectItem value="Other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="owner.dateOfBirth"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Date of Birth</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    {...field}
-                                    type="date"
-                                    
-                                    onChange={(e) => field.onChange(e.target.value)}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        {/* Business Address */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="owner.businessAddress.physicalAddress"
-                            render={({ field }) => (
-                              <FormItem className="col-span-2">
-                                <FormLabel>Address</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="owner.businessAddress.city"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>City</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="owner.businessAddress.state"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>State</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="owner.businessAddress.pincode"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Pincode</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        {/* Identity Proof */}
-                        <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="owner.identityProof.type"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Identity Proof Type</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select ID type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="Aadhar">Aadhar Card</SelectItem>
-                                    <SelectItem value="PAN">PAN Card</SelectItem>
-                                    <SelectItem value="Passport">Passport</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="owner.identityProof.number"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Identity Proof Number</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormItem>
-                            <FormLabel>Upload Identity Proof</FormLabel>
-                            <FileUpload
-                              label="Identity Proof"
-                              fileType="identityProof"
-                              accept="image/*"
-                              onFileChange={(fileData) => handleFileChange('identityProof', fileData)}
-                            />
-                            <FormDescription>
-                              Upload a clear image of your identity proof (Aadhar/PAN/Passport)
-                            </FormDescription>
-                          </FormItem>
-                        </div>
-                      </div>
-
                       {/* Startup Details */}
                       <div className="space-y-4">
                         <h3 className="text-lg font-semibold">Startup Details</h3>
@@ -1158,8 +933,11 @@ export default function StartupRegistrationForm() {
                             <FormItem>
                               <FormLabel>Support Required</FormLabel>
                               <Select
-                                onValueChange={(value) => field.onChange([...field.value || [], value])}
-                                value={field.value?.[0] || ""}
+                                onValueChange={(value) => {
+                                  const currentSupports = field.value || [];
+                                  field.onChange([...currentSupports, { type: value, description: '' }]);
+                                }}
+                                value={field.value?.[0]?.type || ""}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -1184,7 +962,7 @@ export default function StartupRegistrationForm() {
                                     variant="secondary"
                                     className="flex items-center gap-1"
                                   >
-                                    {support}
+                                    {support.type}
                                     <Button
                                       type="button"
                                       variant="ghost"
