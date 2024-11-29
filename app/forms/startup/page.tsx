@@ -1158,7 +1158,12 @@ export default function StartupRegistrationForm() {
                             <FormItem>
                               <FormLabel>Support Required</FormLabel>
                               <Select
-                                onValueChange={(value) => field.onChange([...field.value || [], value])}
+                                onValueChange={(value) => {
+                                  const currentSupports = field.value || [];
+                                  if (!currentSupports.includes(value)) {
+                                    field.onChange([...currentSupports, value]);
+                                  }
+                                }}
                                 value={field.value?.[0] || ""}
                               >
                                 <FormControl>
@@ -1178,7 +1183,7 @@ export default function StartupRegistrationForm() {
                                 </SelectContent>
                               </Select>
                               <div className="flex flex-wrap gap-2 mt-2">
-                                {field.value?.map((support, index) => (
+                                {(field.value || []).map((support, index) => (
                                   <Badge 
                                     key={index}
                                     variant="secondary"
@@ -1388,7 +1393,7 @@ export default function StartupRegistrationForm() {
               </form>
             </Form>
           </CardContent>
-        </Card>
+        </Card> 
       </motion.div>
     </div>
   );

@@ -115,10 +115,7 @@ export const startupFormSchema = z.object({
     }).optional(),
   }).optional(),
   supportAndNetworking: z.object({
-    supportRequested: z.array(z.object({
-      type: z.string(),
-      description: z.string()
-    })).default([]),
+    supportRequested: z.array(z.string()).default([]),
     mentorshipPrograms: z.string().optional(),
     potentialInvestors: z.string().optional(),
   }).optional(),
