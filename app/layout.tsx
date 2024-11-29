@@ -6,6 +6,7 @@ import AuthProvider from "@/providers/auth-provider";
 import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] });
+//hello
 
 export default function RootLayout({
   children,
