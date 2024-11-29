@@ -21,7 +21,7 @@ export async function GET(
 
         await connectDB();
 
-<<<<<<< HEAD
+
 
         const submission = await FormSubmission.findById(params.formId);
         console.log("Found submission:", submission);
