@@ -389,23 +389,35 @@ const CopyrightsPage = () => {
                 <TableCell>
                   <div className="space-y-1">
                     <div>{copyright.title}</div>
-                    {copyright.status === "Pending" && similarityData[copyright._id] && (
-                      <div className="text-xs text-muted-foreground flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={similarityData[copyright._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
-                            Title Similarity: {similarityData[copyright._id].titleSimilarity}%
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={similarityData[copyright._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
-                            Description Similarity: {similarityData[copyright._id].descriptionSimilarity}%
-                          </Badge>
-                        </div>
-                        {(similarityData[copyright._id].titleSimilarity > 70 || 
-                          similarityData[copyright._id].descriptionSimilarity > 70) && (
-                          <span className="text-xs text-red-500">
-                            Similar to: {similarityData[copyright._id].similarTo}
-                          </span>
+                    {copyright.status === "Pending" && (
+                      <div className="text-xs text-muted-foreground">
+                        {similarityData[copyright._id] ? (
+                          <div className="flex flex-col gap-1">
+                            <div>
+                              Title Similarity:
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={similarityData[copyright._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[copyright._id].titleSimilarity}%
+                              </Badge>
+                              {similarityData[copyright._id].titleSimilarity > 70 && (
+                                <span>Similar to: {similarityData[copyright._id].similarTo}</span>
+                              )}
+                            </div>
+                            <div>
+                              Description Similarity:
+                            </div>
+                            <div>
+                              <Badge variant={similarityData[copyright._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[copyright._id].descriptionSimilarity}%
+                              </Badge>
+                            </div>
+                          </div>
+                        ) : isLoadingGemini && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            Analyzing similarity...
+                          </div>
                         )}
                       </div>
                     )}

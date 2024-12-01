@@ -333,23 +333,33 @@ const PatentsPage = () => {
                 <TableCell>
                   <div className="space-y-1">
                     <div>{patent.title}</div>
-                    {patent.status === "Pending" && similarityData[patent._id] && (
-                      <div className="text-xs text-muted-foreground flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={similarityData[patent._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
-                            Title Similarity: {similarityData[patent._id].titleSimilarity}%
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={similarityData[patent._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
-                            Description Similarity: {similarityData[patent._id].descriptionSimilarity}%
-                          </Badge>
-                        </div>
-                        {(similarityData[patent._id].titleSimilarity > 70 || 
-                          similarityData[patent._id].descriptionSimilarity > 70) && (
-                          <span className="text-xs text-red-500">
-                            Similar to: {similarityData[patent._id].similarTo}
-                          </span>
+                    {patent.status === "Pending" && (
+                      <div className="text-xs text-muted-foreground">
+                        {similarityData[patent._id] ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span>Title Similarity:</span>
+                              <Badge variant={similarityData[patent._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[patent._id].titleSimilarity}%
+                              </Badge>
+                              {similarityData[patent._id].titleSimilarity > 70 && (
+                                <span className="text-xs text-red-500">
+                                  Similar to: {similarityData[patent._id].similarTo}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>Description Similarity:</span>
+                              <Badge variant={similarityData[patent._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[patent._id].descriptionSimilarity}%
+                              </Badge>
+                            </div>
+                          </div>
+                        ) : isLoadingGemini && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            Analyzing similarity...
+                          </div>
                         )}
                       </div>
                     )}
