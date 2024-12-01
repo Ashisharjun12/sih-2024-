@@ -46,6 +46,12 @@ interface Copyright {
   message?: string;
 }
 
+interface SimilarityInfo {
+  similarTo: string;
+  titleSimilarity: number;
+  descriptionSimilarity: number;
+}
+
 const CopyrightsPage = () => {
   const [copyrights, setCopyrights] = useState<Copyright[]>([]);
   const [selectedCopyright, setSelectedCopyright] = useState<Copyright | null>(null);
@@ -57,6 +63,9 @@ const CopyrightsPage = () => {
   const [walletAddress, setWalletAddress] = useState("");
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [transactionInProgress, setTransactionInProgress] = useState(false);
+  const [similarityData, setSimilarityData] = useState<Record<string, SimilarityInfo>>({});
+  const [isLoadingGemini, setIsLoadingGemini] = useState(false);
+  const [isLoadingCopyrights, setIsLoadingCopyrights] = useState(true);
 
   const { toast } = useToast();
 
@@ -124,64 +133,182 @@ const CopyrightsPage = () => {
 
   const fetchCopyrights = async () => {
     try {
+      setIsLoadingCopyrights(true);
       const response = await fetch("/api/ipr-professional/types/copyrights");
       if (!response.ok) {
         throw new Error("Failed to fetch copyrights");
       }
       const data = await response.json();
+      
+      // Set copyrights immediately to show static data
       setCopyrights(data);
+      setIsLoadingCopyrights(false);
+
+      // Then start similarity checks
+      setIsLoadingGemini(true);
+      const pendingCopyrights = data.filter((tm: Copyright) => tm.status === "Pending");
+      const acceptedCopyrights = data.filter((tm: Copyright) => tm.status === "Accepted");
+
+      // Process similarities
+      for (const pending of pendingCopyrights) {
+        let highestTitleSimilarity = 0;
+        let highestDescSimilarity = 0;
+        let mostSimilarTitle = "";
+
+        for (const accepted of acceptedCopyrights) {
+          const similarity = await checkSimilarityWithGemini(
+            { title: pending.title, description: pending.description },
+            { title: accepted.title, description: accepted.description }
+          );
+
+          if (similarity) {
+            if (similarity.titleSimilarity > highestTitleSimilarity || 
+                similarity.descriptionSimilarity > highestDescSimilarity) {
+              highestTitleSimilarity = similarity.titleSimilarity;
+              highestDescSimilarity = similarity.descriptionSimilarity;
+              mostSimilarTitle = accepted.title;
+            }
+          }
+        }
+
+        if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
+          setSimilarityData(prev => ({
+            ...prev,
+            [pending._id]: {
+              similarTo: mostSimilarTitle,
+              titleSimilarity: Math.round(highestTitleSimilarity),
+              descriptionSimilarity: Math.round(highestDescSimilarity)
+            }
+          }));
+        }
+      }
+
+      // Log matches after all similarities are processed
+      logSimilarCopyrights(pendingCopyrights, acceptedCopyrights);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch copyrights");
     } finally {
-      setLoading(false);
+      setIsLoadingCopyrights(false);
+      setIsLoadingGemini(false);
     }
   };
 
-  const handleStatusUpdate = async (iprId: string, status: string, message: string) => {
+  const checkSimilarityWithGemini = async (
+    pending: { title: string; description: string },
+    accepted: { title: string; description: string }
+  ) => {
     try {
-      console.log("Updating IPR:", { iprId, status, message });
-
-      // Validate inputs
-      if (!iprId || !status) {
-        throw new Error("Missing required fields");
-      }
-
-      const response = await fetch(`/api/ipr-professional/${iprId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status, message }),
+      const response = await fetch("/api/gemini/compare-trademarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pending, accepted }),
       });
+
+      if (!response.ok) throw new Error("Failed to check similarity");
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking similarity:", error);
+      return null;
+    }
+  };
+
+  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
+    if (!selectedCopyright || !contract) return;
+
+    setIsSubmitting(true);
+    setTransactionInProgress(true);
+
+    try {
+      // First update the status in database
+      const response = await fetch(
+        `/api/ipr-professional/${selectedCopyright._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status,
+            message,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update copyright status");
+      }
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update IPR status");
+      // Then handle blockchain transaction
+      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+      const title = data.ipr.title;
+      const ownerId = BigInt(
+        parseInt(data.ipr.owner.details._id.toString(), 16)
+      ).toString();
+      try {
+        let transaction;
+        if (status === "Accepted") {
+          transaction = await contract.acceptPatent(id, title, ownerId);
+        } else {
+          transaction = await contract.rejectPatent(id, title, ownerId);
+        }
+
+        // Show transaction pending toast
+        toast({
+          title: "Transaction Pending",
+          description:
+            "Please wait while the transaction is being processed...",
+        });
+
+        // Wait for transaction confirmation
+        const receipt = await transaction.wait();
+
+        // Update transaction hash in database
+        await fetch(
+          `/api/ipr-professional/${selectedCopyright._id}/transactionHash`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              transactionHash: receipt.hash,
+            }),
+          }
+        );
+
+        toast({
+          title: "Success",
+          description: `Copyright ${status.toLowerCase()} successfully. Transaction confirmed!`,
+        });
+      } catch (error: any) {
+        if (error.code === "ACTION_REJECTED") {
+          toast({
+            title: "Transaction Rejected",
+            description: "You rejected the transaction in MetaMask",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
       }
 
-      // Show success message
-      toast({
-        title: "Success",
-        description: data.message || "Status updated successfully",
-      });
-
-      // Refresh the copyrights list
       await fetchCopyrights();
-      
-      // Close the dialog
       setSelectedCopyright(null);
-      
-      // Reset the message
       setMessage("");
-
-    } catch (error) {
-      console.error("Status update error:", error);
+    } catch (error: any) {
+      console.error("Error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update status",
+        description: error.message || "Failed to update status",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
+      setTransactionInProgress(false);
     }
   };
 
@@ -198,67 +325,132 @@ const CopyrightsPage = () => {
     }
   };
 
-  if (loading) {
-    return <div className="p-6">Loading...</div>;
-  }
+  // Add this function after fetchCopyrights
+  const logSimilarCopyrights = (pendingCopyrights: Copyright[], acceptedCopyrights: Copyright[]) => {
+    console.log("\n=== Copyright Similarity Analysis ===");
+    
+    pendingCopyrights.forEach(pending => {
+      const similarAccepted = acceptedCopyrights.filter(accepted => {
+        const titleMatch = similarityData[pending._id]?.titleSimilarity > 70;
+        const descMatch = similarityData[pending._id]?.descriptionSimilarity > 70;
+        return titleMatch || descMatch;
+      });
 
-  if (error) {
-    return <div className="p-6 text-red-500">Error: {error}</div>;
-  }
+      if (similarAccepted.length > 0) {
+        console.log("\nPending Copyright:");
+        console.log("Title:", pending.title);
+        console.log("Description:", pending.description);
+        console.log("\nMatching Accepted Copyrights:");
+        
+        similarAccepted.forEach(match => {
+          console.log("\n- Similar Copyright Found:");
+          console.log("  Title:", match.title);
+          console.log("  Description:", match.description);
+          console.log("  Title Similarity:", similarityData[pending._id].titleSimilarity + "%");
+          console.log("  Description Similarity:", similarityData[pending._id].descriptionSimilarity + "%");
+        });
+      }
+    });
+  };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Copyright Applications</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Copyright Applications</h1>
+        {isLoadingGemini && (
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Analyzing similarities...
+          </div>
+        )}
+      </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Owner</TableHead>
-            <TableHead>Filing Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {copyrights.map((copyright) => (
-            <TableRow key={copyright._id}>
-              <TableCell>{copyright.title}</TableCell>
-              <TableCell>
-                {copyright.ownerType === "Startup"
-                  ? copyright.owner.startupName
-                  : copyright.owner.name}
-              </TableCell>
-              <TableCell>{format(new Date(copyright.filingDate), "PP")}</TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className={getStatusColor(copyright.status)}
-                >
-                  {copyright.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {copyright.status === "Pending" ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedCopyright(copyright)}
-                  >
-                    Review
-                  </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    onClick={() => setSelectedCopyright(copyright)}
-                  >
-                    View
-                  </Button>
-                )}
-              </TableCell>
+      {isLoadingCopyrights ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading copyrights...</p>
+          </div>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Filing Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {copyrights.map((copyright) => (
+              <TableRow key={copyright._id}>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div>{copyright.title}</div>
+                    {copyright.status === "Pending" && similarityData[copyright._id] && (
+                      <div className="text-xs text-muted-foreground flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={similarityData[copyright._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                            Title Similarity: {similarityData[copyright._id].titleSimilarity}%
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={similarityData[copyright._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
+                            Description Similarity: {similarityData[copyright._id].descriptionSimilarity}%
+                          </Badge>
+                        </div>
+                        {(similarityData[copyright._id].titleSimilarity > 70 || 
+                          similarityData[copyright._id].descriptionSimilarity > 70) && (
+                          <span className="text-xs text-red-500">
+                            Similar to: {similarityData[copyright._id].similarTo}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div>
+                      {copyright.ownerType === "Startup" 
+                        ? copyright.owner.startupName 
+                        : copyright.owner.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {copyright.owner.email}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>{format(new Date(copyright.filingDate), "PP")}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className={getStatusColor(copyright.status)}>
+                    {copyright.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {copyright.status === "Pending" ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedCopyright(copyright)}
+                    >
+                      Review
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSelectedCopyright(copyright)}
+                    >
+                      View
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* Copyright Review Dialog */}
       <Dialog
@@ -330,16 +522,20 @@ const CopyrightsPage = () => {
                     </div>
                     <div className="flex gap-4 pt-4">
                       <Button
-                        onClick={() => handleStatusUpdate(selectedCopyright._id, "Accepted", message)}
+                        onClick={() => handleStatusUpdate("Accepted")}
                         className="flex-1 bg-green-500 hover:bg-green-600"
-                        disabled={isSubmitting || !message || transactionInProgress}
+                        disabled={
+                          isSubmitting || !message || transactionInProgress
+                        }
                       >
                         {transactionInProgress ? "Processing..." : "Accept"}
                       </Button>
                       <Button
-                        onClick={() => handleStatusUpdate(selectedCopyright._id, "Rejected", message)}
+                        onClick={() => handleStatusUpdate("Rejected")}
                         className="flex-1 bg-red-500 hover:bg-red-600"
-                        disabled={isSubmitting || !message || transactionInProgress}
+                        disabled={
+                          isSubmitting || !message || transactionInProgress
+                        }
                       >
                         {transactionInProgress ? "Processing..." : "Reject"}
                       </Button>
