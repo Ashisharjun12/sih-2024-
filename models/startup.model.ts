@@ -143,10 +143,26 @@ const startupSchema = new mongoose.Schema({
       public_id: String,
       secure_url: String,
     },
-    documents: [{
+    identityProof: {
+      filename:String,
       public_id: String,
       secure_url: String,
-    }],
+    },
+    businessPlan: {
+      filename:String,  
+      public_id: String,
+      secure_url: String,
+    },
+    financialProjections: {
+      filename:String,
+      public_id: String,
+      secure_url: String,
+    },
+    incorporationCertificate: {
+      filename:String,
+      public_id: String,
+      secure_url: String,
+    },
   },
   allIPR: [{
     ipr: {
