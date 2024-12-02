@@ -55,8 +55,8 @@ interface FundingAgencyFormData {
   }>;
   fundingPreferences: {
     investmentRange: {
-      minimum: number;
-      maximum: number;
+      minimum: string;
+      maximum: string;
     };
     preferredStages: string[];
     fundingTypes: string[];
@@ -64,10 +64,32 @@ interface FundingAgencyFormData {
     disbursementMode: string;
   };
   experience: {
-    yearsOfOperation: number;
-    totalInvestments: number;
-    averageTicketSize: number;
-    successfulExits: number;
+    yearsOfOperation: string;
+    totalInvestments: string;
+    averageTicketSize: string;
+    successfulExits: string;
+  };
+  documents: {
+    registrationCertificate?: {
+      public_id: string;
+      secure_url: string;
+    };
+    governmentApprovals?: {
+      public_id: string;
+      secure_url: string;
+    };
+    addressProof?: {
+      public_id: string;
+      secure_url: string;
+    };
+    taxDocuments?: {
+      public_id: string;
+      secure_url: string;
+    };
+    portfolioDocument?: {
+      public_id: string;
+      secure_url: string;
+    };
   };
 }
 
@@ -105,12 +127,88 @@ const sectorOptions = [
   { value: "Other", label: "Other" },
 ];
 
+interface SubmissionData {
+  userId: string;
+  formType: "fundingAgency";
+  formData: {
+    owner: {
+      fullName: string;
+      email: string;
+      phone: string;
+      businessAddress: {
+        physicalAddress: string;
+      };
+      note: string;
+    };
+    agencyDetails: {
+      name: string;
+      registrationNumber: string;
+      type: string;
+      establishmentDate: string;
+      description: string;
+    };
+    contactInformation: {
+      officialAddress: string;
+      officialEmail: string;
+      phoneNumber: string;
+      websiteURL: string;
+    };
+    representatives: Array<{
+      name: string;
+      designation: string;
+      email: string;
+      phone: string;
+      note?: string;
+    }>;
+    fundingPreferences: {
+      investmentRange: {
+        minimum: string;
+        maximum: string;
+      };
+      preferredStages: string[];
+      fundingTypes: string[];
+      preferredSectors: string[];
+      disbursementMode: string;
+    };
+    experience: {
+      yearsOfOperation: string;
+      totalInvestments: string;
+      averageTicketSize: string;
+      successfulExits: string;
+    };
+    documents: {
+      registrationCertificate?: {
+        public_id: string;
+        secure_url: string;
+      };
+      governmentApprovals?: {
+        public_id: string;
+        secure_url: string;
+      };
+      addressProof?: {
+        public_id: string;
+        secure_url: string;
+      };
+      taxDocuments?: {
+        public_id: string;
+        secure_url: string;
+      };
+      portfolioDocument?: {
+        public_id: string;
+        secure_url: string;
+      };
+    };
+  };
+  userEmail: string;
+  userName: string;
+}
+
 export default function FundingAgencyRegistrationForm() {
   const { data: session } = useSession();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [files, setFiles] = useState<Record<string, any>>({});
 
   const form = useForm<FundingAgencyFormData>({
@@ -136,19 +234,41 @@ export default function FundingAgencyRegistrationForm() {
       }],
       fundingPreferences: {
         investmentRange: {
-          minimum: 0,
-          maximum: 0,
+          minimum: "0",
+          maximum: "0",
         },
-        preferredStages: [] as string[],
-        fundingTypes: [] as string[],
-        preferredSectors: [] as string[],
+        preferredStages: [],
+        fundingTypes: [],
+        preferredSectors: [],
         disbursementMode: "",
       },
       experience: {
-        yearsOfOperation: 0,
-        totalInvestments: 0,
-        averageTicketSize: 0,
-        successfulExits: 0,
+        yearsOfOperation: "0",
+        totalInvestments: "0",
+        averageTicketSize: "0",
+        successfulExits: "0",
+      },
+      documents: {
+        registrationCertificate: {
+          public_id: "",
+          secure_url: "",
+        },
+        governmentApprovals: {
+          public_id: "",
+          secure_url: "",
+        },
+        addressProof: {
+          public_id: "",
+          secure_url: "",
+        },
+        taxDocuments: {
+          public_id: "",
+          secure_url: "",
+        },
+        portfolioDocument: {
+          public_id: "",
+          secure_url: "",
+        },
       },
     },
   });
@@ -176,7 +296,7 @@ export default function FundingAgencyRegistrationForm() {
         return;
       }
 
-      const submissionData = {
+      const submissionData: SubmissionData = {
         userId: session.user.id,
         formType: "fundingAgency",
         formData: {
@@ -187,55 +307,71 @@ export default function FundingAgencyRegistrationForm() {
             businessAddress: {
               physicalAddress: data.contactInformation.officialAddress,
             },
+            note: "This is the primary representative (index 0)"
           },
           agencyDetails: data.agencyDetails,
           contactInformation: data.contactInformation,
-          representatives: data.representatives,
-          fundingPreferences: data.fundingPreferences,
-          experience: data.experience,
-        },
-        files: files,
-        userEmail: session.user.email,
-        userName: session.user.name,
-      };
-
-      console.log("Form Submission Data:", {
-        ...submissionData,
-        formData: {
-          ...submissionData.formData,
-          owner: {
-            ...submissionData.formData.owner,
-            note: "This is the primary representative (index 0)",
-          },
-          representatives: submissionData.formData.representatives.map((rep, index) => ({
+          representatives: data.representatives.map((rep, index) => ({
             ...rep,
             note: index === 0 ? "This is also the owner" : "Additional representative"
-          }))
-        }
-      });
-
-      const response = await fetch("/api/forms/fundingAgency", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+          })),
+          fundingPreferences: {
+            ...data.fundingPreferences,
+            investmentRange: {
+              minimum: String(data.fundingPreferences.investmentRange.minimum),
+              maximum: String(data.fundingPreferences.investmentRange.maximum)
+            }
+          },
+          experience: {
+            yearsOfOperation: String(data.experience.yearsOfOperation),
+            totalInvestments: String(data.experience.totalInvestments),
+            averageTicketSize: String(data.experience.averageTicketSize),
+            successfulExits: String(data.experience.successfulExits)
+          },
+          documents: {
+            registrationCertificate: files.registrationCertificate?.uploadData,
+            governmentApprovals: files.governmentApprovals?.uploadData,
+            addressProof: files.addressProof?.uploadData,
+            taxDocuments: files.taxDocuments?.uploadData,
+            portfolioDocument: files.portfolioDocument?.uploadData,
+          }
         },
-        body: JSON.stringify(submissionData),
-      });
+        userEmail: session.user.email || "",
+        userName: session.user.name || "",
+      };
 
-      if (!response.ok) {
-        throw new Error("Failed to submit form");
+      console.log("Form Submission Data:", submissionData);
+
+      try {
+        const response = await fetch("/api/forms/fundingAgency", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(submissionData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to submit form");
+        }
+
+        const result = await response.json();
+        console.log("Form submission response:", result);
+
+        toast({
+          title: "Success!",
+          description: "Your funding agency registration has been submitted.",
+        });
+        router.push("/");
+      } catch (err) {
+        throw new Error(err instanceof Error ? err.message : "Failed to submit form");
       }
 
-      toast({
-        title: "Success!",
-        description: "Your funding agency registration has been submitted.",
-      });
-
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Form submission error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to submit form",
+        description: error instanceof Error ? error.message : "Failed to submit form",
         variant: "destructive",
       });
     } finally {
