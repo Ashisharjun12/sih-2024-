@@ -15,14 +15,10 @@ import {
   Download,
   User,
   GraduationCap,
-  BookOpen,
   Award,
   Brain,
   FileCheck,
-  School,
   Microscope,
-  Trophy,
-  Link
 } from "lucide-react";
 
 interface FormSubmission {

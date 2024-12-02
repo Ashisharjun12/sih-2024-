@@ -108,24 +108,28 @@ export async function POST(
             website: submission.formData.additionalInfo?.website,
             socialMedia: submission.formData.additionalInfo?.socialMedia || {},
             pitchDeck: submission.files?.pitchDeck || {},
-            documents: [
-              submission.files?.identityProof && {
-                public_id: submission.files.identityProof.public_id,
-                secure_url: submission.files.identityProof.secure_url,
-              },
-              submission.files?.businessPlan && {
-                public_id: submission.files.businessPlan.public_id,
-                secure_url: submission.files.businessPlan.secure_url,
-              },
-              submission.files?.financialProjections && {
-                public_id: submission.files.financialProjections.public_id,
-                secure_url: submission.files.financialProjections.secure_url,
-              },
-              submission.files?.incorporationCertificate && {
-                public_id: submission.files.incorporationCertificate.public_id,
-                secure_url: submission.files.incorporationCertificate.secure_url,
-              },
-            ].filter(Boolean),
+            identityProof: submission.files?.identityProof || {},
+            businessPlan: submission.files?.businessPlan || {},
+            financialProjections: submission.files?.financialProjections || {},
+            incorporationCertificate: submission.files?.incorporationCertificate || {},
+            // documents: [
+            //   submission.files?.identityProof && {
+            //     public_id: submission.files.identityProof.public_id,
+            //     secure_url: submission.files.identityProof.secure_url,
+            //   },
+            //   submission.files?.businessPlan && {
+            //     public_id: submission.files.businessPlan.public_id,
+            //     secure_url: submission.files.businessPlan.secure_url,
+            //   },
+            //   submission.files?.financialProjections && {
+            //     public_id: submission.files.financialProjections.public_id,
+            //     secure_url: submission.files.financialProjections.secure_url,
+            //   },
+            //   submission.files?.incorporationCertificate && {
+            //     public_id: submission.files.incorporationCertificate.public_id,
+            //     secure_url: submission.files.incorporationCertificate.secure_url,
+            //   },
+            // ].filter(Boolean),
           },
         };
 

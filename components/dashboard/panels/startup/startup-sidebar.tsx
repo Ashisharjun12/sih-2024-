@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Mail,
   Target,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -32,11 +33,6 @@ const sidebarItems = [
     title: "Profile",
     href: "/startup/profile",
     icon: Building2,
-  },
-  {
-    title: "Team",
-    href: "/startup/team",
-    icon: Users,
   },
   {
     title: "Funding",
@@ -59,24 +55,14 @@ const sidebarItems = [
     icon: FileSpreadsheet,
   },
   {
-    title: "Goals",
-    href: "/startup/goals",
-    icon: Target,
+    title: "Meetings",
+    href: "/startup/meetings",
+    icon: Calendar,
   },
   {
     title: "Messages",
     href: "/startup/messages",
     icon: MessageSquare,
-  },
-  {
-    title: "Email",
-    href: "/startup/email",
-    icon: Mail,
-  },
-  {
-    title: "Settings",
-    href: "/startup/settings",
-    icon: Settings,
   },
   {
     title: "IPR",

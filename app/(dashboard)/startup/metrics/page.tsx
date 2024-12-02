@@ -11,6 +11,7 @@ import {
   PieChart,
   Target,
   ArrowUpRight,
+  Users,
 } from "lucide-react";
 import {
   Line,
@@ -187,6 +188,7 @@ export default function StartupMetrics() {
     ],
   };
 
+  // Add new metrics data
   const stats = [
     {
       title: "EBITDA",
@@ -195,15 +197,27 @@ export default function StartupMetrics() {
       icon: DollarSign,
     },
     {
-      title: "Active MoUs",
-      value: "47",
-      change: "+8",
+      title: "Monthly Burn Rate",
+      value: "₹2.5L",
+      change: "-8%", // Negative is good for burn rate
+      icon: TrendingUp,
+    },
+    {
+      title: "CAR",
+      value: "125",
+      change: "+12%",
       icon: Target,
     },
     {
-      title: "Market Share",
-      value: "12.5%",
-      change: "+2.3%",
+      title: "Churn Rate",
+      value: "2.3%",
+      change: "-0.5%", // Negative is good for churn
+      icon: Activity,
+    },
+    {
+      title: "Gross Margin",
+      value: "68%",
+      change: "+5%",
       icon: PieChart,
     },
     {
@@ -213,6 +227,68 @@ export default function StartupMetrics() {
       icon: TrendingUp,
     },
   ];
+
+  // Add customer metrics data
+  const getCustomerMetricsData = (period: string) => {
+    switch(period) {
+      case 'monthly':
+        return {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [
+            {
+              label: 'Customer Acquisition Rate',
+              data: [85, 95, 110, 125, 140, 155, 170, 185, 200, 215, 230, 245],
+              borderColor: 'rgb(34, 197, 94)',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              tension: 0.4,
+              fill: true,
+            },
+            {
+              label: 'Churn Rate (%)',
+              data: [2.8, 2.6, 2.5, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6, 1.5],
+              borderColor: 'rgb(239, 68, 68)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              tension: 0.4,
+              fill: true,
+            }
+          ],
+        };
+      // Add cases for weekly and yearly...
+      default:
+        return { labels: [], datasets: [] };
+    }
+  };
+
+  // Add financial metrics data
+  const getFinancialMetricsData = (period: string) => {
+    switch(period) {
+      case 'monthly':
+        return {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [
+            {
+              label: 'Burn Rate (₹L)',
+              data: [3.0, 2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8],
+              borderColor: 'rgb(239, 68, 68)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              tension: 0.4,
+              fill: true,
+            },
+            {
+              label: 'Gross Margin (%)',
+              data: [60, 62, 63, 65, 66, 68, 69, 70, 71, 72, 73, 74],
+              borderColor: 'rgb(34, 197, 94)',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              tension: 0.4,
+              fill: true,
+            }
+          ],
+        };
+      // Add cases for weekly and yearly...
+      default:
+        return { labels: [], datasets: [] };
+    }
+  };
 
   return (
     <div className="container py-8">
@@ -240,10 +316,16 @@ export default function StartupMetrics() {
           </Select>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Updated Stats Grid - now 2x3 */}
+        <div className="grid gap-4 md:grid-cols-3">
           {stats.map((stat, index) => {
             const StatIcon = stat.icon;
+            const isNegativeGood = stat.title === "Burn Rate" || stat.title === "Churn Rate";
+            const isPositive = stat.change.startsWith('+');
+            const textColorClass = isNegativeGood 
+              ? (!isPositive ? 'text-green-600' : 'text-red-600')
+              : (isPositive ? 'text-green-600' : 'text-red-600');
+
             return (
               <motion.div
                 key={stat.title}
@@ -253,14 +335,16 @@ export default function StartupMetrics() {
               >
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                    <CardTitle className="text-sm font-medium">
                       {stat.title}
                     </CardTitle>
-                    <StatIcon className="h-4 w-4 text-muted-foreground" />
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      <StatIcon className="h-4 w-4 text-primary" />
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{stat.value}</div>
-                    <p className={`text-xs ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'} flex items-center gap-1`}>
+                    <p className={`text-xs ${textColorClass} flex items-center gap-1`}>
                       {stat.change}
                       <ArrowUpRight className="h-3 w-3" />
                     </p>
@@ -297,6 +381,74 @@ export default function StartupMetrics() {
             <CardContent>
               <Line 
                 data={getEbitdaData(timeFrame)}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' },
+                  },
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Customer Metrics Chart */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Customer Metrics
+              </CardTitle>
+              <Select
+                value={timeFrame}
+                onValueChange={setTimeFrame}
+              >
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              <Line 
+                data={getCustomerMetricsData(timeFrame)}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' },
+                  },
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Financial Metrics Chart */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Financial Metrics
+              </CardTitle>
+              <Select
+                value={timeFrame}
+                onValueChange={setTimeFrame}
+              >
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              <Line 
+                data={getFinancialMetricsData(timeFrame)}
                 options={{
                   responsive: true,
                   plugins: {
