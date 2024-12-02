@@ -82,8 +82,8 @@ export async function POST(req: NextRequest) {
 
         await connectDB();
 
-        // Find the startup
-        const startup = await Startup.findOne({ userId: session.user.id });
+        // Find the startup without validation
+        const startup = await Startup.findOne({ userId: session.user.id }).select('_id');
         if (!startup) {
             return NextResponse.json({ error: "Startup not found" }, { status: 404 });
         }
@@ -91,35 +91,53 @@ export async function POST(req: NextRequest) {
         // Parse request body
         const iprData = await req.json();
 
-        // Create new IPR document
-        const newIPR = new IPR({
-            ...iprData,
-            ownerType: 'Startup',
-            owner: startup._id,
-            status: 'Pending',
-            filingDate: new Date(),
-        });
+        try {
+            // Create new IPR document
+            const newIPR = new IPR({
+                ...iprData,
+                ownerType: 'Startup',
+                owner: startup._id,
+                status: 'Pending',
+                filingDate: new Date(),
+            });
 
-        // Save the IPR
-        await newIPR.save();
+            // Save the IPR
+            await newIPR.save();
 
-        // Add IPR reference to startup's allIPR array
-        startup.allIPR.push({
-            ipr: newIPR._id,
-            message: "IPR filing initiated"
-        });
+            // Update startup's allIPR array without validation
+            await Startup.findByIdAndUpdate(
+                startup._id,
+                {
+                    $push: {
+                        allIPR: {
+                            ipr: newIPR._id,
+                            message: "IPR filing initiated"
+                        }
+                    }
+                },
+                { new: true, runValidators: false }
+            );
 
-        await startup.save();
+            return NextResponse.json({
+                message: "IPR created successfully",
+                ipr: newIPR
+            }, { status: 201 });
 
-        return NextResponse.json({
-            message: "IPR created successfully",
-            ipr: newIPR
-        }, { status: 201 });
+        } catch (saveError) {
+            console.error("Error saving IPR:", saveError);
+            return NextResponse.json(
+                { error: "Failed to save IPR" },
+                { status: 500 }
+            );
+        }
 
     } catch (error) {
         console.error("Error creating IPR:", error);
         return NextResponse.json(
-            { error: "Internal Server Error" },
+            { 
+                error: "Internal Server Error",
+                details: error instanceof Error ? error.message : "Unknown error"
+            },
             { status: 500 }
         );
     }

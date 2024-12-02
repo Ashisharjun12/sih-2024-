@@ -46,6 +46,12 @@ interface Patent {
   message?: string;
 }
 
+interface SimilarityInfo {
+  similarTo: string;
+  titleSimilarity: number;
+  descriptionSimilarity: number;
+}
+
 const PatentsPage = () => {
   const [patents, setPatents] = useState<Patent[]>([]);
   const [selectedPatent, setSelectedPatent] = useState<Patent | null>(null);
@@ -57,6 +63,9 @@ const PatentsPage = () => {
   const [walletAddress, setWalletAddress] = useState("");
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [transactionInProgress, setTransactionInProgress] = useState(false);
+  const [similarityData, setSimilarityData] = useState<Record<string, SimilarityInfo>>({});
+  const [isLoadingGemini, setIsLoadingGemini] = useState(false);
+  const [isLoadingPatents, setIsLoadingPatents] = useState(true);
 
   const { toast } = useToast();
 
@@ -117,118 +126,161 @@ const PatentsPage = () => {
     }
   };
 
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   const fetchPatents = async () => {
     try {
+      setIsLoadingPatents(true);
       const response = await fetch("/api/ipr-professional/types/patents");
       if (!response.ok) {
         throw new Error("Failed to fetch patents");
       }
       const data = await response.json();
-      console.log("data", data);
+      
+      // Set patents immediately to show static data
       setPatents(data);
+      setIsLoadingPatents(false);
+
+      // Then start similarity checks
+      setIsLoadingGemini(true);
+      const pendingPatents = data.filter((tm: Patent) => tm.status === "Pending");
+      const acceptedPatents = data.filter((tm: Patent) => tm.status === "Accepted");
+
+      // Process similarities with delay between requests
+      for (const pending of pendingPatents) {
+        let highestTitleSimilarity = 0;
+        let highestDescSimilarity = 0;
+        let mostSimilarTitle = "";
+
+        for (const accepted of acceptedPatents) {
+          try {
+            // Add delay between requests
+            await delay(1000); // 1 second delay
+
+            const similarity = await checkSimilarityWithGemini(
+              { title: pending.title, description: pending.description },
+              { title: accepted.title, description: accepted.description }
+            );
+
+            if (similarity) {
+              if (similarity.titleSimilarity > highestTitleSimilarity || 
+                  similarity.descriptionSimilarity > highestDescSimilarity) {
+                highestTitleSimilarity = similarity.titleSimilarity;
+                highestDescSimilarity = similarity.descriptionSimilarity;
+                mostSimilarTitle = accepted.title;
+              }
+            }
+          } catch (error) {
+            // If rate limit hit, use basic similarity check
+            console.log("Using fallback similarity check due to rate limit");
+            const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
+            const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
+            
+            if (titleSimilarity > highestTitleSimilarity || descSimilarity > highestDescSimilarity) {
+              highestTitleSimilarity = titleSimilarity * 100;
+              highestDescSimilarity = descSimilarity * 100;
+              mostSimilarTitle = accepted.title;
+            }
+          }
+        }
+
+        if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
+          setSimilarityData(prev => ({
+            ...prev,
+            [pending._id]: {
+              similarTo: mostSimilarTitle,
+              titleSimilarity: Math.round(highestTitleSimilarity),
+              descriptionSimilarity: Math.round(highestDescSimilarity)
+            }
+          }));
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch patents");
     } finally {
-      setLoading(false);
+      setIsLoadingPatents(false);
+      setIsLoadingGemini(false);
     }
   };
 
-  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
-    if (!selectedPatent || !contract) return;
-
-    setIsSubmitting(true);
-    setTransactionInProgress(true);
-
+  const checkSimilarityWithGemini = async (
+    pending: { title: string; description: string },
+    accepted: { title: string; description: string }
+  ) => {
     try {
-      // First update the status in database
-      const response = await fetch(
-        `/api/ipr-professional/${selectedPatent._id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status,
-            message,
-          }),
-        }
-      );
+      const response = await fetch("/api/gemini/compare-trademarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pending, accepted }),
+      });
 
-      if (!response.ok) {
-        throw new Error("Failed to update patent status");
+      if (!response.ok) throw new Error("Failed to check similarity");
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking similarity:", error);
+      return null;
+    }
+  };
+
+  const calculateBasicSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+    
+    const commonWords = words1.filter(word => set2.has(word));
+    return (commonWords.length * 2) / (set1.size + set2.size);
+  };
+
+  const handleStatusUpdate = async (iprId: string, status: string, message: string) => {
+    try {
+      console.log("Updating IPR:", { iprId, status, message });
+
+      // Validate inputs
+      if (!iprId || !status) {
+        throw new Error("Missing required fields");
       }
+
+      const response = await fetch(`/api/ipr-professional/${iprId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status, message }),
+      });
 
       const data = await response.json();
 
-      // Then handle blockchain transaction
-      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
-      const title = data.ipr.title;
-      const ownerId = BigInt(
-        parseInt(data.ipr.owner.details._id.toString(), 16)
-      ).toString();
-      try {
-        let transaction;
-        if (status === "Accepted") {
-          transaction = await contract.acceptPatent(id, title, ownerId);
-        } else {
-          transaction = await contract.rejectPatent(id, title, ownerId);
-        }
-
-        // Show transaction pending toast
-        toast({
-          title: "Transaction Pending",
-          description:
-            "Please wait while the transaction is being processed...",
-        });
-
-        // Wait for transaction confirmation
-        const receipt = await transaction.wait();
-
-        // Update transaction hash in database
-        await fetch(
-          `/api/ipr-professional/${selectedPatent._id}/transactionHash`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              transactionHash: receipt.hash,
-            }),
-          }
-        );
-
-        toast({
-          title: "Success",
-          description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`,
-        });
-      } catch (error: any) {
-        if (error.code === "ACTION_REJECTED") {
-          toast({
-            title: "Transaction Rejected",
-            description: "You rejected the transaction in MetaMask",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-        return;
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update IPR status");
       }
 
+      // Show success message
+      toast({
+        title: "Success",
+        description: data.message || "Status updated successfully",
+      });
+
+      // Refresh the patents list
       await fetchPatents();
+      
+      // Close the dialog
       setSelectedPatent(null);
+      
+      // Reset the message
       setMessage("");
-    } catch (error: any) {
-      console.error("Error:", error);
+
+    } catch (error) {
+      console.error("Status update error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update status",
+        description: error instanceof Error ? error.message : "Failed to update status",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-      setTransactionInProgress(false);
     }
   };
 
@@ -245,67 +297,110 @@ const PatentsPage = () => {
     }
   };
 
-  if (loading) {
-    return <div className="p-6">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="p-6 text-red-500">Error: {error}</div>;
-  }
-
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Patent Applications</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Patent Applications</h1>
+        {isLoadingGemini && (
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Analyzing similarities...
+          </div>
+        )}
+      </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Owner</TableHead>
-            <TableHead>Filing Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {patents.map((patent) => (
-            <TableRow key={patent._id}>
-              <TableCell>{patent.title}</TableCell>
-              <TableCell>
-                {patent.ownerType === "Startup"
-                  ? patent.owner.startupName
-                  : patent.owner.name}
-              </TableCell>
-              <TableCell>{format(new Date(patent.filingDate), "PP")}</TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className={getStatusColor(patent.status)}
-                >
-                  {patent.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {patent.status === "Pending" ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedPatent(patent)}
-                  >
-                    Review
-                  </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    onClick={() => setSelectedPatent(patent)}
-                  >
-                    View
-                  </Button>
-                )}
-              </TableCell>
+      {isLoadingPatents ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading patents...</p>
+          </div>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Filing Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {patents.map((patent) => (
+              <TableRow key={patent._id}>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div>{patent.title}</div>
+                    {patent.status === "Pending" && (
+                      <div className="text-xs text-muted-foreground">
+                        {similarityData[patent._id] ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span>Title Similarity:</span>
+                              <Badge variant={similarityData[patent._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[patent._id].titleSimilarity}%
+                              </Badge>
+                              {similarityData[patent._id].titleSimilarity > 70 && (
+                                <span className="text-xs text-red-500">
+                                  Similar to: {similarityData[patent._id].similarTo}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>Description Similarity:</span>
+                              <Badge variant={similarityData[patent._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[patent._id].descriptionSimilarity}%
+                              </Badge>
+                            </div>
+                          </div>
+                        ) : isLoadingGemini && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            Analyzing similarity...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {patent.ownerType === "Startup"
+                    ? patent.owner.startupName
+                    : patent.owner.name}
+                </TableCell>
+                <TableCell>{format(new Date(patent.filingDate), "PP")}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant="secondary"
+                    className={getStatusColor(patent.status)}
+                  >
+                    {patent.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {patent.status === "Pending" ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedPatent(patent)}
+                    >
+                      Review
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSelectedPatent(patent)}
+                    >
+                      View
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* Patent Review Dialog */}
       <Dialog
@@ -377,7 +472,7 @@ const PatentsPage = () => {
                     </div>
                     <div className="flex gap-4 pt-4">
                       <Button
-                        onClick={() => handleStatusUpdate("Accepted")}
+                        onClick={() => handleStatusUpdate(selectedPatent._id, "Accepted", message)}
                         className="flex-1 bg-green-500 hover:bg-green-600"
                         disabled={
                           isSubmitting || !message || transactionInProgress
@@ -386,7 +481,7 @@ const PatentsPage = () => {
                         {transactionInProgress ? "Processing..." : "Accept"}
                       </Button>
                       <Button
-                        onClick={() => handleStatusUpdate("Rejected")}
+                        onClick={() => handleStatusUpdate(selectedPatent._id, "Rejected", message)}
                         className="flex-1 bg-red-500 hover:bg-red-600"
                         disabled={
                           isSubmitting || !message || transactionInProgress
