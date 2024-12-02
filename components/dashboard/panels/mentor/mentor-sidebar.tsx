@@ -14,7 +14,8 @@ import {
   ClipboardList,
   Target,
   Lightbulb,
-  Star
+  Star,
+  User
 } from "lucide-react";
 
 const mentorLinks = [
@@ -22,6 +23,11 @@ const mentorLinks = [
     title: "Overview",
     href: "/mentor",
     icon: BarChart3,
+  },
+  {
+    title: "Profile",
+    href: "/mentor/profile",
+    icon: User,
   },
   {
     title: "Mentees",

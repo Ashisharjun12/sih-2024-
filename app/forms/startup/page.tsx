@@ -249,12 +249,7 @@ export default function StartupRegistrationForm() {
         title: "Success!",
         description: "Your startup registration form has been submitted successfully.",
       });
-
-      // Wait for 2 seconds before redirecting
-      
-      // setTimeout(() => {
-      //   router.push("/");
-      // }, 2000);
+      router.push("/");
 
     } catch (error: any) {
       console.error("Form submission error:", error);
