@@ -72,6 +72,12 @@ const PatentsPage = () => {
   useEffect(() => {
     fetchPatents();
     checkWalletConnection();
+    if (window.ethereum) {
+      (async () => {
+        const currentContract = await initializeEthers(window.ethereum);
+        setContract(currentContract);
+      })();
+    }
   }, []);
 
   const checkWalletConnection = async () => {
@@ -83,6 +89,10 @@ const PatentsPage = () => {
         if (accounts.length > 0) {
           setIsWalletConnected(true);
           setWalletAddress(accounts[0].address);
+        }
+        if(!contract){
+          const currentContract = await initializeEthers(window.ethereum);
+          setContract(currentContract);
         }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
@@ -172,7 +182,6 @@ const PatentsPage = () => {
             }
           } catch (error) {
             // If rate limit hit, use basic similarity check
-            console.log("Using fallback similarity check due to rate limit");
             const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
             const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
             
@@ -236,51 +245,101 @@ const PatentsPage = () => {
     return (commonWords.length * 2) / (set1.size + set2.size);
   };
 
-  const handleStatusUpdate = async (iprId: string, status: string, message: string) => {
+  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
+    if (!selectedPatent || !contract) return;
+    setIsSubmitting(true);
+    setTransactionInProgress(true);
+
     try {
-      console.log("Updating IPR:", { iprId, status, message });
+      // First update the status in database
+      const response = await fetch(
+        `/api/ipr-professional/${selectedPatent?._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status,
+            message,
+          }),
+        }
+      );
 
-      // Validate inputs
-      if (!iprId || !status) {
-        throw new Error("Missing required fields");
+      if (!response.ok) {
+        throw new Error("Failed to update patent status");
       }
-
-      const response = await fetch(`/api/ipr-professional/${iprId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status, message }),
-      });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update IPR status");
+      // Then handle blockchain transaction
+      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+      const title = data.ipr.title;
+      const ownerId = BigInt(
+        parseInt(data.ipr.owner.details._id.toString(), 16)
+      ).toString();
+      try {
+        let transaction;
+        if (status === "Accepted") {
+          transaction = await contract.acceptPatent(id, title, ownerId);
+        } else {
+          transaction = await contract.rejectPatent(id, title, ownerId);
+        }
+
+        // Show transaction pending toast
+        toast({
+          title: "Transaction Pending",
+          description:
+            "Please wait while the transaction is being processed...",
+        });
+
+        // Wait for transaction confirmation
+        const receipt = await transaction.wait();
+
+        // Update transaction hash in database
+        await fetch(
+          `/api/ipr-professional/${selectedPatent._id}/transactionHash`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              transactionHash: receipt.hash,
+            }),
+          }
+        );
+
+        toast({
+          title: "Success",
+          description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`
+        });
+      } catch (error: any) {
+        if (error.code === "ACTION_REJECTED") {
+          toast({
+            title: "Transaction Rejected",
+            description: "You rejected the transaction in MetaMask",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
       }
 
-      // Show success message
-      toast({
-        title: "Success",
-        description: data.message || "Status updated successfully",
-      });
-
-      // Refresh the patents list
       await fetchPatents();
-      
-      // Close the dialog
       setSelectedPatent(null);
-      
-      // Reset the message
       setMessage("");
-
-    } catch (error) {
-      console.error("Status update error:", error);
+    } catch (error: any) {
+      console.error("Error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update status",
+        description: error.message || "Failed to update status",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
+      setTransactionInProgress(false);
     }
   };
 
@@ -383,7 +442,8 @@ const PatentsPage = () => {
                   {patent.status === "Pending" ? (
                     <Button
                       variant="outline"
-                      onClick={() => setSelectedPatent(patent)}
+                      onClick={() => {setSelectedPatent(patent);
+                      }}
                     >
                       Review
                     </Button>
@@ -472,7 +532,7 @@ const PatentsPage = () => {
                     </div>
                     <div className="flex gap-4 pt-4">
                       <Button
-                        onClick={() => handleStatusUpdate(selectedPatent._id, "Accepted", message)}
+                        onClick={() => handleStatusUpdate("Accepted")}
                         className="flex-1 bg-green-500 hover:bg-green-600"
                         disabled={
                           isSubmitting || !message || transactionInProgress
@@ -481,7 +541,7 @@ const PatentsPage = () => {
                         {transactionInProgress ? "Processing..." : "Accept"}
                       </Button>
                       <Button
-                        onClick={() => handleStatusUpdate(selectedPatent._id, "Rejected", message)}
+                        onClick={() => handleStatusUpdate("Rejected")}
                         className="flex-1 bg-red-500 hover:bg-red-600"
                         disabled={
                           isSubmitting || !message || transactionInProgress

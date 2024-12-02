@@ -8,8 +8,7 @@ export async function POST(req: Request) {
     const { pending, accepted } = await req.json();
 
     const prompt = `
-      Compare these two trademarks and provide similarity scores as percentages.
-      Return only a JSON object in this exact format, without any markdown or additional text:
+      I have two Intellectual Property Rights (IPRs), each with a title and description. Compare the meaning of the two IPRs based on their content and provide a similarity percentage indicating how closely related their concepts and meanings are. The goal is to determine if the new IPR is similar enough to an existing one to potentially affect its acceptance. Please consider semantic similarity, synonyms, and contextual relevance in your analysis. Provide a clear similarity percentage along with a brief justification for the score.
       {
         "titleSimilarity": <number between 0-100>,
         "descriptionSimilarity": <number between 0-100>
