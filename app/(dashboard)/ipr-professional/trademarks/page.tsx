@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import {
   Table,
@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,131 +52,9 @@ interface SimilarityInfo {
   descriptionSimilarity: number;
 }
 
-const calculateSimilarity = (str1: string, str2: string): number => {
-  const s1 = str1.toLowerCase();
-  const s2 = str2.toLowerCase();
-  
-  // Convert strings to arrays of words
-  const words1 = s1.split(/\s+/);
-  const words2 = s2.split(/\s+/);
-  
-  // Create Sets from arrays
-  const set1 = new Set(words1);
-  const set2 = new Set(words2);
-  
-  // Convert back to array for filtering
-  const commonWords = words1.filter(word => set2.has(word));
-  const similarity = (commonWords.length * 2) / (set1.size + set2.size);
-  
-  return similarity;
-};
-
-const checkForSimilarTrademarks = (
-  pending: Array<{ title: string; description: string; owner: string }>,
-  accepted: Array<{ title: string; description: string; owner: string }>
-) => {
-  const similarityThreshold = 0.7; // 70% similarity threshold
-  const matches = [];
-
-  for (const pendingTM of pending) {
-    for (const acceptedTM of accepted) {
-      const titleSimilarity = calculateSimilarity(pendingTM.title, acceptedTM.title);
-      const descSimilarity = calculateSimilarity(pendingTM.description, acceptedTM.description);
-      
-      if (titleSimilarity > similarityThreshold || descSimilarity > similarityThreshold) {
-        matches.push({
-          pending: pendingTM,
-          accepted: acceptedTM,
-          titleSimilarity: Math.round(titleSimilarity * 100),
-          descriptionSimilarity: Math.round(descSimilarity * 100)
-        });
-      }
-    }
-  }
-
-  return matches;
-};
-
-const testTrademarkMatching = () => {
-  // Test cases
-  const testPending = [
-    {
-      title: "Smart AI Solutions",
-      description: "AI software for business automation",
-      owner: "Company A"
-    },
-    {
-      title: "Cloud Computing Services",
-      description: "Cloud infrastructure solutions",
-      owner: "Company B"
-    }
-  ];
-
-  const testAccepted = [
-    {
-      title: "AI Smart Solutions",
-      description: "Business automation using artificial intelligence",
-      owner: "Company C"
-    },
-    {
-      title: "Digital Cloud Services",
-      description: "Enterprise cloud computing platform",
-      owner: "Company D"
-    }
-  ];
-
-  console.log("\n=== Testing Trademark Matching ===");
-  console.log("Test Pending Trademarks:", testPending);
-  console.log("Test Accepted Trademarks:", testAccepted);
-
-  const matches = checkForSimilarTrademarks(testPending, testAccepted);
-  
-  if (matches.length > 0) {
-    console.log("\nFound Similar Trademarks:");
-    matches.forEach((match, index) => {
-      console.log(`\nMatch ${index + 1}:`);
-      console.log(`Pending: "${match.pending.title}" - ${match.pending.description}`);
-      console.log(`Similar to: "${match.accepted.title}" - ${match.accepted.description}`);
-      console.log(`Title Similarity: ${match.titleSimilarity}%`);
-      console.log(`Description Similarity: ${match.descriptionSimilarity}%`);
-    });
-  } else {
-    console.log("\nNo similar trademarks found");
-  }
-};
-
-const checkSimilarityWithGemini = async (
-  pending: { title: string; description: string },
-  accepted: { title: string; description: string }
-) => {
-  try {
-    const response = await fetch("/api/gemini/compare-trademarks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        pending,
-        accepted,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to check similarity");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error checking similarity:", error);
-    return null;
-  }
-};
-
-const TrademarksPage = () => {
+export default function TrademarksPage() {
   const [trademarks, setTrademarks] = useState<Trademark[]>([]);
-  const [selectedTrademark, setSelectedTrademark] = useState<Trademark | null>(
-    null
-  );
+  const [selectedTrademark, setSelectedTrademark] = useState<Trademark | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -204,13 +81,18 @@ const TrademarksPage = () => {
   }, []);
 
   const checkWalletConnection = async () => {
-    if (window.ethereum) {
+    const { ethereum } = window;
+    if (ethereum) {
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const provider = new ethers.BrowserProvider(ethereum);
         const accounts = await provider.listAccounts();
         if (accounts.length > 0) {
           setIsWalletConnected(true);
           setWalletAddress(accounts[0].address);
+        }
+        if(!contract){
+          const currentContract = await initializeEthers(window.ethereum);
+          setContract(currentContract);
         }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
@@ -254,6 +136,8 @@ const TrademarksPage = () => {
     }
   };
 
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   const fetchTrademarks = async () => {
     try {
       setIsLoadingTrademarks(true);
@@ -262,8 +146,8 @@ const TrademarksPage = () => {
         throw new Error("Failed to fetch trademarks");
       }
       const data = await response.json();
-
-      // Set trademarks immediately
+      
+      // Set trademarks immediately to show static data
       setTrademarks(data);
       setIsLoadingTrademarks(false);
 
@@ -272,41 +156,54 @@ const TrademarksPage = () => {
       const pendingTrademarks = data.filter((tm: Trademark) => tm.status === "Pending");
       const acceptedTrademarks = data.filter((tm: Trademark) => tm.status === "Accepted");
 
-      // Process similarities in batches to avoid rate limits
-      const similarities: Record<string, SimilarityInfo> = {};
-      
-      for (const pending of pendingTrademarks as Trademark[]) {
-        let highestTitleSimilarity = 0;
-        let highestDescSimilarity = 0;
-        let mostSimilarTitle = "";
+      // Process similarities with delay between requests
+      for (const pending of pendingTrademarks) {
+          let highestTitleSimilarity = 0;
+          let highestDescSimilarity = 0;
+          let mostSimilarTitle = "";
 
-        for (const accepted of acceptedTrademarks as Trademark[]) {
-          const similarity = await checkSimilarityWithGemini(
-            { title: pending.title, description: pending.description },
-            { title: accepted.title, description: accepted.description }
-          );
+          for (const accepted of acceptedTrademarks) {
+          try {
+            // Add delay between requests
+            await delay(1000); // 1 second delay
 
-          if (similarity) {
-            if (similarity.titleSimilarity > highestTitleSimilarity || 
-                similarity.descriptionSimilarity > highestDescSimilarity) {
-              highestTitleSimilarity = similarity.titleSimilarity;
-              highestDescSimilarity = similarity.descriptionSimilarity;
-              mostSimilarTitle = accepted.title;
+            const similarity = await checkSimilarityWithGemini(
+              { title: pending.title, description: pending.description },
+              { title: accepted.title, description: accepted.description }
+            );
+
+            if (similarity) {
+              if (similarity.titleSimilarity > highestTitleSimilarity || 
+                  similarity.descriptionSimilarity > highestDescSimilarity) {
+                highestTitleSimilarity = similarity.titleSimilarity;
+                highestDescSimilarity = similarity.descriptionSimilarity;
+                mostSimilarTitle = accepted.title;
+              }
+            }
+          } catch (error) {
+            // If rate limit hit, use basic similarity check
+            const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
+            const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
+            
+            if (titleSimilarity > highestTitleSimilarity || descSimilarity > highestDescSimilarity) {
+              highestTitleSimilarity = titleSimilarity * 100;
+              highestDescSimilarity = descSimilarity * 100;
+                mostSimilarTitle = accepted.title;
+              }
             }
           }
-        }
 
-        if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
-          similarities[pending._id] = {
-            similarTo: mostSimilarTitle,
-            titleSimilarity: Math.round(highestTitleSimilarity),
-            descriptionSimilarity: Math.round(highestDescSimilarity)
-          };
-          // Update similarities progressively
-          setSimilarityData(prev => ({ ...prev, [pending._id]: similarities[pending._id] }));
-        }
+          if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
+            setSimilarityData(prev => ({
+              ...prev,
+              [pending._id]: {
+              similarTo: mostSimilarTitle,
+                titleSimilarity: Math.round(highestTitleSimilarity),
+              descriptionSimilarity: Math.round(highestDescSimilarity)
+              }
+            }));
+          }
       }
-
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch trademarks");
     } finally {
@@ -315,68 +212,129 @@ const TrademarksPage = () => {
     }
   };
 
-  const handleStatusUpdate = async (iprId: string, status: string, message: string) => {
+  const checkSimilarityWithGemini = async (
+    pending: { title: string; description: string },
+    accepted: { title: string; description: string }
+  ) => {
     try {
-      console.log("Updating trademark:", {
-        iprId,
-        status,
-        message,
-        selectedTrademark: selectedTrademark
-      });
-
-      // Validate required data
-      if (!iprId || !status || !selectedTrademark) {
-        toast({
-          title: "Error",
-          description: "Missing required information",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!contract) {
-        toast({
-          title: "Error",
-          description: "Please connect your wallet first",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setIsSubmitting(true);
-      setTransactionInProgress(true);
-
-      // Rest of your function...
-      const response = await fetch(`/api/ipr-professional/${iprId}`, {
+      const response = await fetch("/api/gemini/compare-trademarks", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status, message }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pending, accepted }),
       });
+
+      if (!response.ok) throw new Error("Failed to check similarity");
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking similarity:", error);
+      return null;
+    }
+  };
+
+  const calculateBasicSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+    
+    const commonWords = words1.filter(word => set2.has(word));
+    return (commonWords.length * 2) / (set1.size + set2.size);
+  };
+
+  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
+    if (!selectedTrademark || !contract) return;
+    setIsSubmitting(true);
+    setTransactionInProgress(true);
+
+    try {
+      // First update the status in database
+      const response = await fetch(
+        `/api/ipr-professional/${selectedTrademark?._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status,
+            message,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update trademark status");
       }
 
       const data = await response.json();
-      
-      // Show success message
-      toast({
-        title: "Success",
-        description: "Trademark status updated successfully",
-      });
 
-      // Refresh and reset
+      // Then handle blockchain transaction
+      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+      const title = data.ipr.title;
+      const ownerId = BigInt(
+        parseInt(data.ipr.owner.details._id.toString(), 16)
+      ).toString();
+      try {
+        let transaction;
+        if (status === "Accepted") {
+          transaction = await contract.acceptPatent(id, title, ownerId);
+        } else {
+          transaction = await contract.rejectPatent(id, title, ownerId);
+        }
+
+        // Show transaction pending toast
+        toast({
+          title: "Transaction Pending",
+          description:
+            "Please wait while the transaction is being processed...",
+        });
+
+        // Wait for transaction confirmation
+        const receipt = await transaction.wait();
+
+        // Update transaction hash in database
+        await fetch(
+          `/api/ipr-professional/${selectedTrademark._id}/transactionHash`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              transactionHash: receipt.hash,
+            }),
+          }
+        );
+
+        toast({
+          title: "Success",
+          description: `Trademark ${status.toLowerCase()} successfully. Transaction confirmed!`
+        });
+      } catch (error: any) {
+        if (error.code === "ACTION_REJECTED") {
+          toast({
+            title: "Transaction Rejected",
+            description: "You rejected the transaction in MetaMask",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
       await fetchTrademarks();
       setSelectedTrademark(null);
       setMessage("");
-
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update status",
+        description: error.message || "Failed to update status",
         variant: "destructive",
       });
     } finally {
@@ -398,14 +356,6 @@ const TrademarksPage = () => {
     }
   };
 
-  if (isLoadingTrademarks) {
-    return <div className="p-6">Loading trademarks...</div>;
-  }
-
-  if (error) {
-    return <div className="p-6 text-red-500">Error: {error}</div>;
-  }
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -418,90 +368,99 @@ const TrademarksPage = () => {
         )}
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Owner</TableHead>
-            <TableHead>Filing Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {trademarks.map((trademark) => (
-            <TableRow key={trademark._id}>
-              <TableCell>
-                <div className="space-y-1">
-                  <div>{trademark.title}</div>
-                  {trademark.status === "Pending" && (
-                    <div className="text-xs text-muted-foreground">
-                      {similarityData[trademark._id] ? (
-                        <div className="flex items-center gap-2">
-                          <span>Title Similarity: </span>
-                          <Badge variant={similarityData[trademark._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
-                            {similarityData[trademark._id].titleSimilarity}%
-                          </Badge>
-                          {similarityData[trademark._id].titleSimilarity > 70 && (
-                            <span className="text-xs text-red-500">
-                              Similar to: {similarityData[trademark._id].similarTo}
-                            </span>
-                          )}
-                        </div>
-                      ) : isLoadingGemini && (
-                        <div className="text-xs">Analyzing similarity...</div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="space-y-1">
-                  <div>{trademark.description}</div>
-                  {trademark.status === "Pending" && similarityData[trademark._id] && (
-                    <div className="text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <span>Description Similarity: </span>
-                        <Badge variant={similarityData[trademark._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
-                          {similarityData[trademark._id].descriptionSimilarity}%
-                        </Badge>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                {format(new Date(trademark.filingDate), "PP")}
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className={getStatusColor(trademark.status)}
-                >
-                  {trademark.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {trademark.status === "Pending" ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedTrademark(trademark)}
-                  >
-                    Review
-                  </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    onClick={() => setSelectedTrademark(trademark)}
-                  >
-                    View
-                  </Button>
-                )}
-              </TableCell>
+      {isLoadingTrademarks ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading trademarks...</p>
+          </div>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Filing Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {trademarks.map((trademark) => (
+              <TableRow key={trademark._id}>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div>{trademark.title}</div>
+                    {trademark.status === "Pending" && (
+                      <div className="text-xs text-muted-foreground">
+                        {similarityData[trademark._id] ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span>Title Similarity:</span>
+                              <Badge variant={similarityData[trademark._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[trademark._id].titleSimilarity}%
+                              </Badge>
+                              {similarityData[trademark._id].titleSimilarity > 70 && (
+                                <span className="text-xs text-red-500">
+                                  Similar to: {similarityData[trademark._id].similarTo}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>Description Similarity:</span>
+                              <Badge variant={similarityData[trademark._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[trademark._id].descriptionSimilarity}%
+                              </Badge>
+                            </div>
+                          </div>
+                        ) : isLoadingGemini && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            Analyzing similarity...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {trademark.ownerType === "Startup"
+                    ? trademark.owner.startupName
+                    : trademark.owner.name}
+                </TableCell>
+                <TableCell>{format(new Date(trademark.filingDate), "PP")}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant="secondary"
+                    className={getStatusColor(trademark.status)}
+                  >
+                    {trademark.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {trademark.status === "Pending" ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {setSelectedTrademark(trademark);
+                      }}
+                    >
+                      Review
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSelectedTrademark(trademark)}
+                    >
+                      View
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* Trademark Review Dialog */}
       <Dialog
@@ -509,20 +468,15 @@ const TrademarksPage = () => {
         onOpenChange={() => setSelectedTrademark(null)}
       >
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedTrademark?.title}</DialogTitle>
-            <DialogDescription>
-              Review trademark application details
-            </DialogDescription>
-          </DialogHeader>
           {isWalletConnected ? (
             <>
+              <DialogHeader>
+                <DialogTitle>{selectedTrademark?.title}</DialogTitle>
+              </DialogHeader>
               <div className="mt-4 space-y-4">
                 <div>
                   <h3 className="font-semibold">Description</h3>
-                  <p className="text-gray-600">
-                    {selectedTrademark?.description}
-                  </p>
+                  <p className="text-gray-600">{selectedTrademark?.description}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -578,7 +532,7 @@ const TrademarksPage = () => {
                     </div>
                     <div className="flex gap-4 pt-4">
                       <Button
-                        onClick={() => handleStatusUpdate(selectedTrademark._id, "Accepted", message)}
+                        onClick={() => handleStatusUpdate("Accepted")}
                         className="flex-1 bg-green-500 hover:bg-green-600"
                         disabled={
                           isSubmitting || !message || transactionInProgress
@@ -587,7 +541,7 @@ const TrademarksPage = () => {
                         {transactionInProgress ? "Processing..." : "Accept"}
                       </Button>
                       <Button
-                        onClick={() => handleStatusUpdate(selectedTrademark._id, "Rejected", message)}
+                        onClick={() => handleStatusUpdate("Rejected")}
                         className="flex-1 bg-red-500 hover:bg-red-600"
                         disabled={
                           isSubmitting || !message || transactionInProgress
@@ -634,6 +588,4 @@ const TrademarksPage = () => {
       </Dialog>
     </div>
   );
-};
-
-export default TrademarksPage;
+}

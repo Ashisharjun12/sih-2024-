@@ -7,10 +7,10 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-
+    
     if (!session?.user) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Unauthorized" }, 
         { status: 401 }
       );
     }
@@ -21,25 +21,20 @@ export async function POST(request: Request) {
 
     // Extract file data
     const files = {
-      identityProof: formData?.files?.identityProof,
-      businessPlan: formData?.files?.businessPlan,
-      pitchDeck: formData?.files?.pitchDeck,
-      financialProjections: formData?.files?.financialProjections,
-      incorporationCertificate: formData?.files?.incorporationCertificate,
+      registrationCertificate: formData.files?.registrationCertificate,
+      governmentApprovals: formData.files?.governmentApprovals,
+      addressProof: formData.files?.addressProof,
+      taxDocuments: formData.files?.taxDocuments,
+      portfolioDocument: formData.files?.portfolioDocument,
     };
 
     // Remove files from formData to avoid duplication
     const { files: _, ...restFormData } = formData;
-  
-    //// ### startup files save as files here but in the form for the 
-    // iprProfessional just taking one file 
 
-
-    
     // Create form submission
     const submission = await FormSubmission.create({
       userId: session.user.id,
-      formType: "iprProfessional",
+      formType: "fundingAgency",
       formData: restFormData,
       status: "pending",
       userEmail: session.user.email,
@@ -48,17 +43,17 @@ export async function POST(request: Request) {
       submittedAt: new Date(),
     });
 
-    console.log("Created submission:", submission); // Debug log
+    console.log("Created funding agency submission:", submission); // Debug log
 
-    return NextResponse.json({
-      success: true,
+    return NextResponse.json({ 
+      success: true, 
       message: "Form submitted successfully",
-      submission
+      submission 
     });
   } catch (error) {
     console.error("Form submission error:", error);
     return NextResponse.json(
-      { error: "Failed to submit form" },
+      { error: "Failed to submit form" }, 
       { status: 500 }
     );
   }
