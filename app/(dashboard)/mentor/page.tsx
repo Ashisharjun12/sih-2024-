@@ -4,15 +4,15 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { 
-  Users, 
-  Calendar, 
+import {
+  Users,
+  Calendar,
   Target,
   ChevronRight,
   Star,
   MessageSquare,
   Clock,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 
 export default function MentorDashboard() {
@@ -23,26 +23,26 @@ export default function MentorDashboard() {
       title: "Active Mentees",
       value: "12",
       icon: Users,
-      description: "Currently mentoring"
+      description: "Currently mentoring",
     },
     {
       title: "Sessions",
       value: "48",
       icon: Calendar,
-      description: "This month"
+      description: "This month",
     },
     {
       title: "Success Rate",
       value: "92%",
       icon: TrendingUp,
-      description: "Mentee progress"
+      description: "Mentee progress",
     },
     {
       title: "Hours",
       value: "86",
       icon: Clock,
-      description: "Mentoring hours"
-    }
+      description: "Mentoring hours",
+    },
   ];
 
   const quickActions = [
@@ -50,26 +50,26 @@ export default function MentorDashboard() {
       title: "Schedule Session",
       description: "Plan mentoring sessions",
       icon: Calendar,
-      href: "/mentor/sessions"
+      href: "/mentor/sessions",
     },
     {
       title: "Track Progress",
       description: "Monitor mentee growth",
       icon: Target,
-      href: "/mentor/progress"
+      href: "/mentor/progress",
     },
     {
       title: "Messages",
       description: "Chat with mentees",
       icon: MessageSquare,
-      href: "/mentor/messages"
+      href: "/mentor/messages",
     },
     {
       title: "Reviews",
       description: "View mentee feedback",
       icon: Star,
-      href: "/mentor/feedback"
-    }
+      href: "/mentor/feedback",
+    },
   ];
 
   return (
@@ -173,4 +173,4 @@ export default function MentorDashboard() {
       </div>
     </div>
   );
-} 
+}
