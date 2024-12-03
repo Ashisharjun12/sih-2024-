@@ -14,7 +14,8 @@ import {
   PieChart,
   Briefcase,
   LineChart,
-  Target
+  Target,
+  MessageCircle
 } from "lucide-react";
 
 const fundingAgencyLinks = [
@@ -54,9 +55,9 @@ const fundingAgencyLinks = [
     icon: Briefcase,
   },
   {
-    title: "Goals",
-    href: "/funding-agency/goals",
-    icon: Target,
+    title: "Messages",
+    href: "/funding-agency/messages",
+    icon: MessageCircle,
   },
   {
     title: "Network",

@@ -30,7 +30,7 @@ const policyMakerLinks = [
   },
   {
     title: "Policies",
-    href: "/policy-maker/policies",
+    href: "/policy-maker/policy",
     icon: ScrollText,
   },
   {
