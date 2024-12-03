@@ -6,6 +6,7 @@ import Policy from "@/models/policy.model";
 import { Types } from "mongoose";
 import Startup from "@/models/startup.model";
 import Researcher from "@/models/researcher.model";
+import FundingAgency from "@/models/funding-agency.model";
 
 // GET single policy with reviews
 export async function GET(
@@ -62,8 +63,16 @@ export async function GET(
                     }
                 };
             }
-            else{
-                //!! Funding Agency later add
+            else {
+                reviewer = await FundingAgency.findById(review.reviewer).select('agencyDetails.name owner.email');
+                return {
+                    ...review.toObject(),
+                    reviewer: {
+                        _id: reviewer._id,
+                        name: reviewer.agencyDetails.name,
+                        email: reviewer.owner.email
+                    }
+                };
             }
         }));
 

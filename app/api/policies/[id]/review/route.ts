@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db";
 import Policy from "@/models/policy.model";
 import Startup from "@/models/startup.model";
 import Researcher from "@/models/researcher.model";
+import FundingAgency from "@/models/funding-agency.model";
 
 export async function POST(
     req: NextRequest,
@@ -53,7 +54,15 @@ export async function POST(
                 }
             }
             else {
-                //!! Later I have to add funding agency
+                owner = await FundingAgency.findOne({ userId: session.user.id })
+                    .select('_id agencyDetails.name');
+
+                if (!owner) {
+                    return NextResponse.json(
+                        { error: "Funding agency profile not found" },
+                        { status: 404 }
+                    );
+                }
             }
 
             // Find policy and add review
@@ -151,7 +160,15 @@ export async function PUT(
                 }
             }
             else {
-                //!! Later add funding agency
+                owner = await FundingAgency.findOne({ userId: session.user.id })
+                    .select('_id agencyDetails.name');
+
+                if (!owner) {
+                    return NextResponse.json(
+                        { error: "Funding agency profile not found" },
+                        { status: 404 }
+                    );
+                }
             }
 
             // Find policy and update review
