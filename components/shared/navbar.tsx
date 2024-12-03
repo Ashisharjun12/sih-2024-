@@ -58,7 +58,7 @@ const roleApplications = [
   {
     title: "Apply as Funding Agency",
     description: "Register funding agency",
-    href: "/forms/funding",
+    href: "/forms/fundingAgency",
     icon: Banknote,
   },
   {

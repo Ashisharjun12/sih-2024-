@@ -35,8 +35,8 @@ const mentorLinks = [
     icon: Users,
   },
   {
-    title: "Sessions",
-    href: "/mentor/sessions",
+    title: "meetings",
+    href: "/mentor/meetings",
     icon: Calendar,
   },
   {

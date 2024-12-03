@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import {
   Table,
@@ -30,7 +30,7 @@ interface IPROwner {
   email: string;
 }
 
-interface Tradesecret {
+interface TradeSecret {
   _id: string;
   title: string;
   description: string;
@@ -46,11 +46,15 @@ interface Tradesecret {
   message?: string;
 }
 
-const TradesecretsPage = () => {
-  const [tradesecrets, setTradesecrets] = useState<Tradesecret[]>([]);
-  const [selectedTradesecret, setSelectedTradesecret] =
-    useState<Tradesecret | null>(null);
+interface SimilarityInfo {
+  similarTo: string;
+  titleSimilarity: number;
+  descriptionSimilarity: number;
+}
 
+export default function TradeSecretsPage() {
+  const [tradeSecrets, setTradeSecrets] = useState<TradeSecret[]>([]);
+  const [selectedTradeSecret, setSelectedTradeSecret] = useState<TradeSecret | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -59,11 +63,14 @@ const TradesecretsPage = () => {
   const [walletAddress, setWalletAddress] = useState("");
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [transactionInProgress, setTransactionInProgress] = useState(false);
+  const [similarityData, setSimilarityData] = useState<Record<string, SimilarityInfo>>({});
+  const [isLoadingGemini, setIsLoadingGemini] = useState(false);
+  const [isLoadingTradeSecrets, setIsLoadingTradeSecrets] = useState(true);
 
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTradesecrets();
+    fetchTradeSecrets();
     checkWalletConnection();
     if (window.ethereum) {
       (async () => {
@@ -74,13 +81,18 @@ const TradesecretsPage = () => {
   }, []);
 
   const checkWalletConnection = async () => {
-    if (window.ethereum) {
+    const { ethereum } = window;
+    if (ethereum) {
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const provider = new ethers.BrowserProvider(ethereum);
         const accounts = await provider.listAccounts();
         if (accounts.length > 0) {
           setIsWalletConnected(true);
           setWalletAddress(accounts[0].address);
+        }
+        if(!contract){
+          const currentContract = await initializeEthers(window.ethereum);
+          setContract(currentContract);
         }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
@@ -124,33 +136,124 @@ const TradesecretsPage = () => {
     }
   };
 
-  const fetchTradesecrets = async () => {
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const fetchTradeSecrets = async () => {
     try {
-      const response = await fetch("/api/ipr-professional/types/tradesecrets");
+      setIsLoadingTradeSecrets(true);
+      const response = await fetch("/api/ipr-professional/types/trade_secrets");
       if (!response.ok) {
-        throw new Error("Failed to fetch tradesecrets");
+        throw new Error("Failed to fetch trade secrets");
       }
       const data = await response.json();
-      setTradesecrets(data);
+      
+      // Set trade secrets immediately to show static data
+      setTradeSecrets(data);
+      setIsLoadingTradeSecrets(false);
+
+      // Then start similarity checks
+      setIsLoadingGemini(true);
+      const pendingTradeSecrets = data.filter((ts: TradeSecret) => ts.status === "Pending");
+      const acceptedTradeSecrets = data.filter((ts: TradeSecret) => ts.status === "Accepted");
+
+      // Process similarities with delay between requests
+      for (const pending of pendingTradeSecrets) {
+        let highestTitleSimilarity = 0;
+        let highestDescSimilarity = 0;
+        let mostSimilarTitle = "";
+
+        for (const accepted of acceptedTradeSecrets) {
+          try {
+            // Add delay between requests
+            await delay(1000); // 1 second delay
+
+            const similarity = await checkSimilarityWithGemini(
+              { title: pending.title, description: pending.description },
+              { title: accepted.title, description: accepted.description }
+            );
+
+            if (similarity) {
+              if (similarity.titleSimilarity > highestTitleSimilarity || 
+                  similarity.descriptionSimilarity > highestDescSimilarity) {
+                highestTitleSimilarity = similarity.titleSimilarity;
+                highestDescSimilarity = similarity.descriptionSimilarity;
+                mostSimilarTitle = accepted.title;
+              }
+            }
+          } catch (error) {
+            // If rate limit hit, use basic similarity check
+            const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
+            const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
+            
+            if (titleSimilarity > highestTitleSimilarity || descSimilarity > highestDescSimilarity) {
+              highestTitleSimilarity = titleSimilarity * 100;
+              highestDescSimilarity = descSimilarity * 100;
+              mostSimilarTitle = accepted.title;
+            }
+          }
+        }
+
+        if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
+          setSimilarityData(prev => ({
+            ...prev,
+            [pending._id]: {
+              similarTo: mostSimilarTitle,
+              titleSimilarity: Math.round(highestTitleSimilarity),
+              descriptionSimilarity: Math.round(highestDescSimilarity)
+            }
+          }));
+        }
+      }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch tradesecrets"
-      );
+      setError(err instanceof Error ? err.message : "Failed to fetch trade secrets");
     } finally {
-      setLoading(false);
+      setIsLoadingTradeSecrets(false);
+      setIsLoadingGemini(false);
     }
   };
 
-  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
-    if (!selectedTradesecret || !contract) return;
+  const checkSimilarityWithGemini = async (
+    pending: { title: string; description: string },
+    accepted: { title: string; description: string }
+  ) => {
+    try {
+      const response = await fetch("/api/gemini/compare-trademarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pending, accepted }),
+      });
 
+      if (!response.ok) throw new Error("Failed to check similarity");
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking similarity:", error);
+      return null;
+    }
+  };
+
+  const calculateBasicSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+    
+    const commonWords = words1.filter(word => set2.has(word));
+    return (commonWords.length * 2) / (set1.size + set2.size);
+  };
+
+  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
+    if (!selectedTradeSecret || !contract) return;
     setIsSubmitting(true);
     setTransactionInProgress(true);
 
     try {
       // First update the status in database
       const response = await fetch(
-        `/api/ipr-professional/${selectedTradesecret._id}`,
+        `/api/ipr-professional/${selectedTradeSecret?._id}`,
         {
           method: "POST",
           headers: {
@@ -164,7 +267,7 @@ const TradesecretsPage = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update tradesecret status");
+        throw new Error("Failed to update trade secret status");
       }
 
       const data = await response.json();
@@ -195,7 +298,7 @@ const TradesecretsPage = () => {
 
         // Update transaction hash in database
         await fetch(
-          `/api/ipr-professional/${selectedTradesecret._id}/transactionHash`,
+          `/api/ipr-professional/${selectedTradeSecret._id}/transactionHash`,
           {
             method: "POST",
             headers: {
@@ -209,7 +312,7 @@ const TradesecretsPage = () => {
 
         toast({
           title: "Success",
-          description: `Trademark ${status.toLowerCase()} successfully. Transaction confirmed!`,
+          description: `Trade Secret ${status.toLowerCase()} successfully. Transaction confirmed!`
         });
       } catch (error: any) {
         if (error.code === "ACTION_REJECTED") {
@@ -224,8 +327,8 @@ const TradesecretsPage = () => {
         return;
       }
 
-      await fetchTradesecrets();
-      setSelectedTradesecret(null);
+      await fetchTradeSecrets();
+      setSelectedTradeSecret(null);
       setMessage("");
     } catch (error: any) {
       console.error("Error:", error);
@@ -240,7 +343,7 @@ const TradesecretsPage = () => {
     }
   };
 
-  const getStatusColor = (status: Tradesecret["status"]) => {
+  const getStatusColor = (status: TradeSecret["status"]) => {
     switch (status) {
       case "Pending":
         return "bg-yellow-500";
@@ -253,112 +356,152 @@ const TradesecretsPage = () => {
     }
   };
 
-  if (loading) {
-    return <div className="p-6">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="p-6 text-red-500">Error: {error}</div>;
-  }
-
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Trade Secret Applications</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Trade Secret Applications</h1>
+        {isLoadingGemini && (
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Analyzing similarities...
+          </div>
+        )}
+      </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Owner</TableHead>
-            <TableHead>Filing Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tradesecrets.map((tradesecret) => (
-            <TableRow key={tradesecret._id}>
-              <TableCell>{tradesecret.title}</TableCell>
-              <TableCell>
-                {tradesecret.ownerType === "Startup"
-                  ? tradesecret.owner.startupName
-                  : tradesecret.owner.name}
-              </TableCell>
-              <TableCell>
-                {format(new Date(tradesecret.filingDate), "PP")}
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className={getStatusColor(tradesecret.status)}
-                >
-                  {tradesecret.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {tradesecret.status === "Pending" ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedTradesecret(tradesecret)}
-                  >
-                    Review
-                  </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    onClick={() => setSelectedTradesecret(tradesecret)}
-                  >
-                    View
-                  </Button>
-                )}
-              </TableCell>
+      {isLoadingTradeSecrets ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading trade secrets...</p>
+          </div>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Filing Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {tradeSecrets.map((tradeSecret) => (
+              <TableRow key={tradeSecret._id}>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div>{tradeSecret.title}</div>
+                    {tradeSecret.status === "Pending" && (
+                      <div className="text-xs text-muted-foreground">
+                        {similarityData[tradeSecret._id] ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span>Title Similarity:</span>
+                              <Badge variant={similarityData[tradeSecret._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[tradeSecret._id].titleSimilarity}%
+                              </Badge>
+                              {similarityData[tradeSecret._id].titleSimilarity > 70 && (
+                                <span className="text-xs text-red-500">
+                                  Similar to: {similarityData[tradeSecret._id].similarTo}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>Description Similarity:</span>
+                              <Badge variant={similarityData[tradeSecret._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
+                                {similarityData[tradeSecret._id].descriptionSimilarity}%
+                              </Badge>
+                            </div>
+                          </div>
+                        ) : isLoadingGemini && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            Analyzing similarity...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {tradeSecret.ownerType === "Startup"
+                    ? tradeSecret.owner.startupName
+                    : tradeSecret.owner.name}
+                </TableCell>
+                <TableCell>{format(new Date(tradeSecret.filingDate), "PP")}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant="secondary"
+                    className={getStatusColor(tradeSecret.status)}
+                  >
+                    {tradeSecret.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {tradeSecret.status === "Pending" ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {setSelectedTradeSecret(tradeSecret);
+                      }}
+                    >
+                      Review
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSelectedTradeSecret(tradeSecret)}
+                    >
+                      View
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
-      {/* Trademark Review Dialog */}
+      {/* Trade Secret Review Dialog */}
       <Dialog
-        open={!!selectedTradesecret}
-        onOpenChange={() => setSelectedTradesecret(null)}
+        open={!!selectedTradeSecret}
+        onOpenChange={() => setSelectedTradeSecret(null)}
       >
         <DialogContent className="max-w-2xl">
           {isWalletConnected ? (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedTradesecret?.title}</DialogTitle>
+                <DialogTitle>{selectedTradeSecret?.title}</DialogTitle>
               </DialogHeader>
               <div className="mt-4 space-y-4">
                 <div>
                   <h3 className="font-semibold">Description</h3>
-                  <p className="text-gray-600">
-                    {selectedTradesecret?.description}
-                  </p>
+                  <p className="text-gray-600">{selectedTradeSecret?.description}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-semibold">Owner</h3>
                     <p className="text-gray-600">
-                      {selectedTradesecret?.ownerType === "Startup"
-                        ? selectedTradesecret.owner.startupName
-                        : selectedTradesecret?.owner.name}
+                      {selectedTradeSecret?.ownerType === "Startup"
+                        ? selectedTradeSecret.owner.startupName
+                        : selectedTradeSecret?.owner.name}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {selectedTradesecret?.owner.email}
+                      {selectedTradeSecret?.owner.email}
                     </p>
                   </div>
                   <div>
                     <h3 className="font-semibold">Filing Date</h3>
                     <p className="text-gray-600">
-                      {selectedTradesecret &&
-                        format(new Date(selectedTradesecret.filingDate), "PP")}
+                      {selectedTradeSecret &&
+                        format(new Date(selectedTradeSecret.filingDate), "PP")}
                     </p>
                   </div>
                 </div>
                 <div>
                   <h3 className="font-semibold">Related Documents</h3>
                   <div className="mt-2">
-                    {selectedTradesecret?.relatedDocuments.map((doc, index) => (
+                    {selectedTradeSecret?.relatedDocuments.map((doc, index) => (
                       <a
                         key={doc.public_id}
                         href={doc.secure_url}
@@ -376,7 +519,7 @@ const TradesecretsPage = () => {
                   <p className="text-gray-600">{walletAddress}</p>
                 </div>
 
-                {selectedTradesecret?.status === "Pending" ? (
+                {selectedTradeSecret?.status === "Pending" ? (
                   <>
                     <div className="space-y-2">
                       <h3 className="font-semibold">Review Message</h3>
@@ -410,16 +553,16 @@ const TradesecretsPage = () => {
                   </>
                 ) : (
                   <>
-                    {selectedTradesecret?.transactionHash && (
+                    {selectedTradeSecret?.transactionHash && (
                       <div className="space-y-2">
                         <h3 className="font-semibold">Transaction Hash</h3>
                         <a
-                          href={`https://sepolia.etherscan.io/tx/${selectedTradesecret.transactionHash}#eventlog`}
+                          href={`https://sepolia.etherscan.io/tx/${selectedTradeSecret.transactionHash}#eventlog`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-500 hover:underline break-all"
                         >
-                          {selectedTradesecret.transactionHash}
+                          {selectedTradeSecret.transactionHash}
                         </a>
                       </div>
                     )}
@@ -434,7 +577,7 @@ const TradesecretsPage = () => {
               </DialogHeader>
               <div className="flex flex-col items-center justify-center p-6 space-y-4">
                 <p className="text-center text-gray-600">
-                  Please connect your MetaMask wallet to review tradesecret
+                  Please connect your MetaMask wallet to review trade secret
                   applications
                 </p>
                 <Button onClick={connectWallet}>Connect MetaMask</Button>
@@ -445,6 +588,4 @@ const TradesecretsPage = () => {
       </Dialog>
     </div>
   );
-};
-
-export default TradesecretsPage;
+}

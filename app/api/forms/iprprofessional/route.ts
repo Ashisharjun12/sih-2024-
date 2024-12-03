@@ -30,7 +30,12 @@ export async function POST(request: Request) {
 
     // Remove files from formData to avoid duplication
     const { files: _, ...restFormData } = formData;
+  
+    //// ### startup files save as files here but in the form for the 
+    // iprProfessional just taking one file 
 
+
+    
     // Create form submission
     const submission = await FormSubmission.create({
       userId: session.user.id,

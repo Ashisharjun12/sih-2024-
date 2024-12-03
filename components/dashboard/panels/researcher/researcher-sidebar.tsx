@@ -18,6 +18,7 @@ import {
   Target,
   Award,
   Network,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -71,19 +72,14 @@ const sidebarItems = [
     icon: FileSpreadsheet,
   },
   {
-    title: "Goals",
-    href: "/researcher/goals",
-    icon: Target,
+    title: "Meetings",
+    href: "/researcher/meetings",
+    icon: Calendar,
   },
   {
     title: "Messages",
     href: "/researcher/messages",
     icon: MessageSquare,
-  },
-  {
-    title: "Email",
-    href: "/researcher/email",
-    icon: Mail,
   },
   {
     title: "Settings",

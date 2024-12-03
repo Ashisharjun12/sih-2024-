@@ -89,6 +89,10 @@ const CopyrightsPage = () => {
           setIsWalletConnected(true);
           setWalletAddress(accounts[0].address);
         }
+        if(!contract){
+          const currentContract = await initializeEthers(window.ethereum);
+          setContract(currentContract);
+        }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
       }
@@ -131,6 +135,8 @@ const CopyrightsPage = () => {
     }
   };
 
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   const fetchCopyrights = async () => {
     try {
       setIsLoadingCopyrights(true);
@@ -140,32 +146,47 @@ const CopyrightsPage = () => {
       }
       const data = await response.json();
       
-      // Set copyrights immediately to show static data
+      // Set patents immediately to show static data
       setCopyrights(data);
       setIsLoadingCopyrights(false);
 
       // Then start similarity checks
       setIsLoadingGemini(true);
-      const pendingCopyrights = data.filter((tm: Copyright) => tm.status === "Pending");
-      const acceptedCopyrights = data.filter((tm: Copyright) => tm.status === "Accepted");
+      const pendingPatents = data.filter((tm: Copyright) => tm.status === "Pending");
+      const acceptedPatents = data.filter((tm: Copyright) => tm.status === "Accepted");
 
-      // Process similarities
-      for (const pending of pendingCopyrights) {
+      // Process similarities with delay between requests
+      for (const pending of pendingPatents) {
         let highestTitleSimilarity = 0;
         let highestDescSimilarity = 0;
         let mostSimilarTitle = "";
 
-        for (const accepted of acceptedCopyrights) {
-          const similarity = await checkSimilarityWithGemini(
-            { title: pending.title, description: pending.description },
-            { title: accepted.title, description: accepted.description }
-          );
+        for (const accepted of acceptedPatents) {
+          try {
+            // Add delay between requests
+            await delay(1000); // 1 second delay
 
-          if (similarity) {
-            if (similarity.titleSimilarity > highestTitleSimilarity || 
-                similarity.descriptionSimilarity > highestDescSimilarity) {
-              highestTitleSimilarity = similarity.titleSimilarity;
-              highestDescSimilarity = similarity.descriptionSimilarity;
+            const similarity = await checkSimilarityWithGemini(
+              { title: pending.title, description: pending.description },
+              { title: accepted.title, description: accepted.description }
+            );
+
+            if (similarity) {
+              if (similarity.titleSimilarity > highestTitleSimilarity || 
+                  similarity.descriptionSimilarity > highestDescSimilarity) {
+                highestTitleSimilarity = similarity.titleSimilarity;
+                highestDescSimilarity = similarity.descriptionSimilarity;
+                mostSimilarTitle = accepted.title;
+              }
+            }
+          } catch (error) {
+            // If rate limit hit, use basic similarity check
+            const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
+            const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
+            
+            if (titleSimilarity > highestTitleSimilarity || descSimilarity > highestDescSimilarity) {
+              highestTitleSimilarity = titleSimilarity * 100;
+              highestDescSimilarity = descSimilarity * 100;
               mostSimilarTitle = accepted.title;
             }
           }
@@ -182,11 +203,7 @@ const CopyrightsPage = () => {
           }));
         }
       }
-
-      // Log matches after all similarities are processed
-      logSimilarCopyrights(pendingCopyrights, acceptedCopyrights);
-
-    } catch (err) {
+    }  catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch copyrights");
     } finally {
       setIsLoadingCopyrights(false);
@@ -211,6 +228,20 @@ const CopyrightsPage = () => {
       console.error("Error checking similarity:", error);
       return null;
     }
+  };
+
+  const calculateBasicSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+    
+    const commonWords = words1.filter(word => set2.has(word));
+    return (commonWords.length * 2) / (set1.size + set2.size);
   };
 
   const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {

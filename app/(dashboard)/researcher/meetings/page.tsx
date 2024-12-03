@@ -46,7 +46,7 @@ const TIME_SLOTS = [
   "09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"
 ];
 
-export default function MeetingsPage() {
+export default function ResearcherMeetingsPage() {
   const { toast } = useToast();
   const [date, setDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>("");
@@ -123,7 +123,8 @@ export default function MeetingsPage() {
           mentorId: selectedMentor._id,
           date: date,
           startTime: selectedTime,
-          endTime: endTime
+          endTime: endTime,
+          userType: 'researcher'
         }),
       });
 
