@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectDB } from "@/lib/db";
-import User from "@/models/user.model";
+import Policy from "@/models/policy.model";
 
 export async function GET() {
     try {
         const session = await getServerSession(authOptions);
-        if (!session || session.user.role !== "admin") {
+        if (!session) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
@@ -16,20 +16,15 @@ export async function GET() {
 
         await connectDB();
 
-        const users = await User.find()
-            .select({
-                name: 1,
-                email: 1,
-                role: 1,
-                profileComplete: 1,
-                createdAt: 1
-            })
-            .sort({ createdAt: -1 });
+        const policies = await Policy.find();
 
-        return NextResponse.json({ success: true, users });
+        return NextResponse.json({
+            success: true,
+            policies
+        });
 
     } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching policies:", error);
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }
