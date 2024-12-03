@@ -15,13 +15,10 @@ import {
   Briefcase,
   LineChart,
   Target,
-<<<<<<< HEAD
-  MessageCircle
-=======
-  ChevronRight,
+  MessageCircle,
   ChevronLeft,
   Menu
->>>>>>> e3c0b4ba99c90ef2563b71bf1a04fc75ffce609a
+
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
