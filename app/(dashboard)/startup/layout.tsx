@@ -6,9 +6,9 @@ export default function StartupLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen">
-      <StartupSidebar className="w-64 border-r bg-background" />
-      <main className="flex-1 overflow-y-auto">
+    <div className="min-h-screen">
+      <StartupSidebar />
+      <main className="pl-16 w-full transition-all duration-300">
         {children}
       </main>
     </div>

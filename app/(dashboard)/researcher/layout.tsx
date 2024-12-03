@@ -6,9 +6,9 @@ export default function ResearcherLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen">
-      <ResearcherSidebar className="w-64 border-r bg-background" />
-      <main className="flex-1 overflow-y-auto">
+    <div className="min-h-screen">
+      <ResearcherSidebar />
+      <main className="pl-16 w-full transition-all duration-300">
         {children}
       </main>
     </div>

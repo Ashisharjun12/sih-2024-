@@ -38,12 +38,14 @@ export async function GET(
                 { status: 404 }
             );
         }
+        console.log(policy)
 
         // Populate reviews with proper reviewer details
         const populatedReviews = await Promise.all(policy.reviews.map(async (review) => {
             let reviewer;
             if (review.reviewerType === 'Startup') {
-                reviewer = await Startup.findById(review.reviewer).select('startupDetails.startupName email');
+                reviewer = await Startup.findById(review.reviewer).select('startupDetails.startupName email _id');
+                console.log(reviewer)
                 return {
                     ...review.toObject(),
                     reviewer: {
