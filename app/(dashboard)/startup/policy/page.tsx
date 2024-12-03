@@ -434,7 +434,6 @@ export default function StartupPolicyPage() {
         title: "Success",
         description: "Review submitted successfully",
       });
-      setMessage("");
 
       // Refresh policies to get updated data
       fetchPolicies();

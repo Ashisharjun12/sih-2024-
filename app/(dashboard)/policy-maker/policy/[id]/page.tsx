@@ -18,6 +18,8 @@ import {
   MessageSquare,
   Eye,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface Review {
   _id: string;
@@ -27,7 +29,7 @@ interface Review {
     startupName?: string;
     email: string;
   };
-  reviewerType: "Startup" | "Researcher";
+  reviewerType: "Startup" | "Researcher" | "FundingAgency";
   message: string;
   createdAt: string;
 }
@@ -45,6 +47,7 @@ interface Policy {
     totalReviews: number;
     startupReviews: number;
     researcherReviews: number;
+    fundingAgencyReviews: number;
   };
 }
 
@@ -74,15 +77,15 @@ const ReviewCard = ({ review }: { review: Review }) => (
       <div className="flex justify-between items-start">
         <div>
           <CardTitle className="text-base">
-            {review.reviewerType === "Startup" 
-              ? review.reviewer.startupName 
+            {review.reviewerType === "Startup"
+              ? review.reviewer.startupName
               : review.reviewer.name}
           </CardTitle>
-          <p className="text-sm text-muted-foreground">{review.reviewer.email}</p>
+          <p className="text-sm text-muted-foreground">
+            {review.reviewer.email}
+          </p>
         </div>
-        <Badge variant={review.reviewerType === "Startup" ? "default" : "secondary"}>
-          {review.reviewerType}
-        </Badge>
+        <Badge>{review.reviewerType}</Badge>
       </div>
     </CardHeader>
     <CardContent>
@@ -96,6 +99,7 @@ const ReviewCard = ({ review }: { review: Review }) => (
 
 export default function PolicyDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { toast } = useToast();
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,15 +114,39 @@ export default function PolicyDetailPage() {
       if (!response.ok) throw new Error("Failed to fetch policy");
       const data = await response.json();
       setPolicy(data.policy);
-      console.log(data.policy);
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch policy",
+        description:
+          error instanceof Error ? error.message : "Failed to fetch policy",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const deletePolicy = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/policy-maker/policies/${params.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete policy");
+      router.push("/policy-maker/policy");
+      toast({
+        title: "Policy deleted",
+        description: "Policy has been deleted successfully",
+        variant: "default",
+      });
+      setIsLoading(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete policy",
+        variant: "destructive",
+      });
     }
   };
 
@@ -153,6 +181,13 @@ export default function PolicyDetailPage() {
               <GraduationCap className="h-4 w-4" />
               <span>{policy.metrics.researcherReviews} Researchers</span>
             </div>
+            <div className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              <span>{policy.metrics.fundingAgencyReviews} Funding Agency</span>
+            </div>
+          </div>
+          <div>
+            <Button onClick={deletePolicy}>Delete</Button>
           </div>
         </div>
 
@@ -202,6 +237,9 @@ export default function PolicyDetailPage() {
               <TabsTrigger value="researcher">
                 Researcher Reviews ({policy.metrics.researcherReviews})
               </TabsTrigger>
+              <TabsTrigger value="fundingAgency">
+                Funding Agency Reviews ({policy.metrics.fundingAgencyReviews})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="all">
@@ -215,7 +253,7 @@ export default function PolicyDetailPage() {
             <TabsContent value="startup">
               <ScrollArea className="h-[calc(100vh-32rem)]">
                 {policy.reviews
-                  .filter(review => review.reviewerType === "Startup")
+                  .filter((review) => review.reviewerType === "Startup")
                   .map((review) => (
                     <ReviewCard key={review._id} review={review} />
                   ))}
@@ -225,7 +263,16 @@ export default function PolicyDetailPage() {
             <TabsContent value="researcher">
               <ScrollArea className="h-[calc(100vh-32rem)]">
                 {policy.reviews
-                  .filter(review => review.reviewerType === "Researcher")
+                  .filter((review) => review.reviewerType === "Researcher")
+                  .map((review) => (
+                    <ReviewCard key={review._id} review={review} />
+                  ))}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="fundingAgency">
+              <ScrollArea className="h-[calc(100vh-32rem)]">
+                {policy.reviews
+                  .filter((review) => review.reviewerType === "FundingAgency")
                   .map((review) => (
                     <ReviewCard key={review._id} review={review} />
                   ))}
@@ -236,4 +283,4 @@ export default function PolicyDetailPage() {
       </motion.div>
     </div>
   );
-} 
+}

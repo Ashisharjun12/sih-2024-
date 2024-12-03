@@ -85,11 +85,12 @@ export async function POST(
                     { status: 400 }
                 );
             }
+            const reviewTYPE = type.charAt(0).toUpperCase() + type.slice(1);
 
             // Add review
             await policy.addReview({
                 reviewer: owner._id,
-                reviewerType: type.toUpperCase(),
+                reviewerType: reviewTYPE,
                 message: message.trim(),
                 createdAt: new Date()
             });

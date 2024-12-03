@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 // Interface for reviews
 interface IReview {
     reviewer: mongoose.Types.ObjectId;
-    reviewerType: 'Startup' | 'Researcher';
+    reviewerType: 'Startup' | 'Researcher' | 'FundingAgency';
     message: string;
     createdAt: Date;
 }
@@ -17,7 +17,7 @@ const reviewSchema = new mongoose.Schema({
     reviewerType: {
         type: String,
         required: true,
-        enum: ['Startup', 'Researcher']
+        enum: ['Startup', 'Researcher', 'FundingAgency']
     },
     message: {
         type: String,
@@ -310,6 +310,10 @@ const policySchema = new mongoose.Schema({
         researcherReviews: {
             type: Number,
             default: 0
+        },
+        fundingAgencyReviews: {
+            type: Number,
+            default: 0
         }
     },
     documents: [{
@@ -319,7 +323,7 @@ const policySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Pre-save middleware to update metrics
-policySchema.pre('save', function(next) {
+policySchema.pre('save', function (next) {
     if (this.reviews?.length > 0) {
         // Update total reviews
         this.metrics.totalReviews = this.reviews.length;
@@ -328,16 +332,20 @@ policySchema.pre('save', function(next) {
         this.metrics.startupReviews = this.reviews.filter(
             review => review.reviewerType === 'Startup'
         ).length;
-        
+
         this.metrics.researcherReviews = this.reviews.filter(
             review => review.reviewerType === 'Researcher'
         ).length;
+
+        this.metrics.fundingAgencyReviews = this.reviews.filter(
+            review => review.reviewerType === 'FundingAgency'
+        )
     }
     next();
 });
 
 // Method to add a review
-policySchema.methods.addReview = async function(reviewData: IReview) {
+policySchema.methods.addReview = async function (reviewData: IReview) {
     // Check if user has already reviewed
     const existingReview = this.reviews.find(
         review => review.reviewer.toString() === reviewData.reviewer.toString()
@@ -353,7 +361,7 @@ policySchema.methods.addReview = async function(reviewData: IReview) {
 };
 
 // Method to get reviews by type
-policySchema.methods.getReviewsByType = function(type: 'Startup' | 'Researcher') {
+policySchema.methods.getReviewsByType = function (type: 'Startup' | 'Researcher' | 'FundingAgency') {
     return this.reviews.filter(review => review.reviewerType === type);
 };
 
