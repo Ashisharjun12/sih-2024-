@@ -88,7 +88,7 @@ export default function ResearcherMessagesPage() {
       } catch (error) {
         console.error('Error polling messages:', error);
       }
-    }, 500); // Poll every 3 seconds
+    }, 2000); // Poll every 3 seconds
 
     return () => clearInterval(interval);
   }, [selectedUser, lastMessageTimestamp]);
