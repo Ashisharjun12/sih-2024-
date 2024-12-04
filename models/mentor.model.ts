@@ -288,7 +288,10 @@ const mentorSchema = new mongoose.Schema({
         public_id: String,
         secure_url: String
     }],
-
+    hourlyRate: {
+        type: Number,
+        default: 1000 // Default rate
+    },
 }, { timestamps: true });
 
 const Mentor = mongoose.models.Mentor || mongoose.model('Mentor', mentorSchema);

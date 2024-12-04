@@ -270,7 +270,7 @@ export default function ResearcherMeetingsPage() {
               onClick={handleMeetingRequest}
               disabled={!date || !selectedTime || !selectedMentor}
             >
-              Book Meeting (₹1000)
+              Book Meeting
             </Button>
           </CardContent>
         </Card>
