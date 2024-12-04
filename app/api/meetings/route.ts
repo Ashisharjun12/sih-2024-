@@ -5,11 +5,11 @@ import Wallet from "@/models/wallet.model";
 import { ensureWallet } from "@/lib/wallet";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-<<<<<<< HEAD
-import { addNotification } from "@/lib/notificationService";
-=======
+
+
+
 import Mentor from "@/models/mentor.model";
->>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
+
 
 export async function POST(request: Request) {
   try {
@@ -49,13 +49,9 @@ export async function POST(request: Request) {
     // Deduct amount from wallet
     const updatedWallet = await Wallet.findOneAndUpdate(
       { userId: session.user.id },
-<<<<<<< HEAD
+
       {
-        $inc: { balance: -1000 },
-=======
-      { 
         $inc: { balance: -meetingAmount },
->>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
         $push: {
           transactions: {
             type: 'debit',
@@ -70,11 +66,7 @@ export async function POST(request: Request) {
     // Populate mentor details
     await meeting.populate('mentorId', 'name email');
     
-    await addNotification({
-        name: meeting.mentorId.name,
-        message: "You have a new meeting request.",
-        role: session.user.role!,
-    }, meeting.mentorId);
+   
 
     return NextResponse.json({
       success: true,
