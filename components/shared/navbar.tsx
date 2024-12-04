@@ -28,7 +28,9 @@ import {
   Building,
   GraduationCap,
   PlusCircle,
+  Bell,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const roleApplications = [
   {
@@ -50,12 +52,6 @@ const roleApplications = [
     icon: Scale,
   },
   {
-    title: "Apply as Policy Maker",
-    description: "Join as policy maker",
-    href: "/forms/policy",
-    icon: FileText,
-  },
-  {
     title: "Apply as Funding Agency",
     description: "Register funding agency",
     href: "/forms/fundingAgency",
@@ -72,28 +68,64 @@ const roleApplications = [
 const roleRoutes = {
   admin: { path: "/admin", label: "Admin Panel", icon: Settings },
   startup: { path: "/startup", label: "Startup Panel", icon: Rocket },
-  researcher: { path: "/researcher", label: "Researcher Panel", icon: Microscope },
-  iprProfessional: { path: "/ipr-professional", label: "IPR Panel", icon: Scale },
+  researcher: {
+    path: "/researcher",
+    label: "Researcher Panel",
+    icon: Microscope,
+  },
+  iprProfessional: {
+    path: "/ipr-professional",
+    label: "IPR Panel",
+    icon: Scale,
+  },
   policyMaker: { path: "/policy-maker", label: "Policy Panel", icon: FileText },
-  fundingAgency: { path: "/funding-agency", label: "Funding Panel", icon: Banknote },
+  fundingAgency: {
+    path: "/funding-agency",
+    label: "Funding Panel",
+    icon: Banknote,
+  },
   mentor: { path: "/mentor", label: "Mentor Panel", icon: UserCog },
 };
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const [notifications, setNotifications] = useState([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
 
   const handleSignIn = async () => {
-    await signIn("google", { 
-      callbackUrl: session?.user?.role ? roleRoutes[session.user.role as keyof typeof roleRoutes]?.path : '/' 
+    await signIn("google", {
+      callbackUrl: session?.user?.role
+        ? roleRoutes[session.user.role as keyof typeof roleRoutes]?.path
+        : "/",
     });
   };
 
   const getRoleConfig = (role: string | undefined) => {
-    if (!role || role === 'user') return null;
+    if (!role || role === "user") return null;
     return roleRoutes[role as keyof typeof roleRoutes];
   };
 
   const roleConfig = getRoleConfig(session?.user?.role);
+
+  // Fetch notifications when the component mounts
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (session) {
+        try {
+          const response = await fetch(`/api/notifications`);
+          if (!response.ok) throw new Error("Failed to fetch notifications");
+          const data = await response.json();
+          setNotifications(data.notifications);
+        } catch (error) {
+          console.error("Error fetching notifications:", error);
+        } finally {
+          setIsLoadingNotifications(false);
+        }
+      }
+    };
+
+    fetchNotifications();
+  }, [session]);
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -104,15 +136,58 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-6">
-          <Link href="/explore" className="hover:text-primary flex items-center gap-2">
+          <Link
+            href="/explore"
+            className="hover:text-primary flex items-center gap-2"
+          >
             <Search className="h-4 w-4" />
             Explore
           </Link>
 
+          {/* Notifications Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="hover:text-primary flex items-center gap-2"
+              >
+                <Bell className="h-4 w-4" />
+                {notifications.length > 0 && (
+                  <span className="bg-red-500 text-white rounded-full px-1 text-xs">
+                    {notifications.length}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[220px]">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {isLoadingNotifications ? (
+                <div className="p-2 text-center">Loading...</div>
+              ) : notifications.length === 0 ? (
+                <div className="p-2 text-center">No notifications</div>
+              ) : (
+                notifications.map((notification) => (
+                  <DropdownMenuItem key={notification._id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{notification.name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {notification.message}
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Role Applications Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="hover:text-primary flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className="hover:text-primary flex items-center gap-2"
+              >
                 <PlusCircle className="h-4 w-4" />
                 Apply For Role
               </Button>
@@ -136,19 +211,22 @@ export default function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href="/researchers" className="hover:text-primary flex items-center gap-2">
+          <Link
+            href="/researchers"
+            className="hover:text-primary flex items-center gap-2"
+          >
             <GraduationCap className="h-4 w-4" />
             Researchers
           </Link>
 
-          {status === 'loading' ? (
+          {status === "loading" ? (
             <Avatar>
               <AvatarFallback>...</AvatarFallback>
             </Avatar>
           ) : session ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="focus:outline-none">
-                <motion.div 
+                <motion.div
                   className="h-10 w-10 rounded-full overflow-hidden border"
                   whileHover={{ scale: 1.05 }}
                 >
@@ -174,7 +252,7 @@ export default function Navbar() {
                 <div className="flex flex-col px-2 py-1.5">
                   <p className="font-medium">{session.user?.name}</p>
                   {roleConfig && (
-                    <Link 
+                    <Link
                       href={roleConfig.path}
                       className="text-xs text-primary hover:underline mt-1 font-medium flex items-center gap-2"
                     >
@@ -184,16 +262,16 @@ export default function Navbar() {
                   )}
                 </div>
                 <DropdownMenuSeparator />
-                
+
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
                     Profile Settings
                   </Link>
                 </DropdownMenuItem>
-                
-                <DropdownMenuItem 
-                  onClick={() => signOut({ callbackUrl: '/' })}
+
+                <DropdownMenuItem
+                  onClick={() => signOut({ callbackUrl: "/" })}
                   className="text-red-600 focus:text-red-600 flex items-center gap-2"
                 >
                   <LogOut className="h-4 w-4" />
@@ -211,4 +289,4 @@ export default function Navbar() {
       </div>
     </nav>
   );
-} 
+}

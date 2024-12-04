@@ -40,20 +40,34 @@ export default function StartupMessagesPage() {
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [isMobileUsersOpen, setIsMobileUsersOpen] = useState(false);
+  const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   useEffect(() => {
-    if (selectedUser) {
-      fetchMessages();
-      setupMessageStream();
-    }
-    return () => {
-      eventSource?.close();
-    };
-  }, [selectedUser]);
+    if (!selectedUser) return;
+
+    fetchMessages();
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/messages?receiverId=${selectedUser._id}&after=${lastMessageTimestamp}`);
+        const data = await res.json();
+        
+        if (data.success && data.messages.length > 0) {
+          setMessages(prevMessages => [...prevMessages, ...data.messages]);
+          const latestMessage = data.messages[data.messages.length - 1];
+          setLastMessageTimestamp(latestMessage.createdAt);
+        }
+      } catch (error) {
+        console.error('Error polling messages:', error);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [selectedUser, lastMessageTimestamp]);
 
   useEffect(() => {
     scrollToBottom();
@@ -116,6 +130,9 @@ export default function StartupMessagesPage() {
       const data = await res.json();
       if (data.success) {
         setMessages(data.messages);
+        if (data.messages.length > 0) {
+          setLastMessageTimestamp(data.messages[data.messages.length - 1].createdAt);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -141,8 +158,11 @@ export default function StartupMessagesPage() {
         }),
       });
 
+      const data = await res.json();
       if (res.ok) {
         setNewMessage('');
+        setMessages(prev => [...prev, data.message]);
+        setLastMessageTimestamp(data.message.createdAt);
       } else {
         throw new Error('Failed to send message');
       }

@@ -19,10 +19,6 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-<<<<<<< HEAD
-=======
-    console.log("ADMIN");
->>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
     await connectDB();
 
     // Find the form submission
@@ -43,21 +39,12 @@ export async function POST(
     // Update submission status
     submission.status = params.action === "approve" ? "approved" : "rejected";
     if (params.action === "reject") {
-<<<<<<< HEAD
       await addNotification({
         name: "Admin",
         message: "Your researcher application has been rejected.",
         role: session.user.role!,
       }, user._id);
-=======
 
-      // Send rejection email
-      await sendEmail({
-        to: user.email,
-        subject: "Researcher Application Status Update",
-        html: getRejectionEmailTemplate(user.name, "Researcher")
-      });
->>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
     }
 
     // If approving, create researcher profile and update user role
@@ -66,9 +53,9 @@ export async function POST(
         // Prepare researcher data with correct structure
         console.log("Files from submission:", submission.files);
 
-        
 
-        
+
+
 
         const researcherData = {
           userId: user._id,
@@ -115,8 +102,8 @@ export async function POST(
             preferredCollaboration: submission.formData.interests?.preferredCollaboration || "BOTH",
             willingToMentor: submission.formData.interests?.willingToMentor || false
           },
-          
-          documents:{
+
+          documents: {
             profilePicture: {
               public_id: submission.files?.profilePicture?.public_id || '',
               secure_url: submission.files?.profilePicture?.secure_url || '',
@@ -164,28 +151,7 @@ export async function POST(
       }
     }
 
-<<<<<<< HEAD
     return NextResponse.json({
-=======
-    // Create notification
-    const notification = {
-      title: params.action === "approve" ? "Application Approved" : "Application Rejected",
-      message: params.action === "approve"
-        ? "Your researcher application has been approved"
-        : `Your application was rejected. ${reason || 'Please contact support for more information.'}`,
-      type: params.action === "approve" ? "success" : "error",
-      createdAt: new Date()
-    };
-
-    // Add notification to user
-    if (!user.notifications) {
-      user.notifications = [];
-    }
-    user.notifications.push(notification);
-    await user.save();
-
-    return NextResponse.json({ 
->>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
       success: true,
       message: `Application ${params.action}d successfully`
     });

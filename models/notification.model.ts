@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema({
     },
     role: {
       type: String,
-      enum: ["startup", "researcher", "fundingAgency", "policyMaker", "iprProfessional", "mentor"],
+      enum: ["startup", "researcher", "fundingAgency", "policyMaker", "iprProfessional", "mentor", "admin"],
       required: true,
     },
   }, { timestamps: true });

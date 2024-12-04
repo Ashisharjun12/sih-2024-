@@ -40,7 +40,7 @@ export async function PATCH(
         userId: existingMeeting.userId,
         amount: existingMeeting.amount
       });
-      
+
       // Update user's wallet with refund
       const updatedWallet = await Wallet.findOneAndUpdate(
         { userId: existingMeeting.userId },
@@ -65,19 +65,12 @@ export async function PATCH(
         );
       }
 
-<<<<<<< HEAD
       await addNotification({
         name: existingMeeting.mentorId.name,
         message: "Your meeting has been rejected.",
         role: session.user.role!,
       }, existingMeeting.userId);
-=======
-      console.log("Refund processed successfully:", {
-        userId: existingMeeting.userId,
-        amount: existingMeeting.amount,
-        newBalance: updatedWallet.balance
-      });
->>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
+
     }
 
     // Update meeting status
@@ -102,8 +95,8 @@ export async function PATCH(
       if (meeting.userId.email) {
         const emailContent = data.action === 'approved'
           ? {
-              subject: 'Meeting Approved - Google Meet Link',
-              html: `
+            subject: 'Meeting Approved - Google Meet Link',
+            html: `
                 <h1>Your meeting has been approved!</h1>
                 <p>Hello ${meeting.userId.name},</p>
                 <p>Your meeting scheduled for ${new Date(meeting.date).toLocaleDateString()} 
@@ -111,10 +104,10 @@ export async function PATCH(
                 <p>Join the meeting using this link: <a href="${data.meetLink}">${data.meetLink}</a></p>
                 <p>Best regards,<br>${session.user.name}</p>
               `
-            }
+          }
           : {
-              subject: 'Meeting Rejected - Refund Processed',
-              html: `
+            subject: 'Meeting Rejected - Refund Processed',
+            html: `
                 <h1>Meeting Update</h1>
                 <p>Hello ${meeting.userId.name},</p>
                 <p>Your meeting scheduled for ${new Date(meeting.date).toLocaleDateString()} 
@@ -122,7 +115,7 @@ export async function PATCH(
                 <p>A refund of ₹${existingMeeting.amount} has been processed to your wallet.</p>
                 <p>Best regards,<br>${session.user.name}</p>
               `
-            };
+          };
 
         await sendEmail({
           to: meeting.userId.email,
@@ -137,15 +130,15 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       meeting,
-      message: data.action === 'rejected' 
-        ? `Meeting rejected and refund of ₹${existingMeeting.amount} processed` 
+      message: data.action === 'rejected'
+        ? `Meeting rejected and refund of ₹${existingMeeting.amount} processed`
         : 'Meeting updated successfully'
     });
 
   } catch (error) {
     console.error("Error updating meeting:", error);
     return NextResponse.json(
-      { 
+      {
         error: "Failed to update meeting",
         details: error instanceof Error ? error.message : "Unknown error"
       },
