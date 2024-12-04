@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+
+
 const researcherSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -95,6 +97,27 @@ const researcherSchema = new mongoose.Schema({
     },
     message: String
   }],
+
+  // Add documents field with proper schema
+  documents: {
+      profilePicture: {
+        public_id: { type: String, default: '' },
+        secure_url: { type: String, default: '' },
+        originalName: { type: String, default: '' }
+      },
+      cv: {
+        public_id: { type: String, default: '' },
+        secure_url: { type: String, default: '' },
+        originalName: { type: String, default: '' }
+      },
+      identityProof: {
+        public_id: { type: String, default: '' },
+        secure_url: { type: String, default: '' },
+        originalName: { type: String, default: '' }
+      
+    },
+    _id: false // Prevents MongoDB from creating _id for subdocuments
+  }
 }, { timestamps: true });
 
 const Researcher = mongoose.models.Researcher || mongoose.model("Researcher", researcherSchema);

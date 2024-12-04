@@ -52,6 +52,8 @@ export async function POST(request: Request) {
       submittedAt: new Date(),
     });
 
+
+
     console.log("Created researcher submission:", submission); // Debug log
 
     return NextResponse.json({ 

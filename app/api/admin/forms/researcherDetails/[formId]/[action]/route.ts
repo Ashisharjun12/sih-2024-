@@ -12,21 +12,24 @@ export async function POST(
   { params }: { params: { formId: string; action: "approve" | "reject" } }
 ) {
   try {
+    console.log("CALEED")
     const session = await getServerSession(authOptions);
     
     if (session?.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { reason } = await request.json();
-
+    console.log("ADMIN");
     await connectDB();
 
     // Find the form submission
     const submission = await FormSubmission.findById(params.formId);
     if (!submission) {
+      console.log("FORM")
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
+
+    console.log(" SUBMISSION FIND LOG ", submission);
 
     // Find the user
     const user = await User.findOne({ email: submission.userEmail });
@@ -37,8 +40,6 @@ export async function POST(
     // Update submission status
     submission.status = params.action === "approve" ? "approved" : "rejected";
     if (params.action === "reject") {
-      submission.rejectionReason = reason;
-      await submission.save();
 
       // Send rejection email
       await sendEmail({
@@ -52,17 +53,23 @@ export async function POST(
     if (params.action === "approve") {
       try {
         // Prepare researcher data with correct structure
+        console.log("Files from submission:", submission.files);
+
+        
+
+        
+
         const researcherData = {
           userId: user._id,
           personalInfo: {
             name: submission.formData.personalInfo.name,
             email: {
               address: user.email,
-              verified: true
+              verified: false
             },
             phone: {
               number: submission.formData.personalInfo.phone.number,
-              verified: submission.formData.personalInfo.phone.verified || false
+              verified: false
             },
             uniqueId: {
               type: submission.formData.personalInfo.uniqueId.type,
@@ -70,7 +77,13 @@ export async function POST(
             },
             fieldOfResearch: submission.formData.personalInfo.fieldOfResearch
           },
-          academicInfo: submission.formData.academicInfo,
+          academicInfo: {
+            institution: submission.formData.academicInfo.institution,
+            position: submission.formData.academicInfo.position,
+            department: submission.formData.academicInfo.department,
+            highestQualification: submission.formData.academicInfo.highestQualification,
+            yearsOfExperience: submission.formData.academicInfo.yearsOfExperience
+          },
           researchDetails: {
             researchTopic: submission.formData.researchDetails.researchTopic,
             expertiseAreas: submission.formData.researchDetails.expertiseAreas || [],
@@ -78,19 +91,44 @@ export async function POST(
           },
           professionalCredentials: {
             publicationNumber: submission.formData.professionalCredentials.publicationNumber || 0,
-            researchIds: submission.formData.professionalCredentials.researchIds || {},
+            researchIds: {
+              orcid: submission.formData.professionalCredentials.researchIds?.orcid || '',
+              googleScholar: submission.formData.professionalCredentials.researchIds?.googleScholar || '',
+              researchGate: submission.formData.professionalCredentials.researchIds?.researchGate || ''
+            },
             publications: submission.formData.professionalCredentials.publications || [],
             fundingAgency: submission.formData.professionalCredentials.fundingAgency || '',
             achievements: submission.formData.professionalCredentials.achievements || []
           },
-          interests: submission.formData.interests || {
-            preferredCollaboration: "BOTH",
-            willingToMentor: false
+          interests: {
+            preferredCollaboration: submission.formData.interests?.preferredCollaboration || "BOTH",
+            willingToMentor: submission.formData.interests?.willingToMentor || false
+          },
+          
+          documents:{
+            profilePicture: {
+              public_id: submission.files?.profilePicture?.public_id || '',
+              secure_url: submission.files?.profilePicture?.secure_url || '',
+              originalName: submission.files?.profilePicture?.originalName || '',
+            },
+            cv: {
+              public_id: submission.files?.cv?.public_id || '',
+              secure_url: submission.files?.cv?.secure_url || '',
+              originalName: submission.files?.cv?.originalName || '',
+            },
+            identityProof: {
+              public_id: submission.files?.identityProof?.public_id || '',
+              secure_url: submission.files?.identityProof?.secure_url || '',
+              originalName: submission.files?.identityProof?.originalName || '',
+            }
           }
         };
 
-        // Create researcher profile
+        console.log("Final researcher data:", researcherData);
+
+        // Create researcher profile  
         const researcherProfile = await Researcher.create(researcherData);
+        console.log("Created researcher profile with documents:", researcherProfile);
 
         // Update user role and link researcher profile
         user.role = "researcher";
@@ -127,7 +165,9 @@ export async function POST(
     };
 
     // Add notification to user
-    user.notifications = user.notifications || [];
+    if (!user.notifications) {
+      user.notifications = [];
+    }
     user.notifications.push(notification);
     await user.save();
 
