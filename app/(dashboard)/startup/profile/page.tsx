@@ -18,7 +18,7 @@ import {
   Shield,
   Loader2,
   Edit,
-  Save
+  Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 const businessModelOptions = [
   { value: "B2B", label: "Business to Business" },
@@ -56,6 +57,7 @@ export default function StartupProfile() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [updatedProfile, setUpdatedProfile] = useState<any>(null);
+  const [isActivelyLookingForFunds, setIsActivelyLookingForFunds] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
@@ -65,7 +67,9 @@ export default function StartupProfile() {
 
   useEffect(() => {
     if (profile) {
+      console.log(profile)
       setUpdatedProfile(profile);
+      setIsActivelyLookingForFunds(profile.supportAndNetworking.isActivelyFundraising || false);
     }
   }, [profile]);
 
@@ -78,7 +82,7 @@ export default function StartupProfile() {
         throw new Error(data.error || "Failed to fetch profile");
       }
 
-      setProfile(data.profile.formData);
+      setProfile(data.profile);
     } catch (error) {
       console.error("Profile fetch error:", error);
       toast({
@@ -149,6 +153,34 @@ export default function StartupProfile() {
     }));
   };
 
+  const toggleActivelyLookingForFunds = async () => {
+    try {
+      const response = await fetch("/api/startup/isFundRaising", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isActivelyLookingForFunds: !isActivelyLookingForFunds }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update fundraising status");
+      }
+
+      setIsActivelyLookingForFunds((prev) => !prev);
+      toast({
+        title: "Success",
+        description: `You are now ${!isActivelyLookingForFunds ? "actively looking for funds" : "not looking for funds"}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update fundraising status",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -209,6 +241,15 @@ export default function StartupProfile() {
             )}
           </Button>
         </motion.div>
+
+        {/* Toggle for Actively Looking for Funds */}
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-semibold">Actively Looking for Funds</span>
+          <Switch
+            checked={isActivelyLookingForFunds}
+            onCheckedChange={toggleActivelyLookingForFunds}
+          />
+        </div>
 
         {/* Profile Sections */}
         <motion.div

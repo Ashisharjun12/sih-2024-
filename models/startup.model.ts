@@ -39,15 +39,85 @@ const startupSchema = new mongoose.Schema({
   },
   startupDetails: {
     startupName: { type: String, required: true },
-    industry: { type: String, required: true },
-    stage: { type: String, required: true },
+    industry: {
+      type: [String],
+      enum: [
+        'Advertising',
+        'Aeronautics Aerospace & Defence',
+        'Agriculture',
+        'AI',
+        'Airport Operations',
+        'Analytics',
+        'Animation',
+        'AR VR (Augmented + Virtual Reality)',
+        'Architecture Interior Design',
+        'Art & Photography',
+        'Automotive',
+        'Biotechnology',
+        'Chemicals',
+        'Computer Vision',
+        'Construction',
+        'Dating Matrimonial',
+        'Design',
+        'Education',
+        'Enterprise Software',
+        'Events',
+        'Fashion',
+        'Finance Technology',
+        'Food & Beverages',
+        'Green Technology',
+        'Healthcare & Lifesciences',
+        'House-Hold Services',
+        'Human Resources',
+        'Indic Language Startups',
+        'Internet of Things',
+        'IT Services',
+        'Logistics',
+        'Marketing',
+        'Media & Entertainment',
+        'Nanotechnology',
+        'Non- Renewable Energy',
+        'Other Specialty Retailers',
+        'Others',
+        'Passenger Experience',
+        'Pets & Animals',
+        'Professional & Commercial Services',
+        'Real Estate',
+        'Renewable Energy',
+        'Retail',
+        'Robotics',
+        'Safety',
+        'Security Solutions',
+        'Social Impact',
+        'Social Network',
+        'Sports',
+        'Technology Hardware',
+        'Telecommunication & Networking',
+        'Textiles & Apparel',
+        'Toys and Games',
+        'Transportation & Storage',
+        'Travel & Tourism',
+        'Waste Management'
+      ],
+      required: true
+    },
+    stage: {
+      type: String,
+      enum: [
+        'Ideation',
+        'Validation',
+        'Scaling',
+        'Expansion'
+      ],
+      required: true
+    },
     registrationNumber: { type: String, required: true },
     incorporationDate: {
       type: Date,
       required: true,
       default: Date.now
     },
-    businessModel: { type: String, required: true },
+    businessModel: { type: String, enum: ['B2B', 'B2C', 'B2B2C', 'Other'], required: true },
     revenueModel: {
       type: String,
       enum: [
@@ -66,15 +136,9 @@ const startupSchema = new mongoose.Schema({
     },
     founders: [founderSchema],
     equitySplits: [equitySplitSchema],
-    directors: [directorSchema],
-    ownershipPercentage: { type: Number, required: true },
   },
   businessActivities: {
     missionAndVision: { type: String, required: true },
-    intellectualProperty: [{
-      type: { type: String, required: true },
-      details: { type: String, required: true },
-    }],
   },
   legalAndCompliance: {
     gstin: { type: String },
@@ -98,40 +162,8 @@ const startupSchema = new mongoose.Schema({
       number: String,
       validUntil: Date
     }],
-    certifications: [{
-      type: {
-        type: String,
-        enum: [
-          "ISO_9001",
-          "ISO_27001",
-          "CE_Mark",
-          "GMP",
-          "HACCP",
-          "Halal",
-          "CMMI",
-          "BIS",
-          "ROHS",
-          "Other"
-        ]
-      },
-      certificationNumber: String,
-      issuingAuthority: String,
-      validUntil: Date,
-      certificationDetails: String
-    }],
-    auditorDetails: {
-      name: String,
-      firm: String,
-      contact: String,
-      email: String,
-      registrationNumber: String
-    }
-  },
-  supportAndNetworking: {
-    supportRequested: [String],
-    mentorshipPrograms: String,
-    potentialInvestors: String,
-  },
+  },    
+  isActivelyFundraising: { type: Boolean, default: false },
   additionalInfo: {
     website: String,
     socialMedia: {
@@ -144,22 +176,18 @@ const startupSchema = new mongoose.Schema({
       secure_url: String,
     },
     identityProof: {
-      filename:String,
       public_id: String,
       secure_url: String,
     },
     businessPlan: {
-      filename:String,  
       public_id: String,
       secure_url: String,
     },
     financialProjections: {
-      filename:String,
       public_id: String,
       secure_url: String,
     },
     incorporationCertificate: {
-      filename:String,
       public_id: String,
       secure_url: String,
     },

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import FormSubmission from "@/models/form-submission.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import Startup from "@/models/startup.model";
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -15,22 +15,20 @@ export async function GET() {
     await connectDB();
 
     // Find the startup's form submission
-    const profile = await FormSubmission.findOne({
-      userEmail: session.user.email,
-      formType: "startup",
-      status: "approved"
+    const profile = await Startup.findOne({
+      userId: session.user.id
     });
 
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-
+    console.log(profile);
     return NextResponse.json({ profile });
 
   } catch (error) {
     console.error("Profile fetch error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch profile" }, 
+      { error: "Failed to fetch profile" },
       { status: 500 }
     );
   }
@@ -39,7 +37,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -67,7 +65,7 @@ export async function PUT(request: Request) {
   } catch (error) {
     console.error("Profile update error:", error);
     return NextResponse.json(
-      { error: "Failed to update profile" }, 
+      { error: "Failed to update profile" },
       { status: 500 }
     );
   }
