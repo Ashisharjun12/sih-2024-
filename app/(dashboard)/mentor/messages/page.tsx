@@ -43,17 +43,13 @@ export default function MentorMessagesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [activeTab, setActiveTab] = useState<string>('all');
   const [isMobileUsersOpen, setIsMobileUsersOpen] = useState(false);
+  const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  const generateChatId = useCallback((userId1: string, userId2: string) => {
-    return [userId1, userId2].sort().join('_');
-  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -82,6 +78,9 @@ export default function MentorMessagesPage() {
       const data = await res.json();
       if (data.success) {
         setMessages(data.messages);
+        if (data.messages.length > 0) {
+          setLastMessageTimestamp(data.messages[data.messages.length - 1].createdAt);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -93,41 +92,32 @@ export default function MentorMessagesPage() {
     }
   };
 
-  const setupMessageStream = () => {
-    if (!selectedUser || !session?.user) return;
-
-    const chatId = generateChatId(session.user.id, selectedUser._id);
-    const sse = new EventSource(`/api/messages/stream?chatId=${chatId}`);
-
-    sse.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.success && data.message) {
-        setMessages(prev => [...prev, data.message]);
-        scrollToBottom();
-      }
-    };
-
-    sse.onerror = (error) => {
-      console.error('SSE error:', error);
-      sse.close();
-    };
-
-    setEventSource(sse);
-  };
-
   useEffect(() => {
     fetchUsers();
   }, []);
 
   useEffect(() => {
-    if (selectedUser) {
-      fetchMessages();
-      setupMessageStream();
-    }
-    return () => {
-      eventSource?.close();
-    };
-  }, [selectedUser]);
+    if (!selectedUser) return;
+
+    fetchMessages();
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/messages?receiverId=${selectedUser._id}&after=${lastMessageTimestamp}`);
+        const data = await res.json();
+        
+        if (data.success && data.messages.length > 0) {
+          setMessages(prevMessages => [...prevMessages, ...data.messages]);
+          const latestMessage = data.messages[data.messages.length - 1];
+          setLastMessageTimestamp(latestMessage.createdAt);
+        }
+      } catch (error) {
+        console.error('Error polling messages:', error);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [selectedUser, lastMessageTimestamp]);
 
   useEffect(() => {
     scrollToBottom();
@@ -147,8 +137,11 @@ export default function MentorMessagesPage() {
         }),
       });
 
+      const data = await res.json();
       if (res.ok) {
         setNewMessage('');
+        setMessages(prev => [...prev, data.message]);
+        setLastMessageTimestamp(data.message.createdAt);
       } else {
         throw new Error('Failed to send message');
       }

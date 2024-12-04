@@ -51,6 +51,7 @@ export default function ResearcherMessagesPage() {
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [isMobileUsersOpen, setIsMobileUsersOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -65,6 +66,32 @@ export default function ResearcherMessagesPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    // Initial fetch
+    fetchMessages();
+
+    // Set up polling interval
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/messages?receiverId=${selectedUser._id}&after=${lastMessageTimestamp}`);
+        const data = await res.json();
+        
+        if (data.success && data.messages.length > 0) {
+          setMessages(prevMessages => [...prevMessages, ...data.messages]);
+          // Update last message timestamp
+          const latestMessage = data.messages[data.messages.length - 1];
+          setLastMessageTimestamp(latestMessage.createdAt);
+        }
+      } catch (error) {
+        console.error('Error polling messages:', error);
+      }
+    }, 500); // Poll every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedUser, lastMessageTimestamp]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,6 +124,10 @@ export default function ResearcherMessagesPage() {
       const data = await res.json();
       if (data.success) {
         setMessages(data.messages);
+        // Set initial last message timestamp
+        if (data.messages.length > 0) {
+          setLastMessageTimestamp(data.messages[data.messages.length - 1].createdAt);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -122,8 +153,13 @@ export default function ResearcherMessagesPage() {
         }),
       });
 
+      const data = await res.json();
       if (res.ok) {
         setNewMessage('');
+        // Add new message to the list immediately
+        setMessages(prev => [...prev, data.message]);
+        // Update last message timestamp
+        setLastMessageTimestamp(data.message.createdAt);
       } else {
         throw new Error('Failed to send message');
       }

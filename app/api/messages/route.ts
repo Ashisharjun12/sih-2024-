@@ -26,6 +26,11 @@ const notifyClients = async (chatId: string, message: any) => {
   });
 };
 
+interface MessageQuery {
+  chatId: string;
+  createdAt?: { $gt: Date };
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -73,6 +78,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const receiverId = searchParams.get('receiverId');
+    const after = searchParams.get('after');
 
     if (!receiverId) {
       return NextResponse.json({ error: "Receiver ID required" }, { status: 400 });
@@ -82,7 +88,13 @@ export async function GET(request: Request) {
 
     const chatId = generateChatId(session.user.id, receiverId);
 
-    const messages = await Message.find({ chatId })
+    // Build query based on timestamp
+    const query: MessageQuery = { chatId };
+    if (after) {
+      query.createdAt = { $gt: new Date(after) };
+    }
+
+    const messages = await Message.find(query)
       .sort({ createdAt: 1 })
       .populate('sender', 'name image')
       .populate('receiver', 'name image');
