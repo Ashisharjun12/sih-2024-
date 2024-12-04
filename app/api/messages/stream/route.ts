@@ -10,45 +10,67 @@ declare global {
 }
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return new Response('Unauthorized', { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const chatId = searchParams.get('chatId');
+    const lastTimestamp = searchParams.get('after');
+
+    if (!chatId) {
+      return new Response('Chat ID is required', { status: 400 });
+    }
+
+    await connectDB();
+
+    // Set up SSE stream
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+    const encoder = new TextEncoder();
+
+    // Initialize global connections
+    if (!global.connections) {
+      global.connections = new Map();
+    }
+    
+    if (!global.connections.has(chatId)) {
+      global.connections.set(chatId, new Set());
+    }
+    
+    // Add this connection
+    global.connections.get(chatId)?.add(writer);
+
+    // Send initial ping
+    writer.write(encoder.encode(`: ping\n\n`));
+
+    // Set up interval to send pings to keep connection alive
+    const pingInterval = setInterval(() => {
+      writer.write(encoder.encode(`: ping\n\n`))
+        .catch(() => clearInterval(pingInterval));
+    }, 30000);
+
+    // Clean up on disconnect
+    request.signal.addEventListener('abort', () => {
+      clearInterval(pingInterval);
+      global.connections.get(chatId)?.delete(writer);
+      if (global.connections.get(chatId)?.size === 0) {
+        global.connections.delete(chatId);
+      }
+      writer.close();
+    });
+
+    return new Response(stream.readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch (error) {
+    console.error('Stream error:', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
-
-  const { searchParams } = new URL(request.url);
-  const chatId = searchParams.get('chatId');
-
-  if (!chatId) {
-    return new Response('Chat ID is required', { status: 400 });
-  }
-
-  const stream = new TransformStream();
-  const writer = stream.writable.getWriter();
-
-  // Initialize global connections if not exists
-  if (!global.connections) {
-    global.connections = new Map();
-  }
-  
-  // Initialize set for this chat if not exists
-  if (!global.connections.has(chatId)) {
-    global.connections.set(chatId, new Set());
-  }
-  
-  // Add this connection to the set
-  global.connections.get(chatId)?.add(writer);
-
-  // Clean up on disconnect
-  request.signal.addEventListener('abort', () => {
-    global.connections.get(chatId)?.delete(writer);
-    writer.close();
-  });
-
-  return new Response(stream.readable, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
 } 
