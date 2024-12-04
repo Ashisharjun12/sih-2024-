@@ -17,10 +17,14 @@ export async function GET() {
         await connectDB();
 
         const policies = await Policy.find();
-
+        const filteredPolicies = policies.map(policy => ({
+            ...policy.toObject(), // Convert to plain object
+            reviews: policy.reviews.filter((review: { userId: string }) => review.userId.toString() === session.user.id) // Filter reviews
+        }));
+        console.log(filteredPolicies);
         return NextResponse.json({
             success: true,
-            policies
+            policies: filteredPolicies
         });
 
     } catch (error) {

@@ -6,6 +6,7 @@ import FormSubmission from "@/models/form-submission.model";
 import Mentor from "@/models/mentor.model";
 import User from "@/models/user.model";
 import { sendEmail } from "@/lib/utils/email";
+import { addNotification } from "@/lib/notificationService";
 
 interface RouteParams {
     formId: string;
@@ -62,12 +63,17 @@ export async function POST(
 
             // Update user role
             user.role = "mentor";
-            user.profileComplete = true;
             await user.save();
 
             // Update form submission status
             formSubmission.status = "approved";
             await formSubmission.save();
+
+            await addNotification({
+                name: "Admin",
+                message: "Your mentor application has been approved.",
+                role: session.user.role!,
+            }, user._id);
 
             // Send approval email
             await sendEmail({
@@ -86,23 +92,16 @@ export async function POST(
 
         } else if (action === "reject") {
             // Get rejection reason from request body
-            const { reason } = await req.json();
 
             // Update form submission status
             formSubmission.status = "rejected";
             await formSubmission.save();
 
-            // Send rejection email
-            await sendEmail({
-                to: user.email,
-                subject: "Mentor Application Status",
-                html: `
-                    <h1>Application Update</h1>
-                    <p>We regret to inform you that your mentor application has been rejected.</p>
-                    ${reason ? `<p>Reason: ${reason}</p>` : ''}
-                    <p>You can submit a new application after addressing the concerns.</p>
-                `
-            });
+            await addNotification({
+                name: "Admin",
+                message: "Your mentor application has been rejected.",
+                role: session.user.role!,
+            }, user._id);
 
             return NextResponse.json({
                 message: "Mentor application rejected successfully"

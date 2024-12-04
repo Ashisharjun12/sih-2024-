@@ -5,6 +5,7 @@ import Wallet from "@/models/wallet.model";
 import { ensureWallet } from "@/lib/wallet";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { addNotification } from "@/lib/notificationService";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 
     // Ensure wallet exists and get balance
     const wallet = await ensureWallet(session.user.id);
-    
+
     if (wallet.balance < 1000) {
       return NextResponse.json(
         { error: "Insufficient wallet balance" },
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     // Deduct amount from wallet
     const updatedWallet = await Wallet.findOneAndUpdate(
       { userId: session.user.id },
-      { 
+      {
         $inc: { balance: -1000 },
         $push: {
           transactions: {
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
 
     // Populate mentor details
     await meeting.populate('mentorId', 'name email');
+    
+    await addNotification({
+        name: meeting.mentorId.name,
+        message: "You have a new meeting request.",
+        role: session.user.role!,
+    }, meeting.mentorId);
 
     return NextResponse.json({
       success: true,
@@ -71,7 +78,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {

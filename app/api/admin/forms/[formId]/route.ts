@@ -9,7 +9,6 @@ export async function GET(
     { params }: { params: { formId: string } }
 ) {
     try {
-        console.log("Received form ID:", params.formId);
         const session = await getServerSession(authOptions);
 
         if (!session?.user || session.user.role !== "admin") {
@@ -25,7 +24,6 @@ export async function GET(
 
         
         const submission = await FormSubmission.findById(params.formId);
-        console.log("Found submission:", submission);
 
         if (!submission) {
             return NextResponse.json(

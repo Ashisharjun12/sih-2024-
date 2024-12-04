@@ -5,7 +5,7 @@ import User from "@/models/user.model";
 import Researcher from "@/models/researcher.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { sendEmail, getApprovalEmailTemplate, getRejectionEmailTemplate } from "@/lib/utils/email";
+import { addNotification } from "@/lib/notificationService";
 
 export async function POST(
   request: Request,
@@ -13,12 +13,10 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (session?.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const { reason } = await request.json();
 
     await connectDB();
 
@@ -37,15 +35,11 @@ export async function POST(
     // Update submission status
     submission.status = params.action === "approve" ? "approved" : "rejected";
     if (params.action === "reject") {
-      submission.rejectionReason = reason;
-      await submission.save();
-
-      // Send rejection email
-      await sendEmail({
-        to: user.email,
-        subject: "Researcher Application Status Update",
-        html: getRejectionEmailTemplate(user.name, "Researcher")
-      });
+      await addNotification({
+        name: "Admin",
+        message: "Your researcher application has been rejected.",
+        role: session.user.role!,
+      }, user._id);
     }
 
     // If approving, create researcher profile and update user role
@@ -101,37 +95,21 @@ export async function POST(
         submission.researcherProfile = researcherProfile._id;
         await submission.save();
 
-        // Send approval email
-        await sendEmail({
-          to: user.email,
-          subject: "Researcher Application Approved",
-          html: getApprovalEmailTemplate(user.name, "Researcher")
-        });
+        await addNotification({
+          name: "Admin",
+          message: "Your researcher application has been approved.",
+          role: session.user.role!,
+        }, user._id);
 
       } catch (error) {
         console.error("Error creating researcher profile:", error);
-        return NextResponse.json({ 
-          error: "Failed to create researcher profile" 
+        return NextResponse.json({
+          error: "Failed to create researcher profile"
         }, { status: 500 });
       }
     }
 
-    // Create notification
-    const notification = {
-      title: params.action === "approve" ? "Application Approved" : "Application Rejected",
-      message: params.action === "approve"
-        ? "Your researcher application has been approved"
-        : `Your application was rejected. ${reason || 'Please contact support for more information.'}`,
-      type: params.action === "approve" ? "success" : "error",
-      createdAt: new Date()
-    };
-
-    // Add notification to user
-    user.notifications = user.notifications || [];
-    user.notifications.push(notification);
-    await user.save();
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: `Application ${params.action}d successfully`
     });
@@ -139,7 +117,7 @@ export async function POST(
   } catch (error) {
     console.error("Form action error:", error);
     return NextResponse.json(
-      { error: "Failed to process application" }, 
+      { error: "Failed to process application" },
       { status: 500 }
     );
   }

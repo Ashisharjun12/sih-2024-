@@ -22,6 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+
         // Connect to database
         await connectDB();
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             iprProfessional: user._id,
             message: message || ""
         };
-        
+
         ipr.status = status;
         ipr.transactionHash = "WAITING";
         await ipr.save();

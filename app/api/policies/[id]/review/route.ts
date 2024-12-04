@@ -22,7 +22,7 @@ export async function POST(
         if (session?.user?.role === "startup" || session?.user?.role === "researcher" || session?.user?.role === "fundingAgency") {
             await connectDB();
 
-            const { message, type } = await req.json();
+            const { message } = await req.json();
             if (!message?.trim()) {
                 return NextResponse.json(
                     { error: "Review message is required" },
@@ -30,10 +30,10 @@ export async function POST(
                 );
             }
             let owner;
-            if (type === "startup") {
+            if (session?.user?.role === "startup") {
                 // Get startup details
                 owner = await Startup.findOne({ userId: session.user.id })
-                    .select('_id startupDetails.startupName');
+                    .select('_id startupDetails.startupName userId');
 
                 if (!owner) {
                     return NextResponse.json(
@@ -42,9 +42,9 @@ export async function POST(
                     );
                 }
             }
-            else if (type === "researcher") {
+            else if (session?.user?.role === "researcher") {
                 owner = await Researcher.findOne({ userId: session.user.id })
-                    .select('_id personalInfo.name');
+                    .select('_id personalInfo.name userId');
 
                 if (!owner) {
                     return NextResponse.json(
@@ -55,7 +55,7 @@ export async function POST(
             }
             else {
                 owner = await FundingAgency.findOne({ userId: session.user.id })
-                    .select('_id agencyDetails.name');
+                    .select('_id agencyDetails.name userId');
 
                 if (!owner) {
                     return NextResponse.json(
@@ -85,10 +85,12 @@ export async function POST(
                     { status: 400 }
                 );
             }
+            const type = session?.user?.role;
             const reviewTYPE = type.charAt(0).toUpperCase() + type.slice(1);
 
             // Add review
             await policy.addReview({
+                userId: owner.userId,
                 reviewer: owner._id,
                 reviewerType: reviewTYPE,
                 message: message.trim(),
@@ -107,108 +109,6 @@ export async function POST(
         }
     } catch (error) {
         console.error("Error submitting review:", error);
-        return NextResponse.json(
-            { error: "Internal Server Error" },
-            { status: 500 }
-        );
-    }
-}
-export async function PUT(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-        if (session?.user?.role === "startup" || session?.user?.role === "researcher" || session?.user?.role === "fundingAgency") {
-
-            await connectDB();
-            const { message, type } = await req.json();
-            if (!message?.trim()) {
-                return NextResponse.json(
-                    { error: "Review message is required" },
-                    { status: 400 }
-                );
-            }
-            let owner;
-
-            if (type === "startup") {
-                // Get startup details
-                owner = await Startup.findOne({ userId: session.user.id })
-                    .select('_id');
-
-                if (!owner) {
-                    return NextResponse.json(
-                        { error: "Startup profile not found" },
-                        { status: 404 }
-                    );
-                }
-            }
-            else if (type === "researcher") {
-                owner = Researcher.findOne({ userId: session.user.id })
-                    .select('_id');
-
-                if (!owner) {
-                    return NextResponse.json(
-                        { error: "Researcher profile not found" },
-                        { status: 404 }
-                    );
-                }
-            }
-            else {
-                owner = await FundingAgency.findOne({ userId: session.user.id })
-                    .select('_id agencyDetails.name');
-
-                if (!owner) {
-                    return NextResponse.json(
-                        { error: "Funding agency profile not found" },
-                        { status: 404 }
-                    );
-                }
-            }
-
-            // Find policy and update review
-            const policy = await Policy.findById(params.id);
-            if (!policy) {
-                return NextResponse.json(
-                    { error: "Policy not found" },
-                    { status: 404 }
-                );
-            }
-
-            // Find and update the review
-            const reviewIndex = policy.reviews.findIndex(
-                review => review.reviewer.toString() === owner._id.toString()
-            );
-
-            if (reviewIndex === -1) {
-                return NextResponse.json(
-                    { error: "Review not found" },
-                    { status: 404 }
-                );
-            }
-
-            policy.reviews[reviewIndex].message = message.trim();
-            await policy.save();
-
-            return NextResponse.json({
-                success: true,
-                message: "Review updated successfully"
-            });
-        } else {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-    } catch (error) {
-        console.error("Error updating review:", error);
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }

@@ -4,6 +4,7 @@ import FormSubmission from "@/models/form-submission.model";
 import User from "@/models/user.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { addNotification } from "@/lib/notificationService";
 
 export async function PATCH(
   req: Request,
@@ -51,12 +52,28 @@ export async function PATCH(
       }
 
       // Update user role
-      await User.findOneAndUpdate(
+      const user = await User.findOneAndUpdate(
         { email: submission.userEmail },
         { role: newRole }
       );
+
+      await addNotification({
+        name: "Admin",
+        message: `Your form has been approved for ${submission.formType}.`,
+        role: session.user.role,
+      }, user._id);
+
+
     } else if (action === "reject") {
+
+      const user = await User.findOne({ email: submission.userEmail });
       submission.status = "rejected";
+      await addNotification({
+        name: "Admin",
+        message: `Your form has been rejected.`,
+        role: session.user.role,
+      }, user._id);
+
     } else {
       return NextResponse.json(
         { error: "Invalid action" },
@@ -66,9 +83,9 @@ export async function PATCH(
 
     await submission.save();
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: `Form ${action}d successfully`,
-      submission 
+      submission
     });
 
   } catch (error) {

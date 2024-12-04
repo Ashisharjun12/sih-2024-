@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/user.model";
 import PolicyMaker from "@/models/policy-maker.model";
 import { Types } from "mongoose";
+import { addNotification } from "@/lib/notificationService";
 
 export async function PUT(
     req: NextRequest,
@@ -32,7 +33,7 @@ export async function PUT(
 
         // Start a session for transaction
         const dbSession = await connectDB().then(m => m.startSession());
-        
+
         try {
             await dbSession.withTransaction(async () => {
                 // Find the user
@@ -59,6 +60,12 @@ export async function PUT(
                         email: user.email
                     }], { session: dbSession });
 
+                    await addNotification({
+                        name: "Admin",
+                        message: `You have been added as a policy maker.`,
+                        role: session.user.role!,
+                    }, user._id);
+
                 } else if (role === "user") {
                     // Check if user is a policy maker
                     const policyMaker = await PolicyMaker.findOne({ userId: user._id });
@@ -75,6 +82,13 @@ export async function PUT(
                         { userId: user._id },
                         { session: dbSession }
                     );
+
+                    await addNotification({
+                        name: "Admin",
+                        message: "Your policy maker role has been removed.",
+                        role: session.user.role!,
+                    }, user._id);
+
                 } else {
                     throw new Error("Invalid role");
                 }
@@ -94,7 +108,7 @@ export async function PUT(
     } catch (error) {
         console.error("Error updating user role:", error);
         return NextResponse.json(
-            { 
+            {
                 error: error instanceof Error ? error.message : "Internal Server Error"
             },
             { status: 500 }

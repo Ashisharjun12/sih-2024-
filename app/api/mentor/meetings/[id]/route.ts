@@ -5,6 +5,7 @@ import Wallet from "@/models/wallet.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { sendEmail } from "@/lib/mail";
+import { addNotification } from "@/lib/notificationService";
 
 export async function PATCH(
   request: Request,
@@ -25,7 +26,7 @@ export async function PATCH(
     const existingMeeting = await Meeting.findOne({
       _id: params.id,
       mentorId: session.user.id
-    });
+    }).populate('userId mentorId', 'name email');
 
     if (!existingMeeting) {
       return NextResponse.json(
@@ -62,10 +63,11 @@ export async function PATCH(
         );
       }
 
-      console.log("Refund processed successfully:", {
-        userId: existingMeeting.userId,
-        newBalance: updatedWallet.balance
-      });
+      await addNotification({
+        name: existingMeeting.mentorId.name,
+        message: "Your meeting has been rejected.",
+        role: session.user.role!,
+      }, existingMeeting.userId);
     }
 
     // Update meeting status

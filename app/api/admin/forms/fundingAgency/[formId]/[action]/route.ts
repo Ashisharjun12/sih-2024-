@@ -5,6 +5,7 @@ import User from "@/models/user.model";
 import FundingAgency from "@/models/funding-agency.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { addNotification } from "@/lib/notificationService";
 
 export async function POST(
   request: Request,
@@ -12,12 +13,10 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (session?.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const { reason } = await request.json();
 
     await connectDB();
 
@@ -36,15 +35,16 @@ export async function POST(
     // Update submission status
     submission.status = params.action === "approve" ? "approved" : "rejected";
     if (params.action === "reject") {
-      submission.rejectionReason = reason;
-      await submission.save();
+      await addNotification({
+        name: "Admin",
+        message: "Your funding agency application has been rejected.",
+        role: session.user.role!,
+      }, user._id);
     }
 
     // If approving, create funding agency profile and update user role
     if (params.action === "approve") {
       try {
-        console.log("Form Submission Data:", JSON.stringify(submission, null, 2));
-
         // Prepare funding agency data
         const fundingAgencyData = {
           userId: user._id,
@@ -71,43 +71,31 @@ export async function POST(
           status: "Active",
         };
 
-        console.log("Processed Funding Agency Data:", JSON.stringify(fundingAgencyData, null, 2));
-
         // Create funding agency profile and update user
         const fundingAgencyProfile = await FundingAgency.create(fundingAgencyData);
-        
+
         user.role = "fundingAgency";
         user.fundingAgencyProfile = fundingAgencyProfile._id;
         await user.save();
 
         submission.fundingAgencyProfile = fundingAgencyProfile._id;
         await submission.save();
+        await addNotification({
+          name: "Admin",
+          message: "Your funding agency application has been approved.",
+          role: session.user.role!,
+        }, user._id);
 
       } catch (error) {
         console.error("Error creating funding agency profile:", error);
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: "Failed to create funding agency profile",
           details: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
       }
     }
 
-    // Create notification
-    const notification = {
-      title: params.action === "approve" ? "Application Approved" : "Application Rejected",
-      message: params.action === "approve"
-        ? `Your funding agency application has been approved. You can now access the funding agency dashboard.`
-        : `Your funding agency application was rejected. ${reason || 'Please try again later.'}`,
-      type: params.action === "approve" ? "success" : "error",
-      createdAt: new Date(),
-    };
-
-    // Add notification to user
-    user.notifications = user.notifications || [];
-    user.notifications.push(notification);
-    await user.save();
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: `Application ${params.action}d successfully`
     });
@@ -115,7 +103,7 @@ export async function POST(
   } catch (error) {
     console.error("Form action error:", error);
     return NextResponse.json(
-      { error: "Failed to process application" }, 
+      { error: "Failed to process application" },
       { status: 500 }
     );
   }

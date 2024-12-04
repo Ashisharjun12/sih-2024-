@@ -5,6 +5,7 @@ import User from "@/models/user.model";
 import Startup from "@/models/startup.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { addNotification } from "@/lib/notificationService";
 
 export async function POST(
   request: Request,
@@ -12,12 +13,10 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (session?.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const { reason } = await request.json();
 
     await connectDB();
 
@@ -36,8 +35,11 @@ export async function POST(
     // Update submission status
     submission.status = params.action === "approve" ? "approved" : "rejected";
     if (params.action === "reject") {
-      submission.rejectionReason = reason;
-      await submission.save();
+      await addNotification({
+        name: "Admin",
+        message: "Your startup application has been rejected.",
+        role: session.user.role!,
+      }, user._id);
     }
 
     // If approving, create startup profile and update user role
@@ -133,43 +135,32 @@ export async function POST(
           },
         };
 
-        console.log("Processed Startup Data:", JSON.stringify(startupData, null, 2));
 
         // Create startup profile and update user
         const startupProfile = await Startup.create(startupData);
-        
+
         user.role = "startup";
         user.startupProfile = startupProfile._id;
         await user.save();
 
         submission.startupProfile = startupProfile._id;
         await submission.save();
+        await addNotification({
+          name: "Admin",
+          message: "Your startup application has been approved.",
+          role: session.user.role!,
+        }, user._id);
 
       } catch (error) {
         console.error("Error creating startup profile:", error);
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: "Failed to create startup profile",
           details: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
       }
     }
 
-    // Create notification
-    const notification = {
-      title: params.action === "approve" ? "Application Approved" : "Application Rejected",
-      message: params.action === "approve"
-        ? `Your startup application has been approved. You can now access the startup dashboard.`
-        : `Your startup application was rejected. ${reason || 'Please try again later.'}`,
-      type: params.action === "approve" ? "success" : "error",
-      createdAt: new Date(),
-    };
-
-    // Add notification to user
-    user.notifications = user.notifications || [];
-    user.notifications.push(notification);
-    await user.save();
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: `Application ${params.action}d successfully`
     });
@@ -177,7 +168,7 @@ export async function POST(
   } catch (error) {
     console.error("Form action error:", error);
     return NextResponse.json(
-      { error: "Failed to process application" }, 
+      { error: "Failed to process application" },
       { status: 500 }
     );
   }

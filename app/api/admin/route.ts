@@ -20,29 +20,31 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
+// export async function PUT(request: Request) {
+//   try {
+//     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+//     if (!session || session.user.role !== "admin") {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
 
-    const { userId, role } = await request.json();
+//     const { userId, role } = await request.json();
     
-    await connectDB();
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { role },
-      { new: true }
-    ).select("-password");
+//     await connectDB();
+//     const user = await User.findByIdAndUpdate(
+//       userId,
+//       { role },
+//       { new: true }
+//     ).select("-password");
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+//     if (!user) {
+//       return NextResponse.json({ error: "User not found" }, { status: 404 });
+//     }
 
-    return NextResponse.json(user);
-  } catch (error) {
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-} 
+//     return NextResponse.json(user);
+//   } catch (error) {
+//     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+//   }
+// } 
+
+//?? If it provides error then uncomment

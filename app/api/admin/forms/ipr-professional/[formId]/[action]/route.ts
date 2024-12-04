@@ -5,14 +5,8 @@ import { connectDB } from "@/lib/db";
 import FormSubmission from "@/models/form-submission.model";
 import IPRProfessional from "@/models/ipr-professional.model";
 import User from "@/models/user.model";
-import { sendEmail, getApprovalEmailTemplate, getRejectionEmailTemplate } from "@/lib/utils/email";
+import { addNotification } from "@/lib/notificationService";
 
-interface RequestBody {
-  reason?: string;
-  userEmail: string;
-  formType: string;
-  userName: string;
-}
 
 export async function POST(
   req: NextRequest,
@@ -50,45 +44,31 @@ export async function POST(
       await iprProfessional.save();
 
       // Update user role
-      await User.findByIdAndUpdate(submission.userId, {
+      const user = await User.findByIdAndUpdate(submission.userId, {
         role: "iprProfessional"
       });
 
-      // Send approval email
-      await sendEmail({
-        to: body.userEmail,
-        subject: "IPR Professional Application Approved",
-        html: getApprovalEmailTemplate(body.userName, "IPR Professional")
-      });
-    } else {
-      // Send rejection email
-      await sendEmail({
-        to: body.userEmail,
-        subject: "IPR Professional Application Status Update",
-        html: getRejectionEmailTemplate(body.userName, "IPR Professional")
-      });
+      await addNotification({
+        name: "Admin",
+        message: "Your IPR Professional application has been approved.",
+        role: session.user.role!,
+      }, user._id);
     }
 
-    // Create notification
-    const notification = {
-      title: action === "approve" ? "Application Approved" : "Application Rejected",
-      message: action === "approve"
-        ? "Your IPR Professional application has been approved"
-        : `Your application was rejected. ${body.reason || 'Please contact support for more information.'}`,
-      type: action === "approve" ? "success" : "error",
-      createdAt: new Date()
-    };
+    else {
+      const user = await User.findById(submission.userId);
 
-    // Add notification to user
-    await User.findByIdAndUpdate(submission.userId, {
-      $push: { notifications: notification }
-    });
+      await addNotification({
+        name: "Admin",
+        message: "Your IPR Professional application has been rejected.",
+        role: session.user.role!,
+      }, user._id);
 
-    return NextResponse.json({
-      success: true,
-      message: `Application ${action}ed successfully`
-    });
-
+      return NextResponse.json({
+        success: true,
+        message: `Application ${action}ed successfully`
+      });
+    }
   } catch (error) {
     console.error(`Error ${params.action}ing IPR Professional application:`, error);
     return NextResponse.json(

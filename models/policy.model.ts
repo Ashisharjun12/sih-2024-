@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 // Interface for reviews
 interface IReview {
+    userId: mongoose.Types.ObjectId;
     reviewer: mongoose.Types.ObjectId;
     reviewerType: 'Startup' | 'Researcher' | 'FundingAgency';
     message: string;
@@ -9,6 +10,10 @@ interface IReview {
 }
 
 const reviewSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
     reviewer: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
@@ -339,7 +344,7 @@ policySchema.pre('save', function (next) {
 
         this.metrics.fundingAgencyReviews = this.reviews.filter(
             review => review.reviewerType === 'FundingAgency'
-        )
+        ).length;
     }
     next();
 });

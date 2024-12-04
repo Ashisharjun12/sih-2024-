@@ -16,11 +16,10 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin", "researcher", "startup", "iprProfessional", "policyMaker", "fundingAgency", "mentor"],
     default: "user",
   },
-  startupProfile: {
+  notifications: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Startup",
-  },
-  
+    ref: "Notification",
+  }],
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);

@@ -32,7 +32,7 @@ interface Review {
     name?: string;
     email: string;
   };
-  reviewerType: "Startup" | "Researcher";
+  reviewerType: "Startup" | "Researcher" | "FundingAgency";
   message: string;
   createdAt: string;
 }
@@ -204,10 +204,7 @@ const PolicyReviewDialog = ({
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                onSubmit(message);
-                setMessage("");
-              }}
+              onClick={() => onSubmit(message)}
               disabled={isSubmitting || !message.trim()}
             >
               {isSubmitting ? (
@@ -234,32 +231,15 @@ const PolicyViewDialog = ({
   review,
   isOpen,
   onClose,
-  onEdit,
   isSubmitting,
 }: {
   policy: Policy | null;
   review: Review | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (message: string) => Promise<void>;
   isSubmitting: boolean;
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editMessage, setEditMessage] = useState(review?.message || "");
-
-  useEffect(() => {
-    if (review) {
-      setEditMessage(review.message);
-    }
-  }, [review]);
-
   if (!policy) return null;
-
-  const handleSave = async () => {
-    await onEdit(editMessage);
-    setIsEditing(false);
-    setEditMessage("");
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -318,42 +298,13 @@ const PolicyViewDialog = ({
               <h3 className="font-semibold flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" /> Your Review
               </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-                disabled={isSubmitting}
-              >
-                {isEditing ? "Cancel Edit" : "Edit Review"}
-              </Button>
             </div>
 
-            {isEditing ? (
-              <div className="space-y-4">
-                <Textarea
-                  value={editMessage}
-                  onChange={(e) => setEditMessage(e.target.value)}
-                  placeholder="Edit your review..."
-                  rows={4}
-                />
-                <Button
-                  onClick={handleSave}
-                  disabled={
-                    isSubmitting ||
-                    !editMessage.trim() ||
-                    editMessage === review?.message
-                  }
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
-                </Button>
-              </div>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
             ) : (
               <div className="bg-muted rounded-lg p-4">
                 <p className="text-sm">{review?.message}</p>
@@ -393,7 +344,7 @@ export default function StartupPolicyPage() {
       const reviewMap: Record<string, Review> = {};
       data.policies.forEach((policy: Policy) => {
         const userReview = policy.reviews.find(
-          (review) => review.reviewerType === "Startup"
+          (review) => review.reviewerType === "Researcher"
         );
         if (userReview) {
           reviewMap[policy._id] = userReview;
@@ -424,7 +375,7 @@ export default function StartupPolicyPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ message, type: "researcher" }),
+          body: JSON.stringify({ message }),
         }
       );
 
@@ -446,47 +397,6 @@ export default function StartupPolicyPage() {
         title: "Error",
         description:
           error instanceof Error ? error.message : "Failed to submit review",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditReview = async (message: string) => {
-    if (!selectedPolicy) return;
-
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(
-        `/api/policies/${selectedPolicy._id}/review`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ message, type: "researcher" }),
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update review");
-      }
-
-      toast({
-        title: "Success",
-        description: "Review updated successfully",
-      });
-
-      // Refresh policies to get updated data
-      fetchPolicies();
-      setSelectedPolicy(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update review",
         variant: "destructive",
       });
     } finally {
@@ -544,7 +454,6 @@ export default function StartupPolicyPage() {
           review={selectedPolicy ? userReviews[selectedPolicy._id] : null}
           isOpen={!!selectedPolicy}
           onClose={() => setSelectedPolicy(null)}
-          onEdit={handleEditReview}
           isSubmitting={isSubmitting}
         />
       )}
