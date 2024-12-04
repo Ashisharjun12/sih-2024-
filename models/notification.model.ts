@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 const notificationSchema = new mongoose.Schema({
+
+  // anme 
     name: {
       type: String,
       required: true,
