@@ -5,10 +5,8 @@ import Wallet from "@/models/wallet.model";
 import { ensureWallet } from "@/lib/wallet";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-
-
 import Mentor from "@/models/mentor.model";
+import { addNotification } from "@/lib/notificationService";
 
 
 export async function POST(request: Request) {
@@ -65,8 +63,13 @@ export async function POST(request: Request) {
 
     // Populate mentor details
     await meeting.populate('mentorId', 'name email');
-    
-   
+
+    await addNotification({
+      name: meeting.mentorId.name,
+      message: "You have a new meeting request.",
+      role: session.user.role!,
+    }, meeting.mentorId);
+
 
     return NextResponse.json({
       success: true,
