@@ -15,6 +15,10 @@ const notificationSchema = new mongoose.Schema({
       enum: ["startup", "researcher", "fundingAgency", "policyMaker", "iprProfessional", "mentor", "admin"],
       required: true,
     },
+    read: {
+      type: Boolean,
+      default: false
+    }
   }, { timestamps: true });
 
 const Notification = mongoose.models.Notification || mongoose.model("Notification", notificationSchema);
