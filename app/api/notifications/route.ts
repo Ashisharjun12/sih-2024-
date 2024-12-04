@@ -44,9 +44,7 @@ export async function POST(request: Request) {
         await connectDB();
 
         const notification = await Notification.findByIdAndUpdate(
-            notificationId,
-            { read: true },
-            { new: true }
+            notificationId
         );
 
         if (!notification) {
