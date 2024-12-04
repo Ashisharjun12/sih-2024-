@@ -20,9 +20,7 @@ export async function PATCH(
     await connectDB();
     const data = await request.json();
 
-    console.log("Processing meeting update:", { meetingId: params.id, action: data.action });
-
-    // Find the meeting first
+    // Find the meeting first with populated user details
     const existingMeeting = await Meeting.findOne({
       _id: params.id,
       mentorId: session.user.id
@@ -37,17 +35,21 @@ export async function PATCH(
 
     // If rejecting, process refund first
     if (data.action === 'rejected') {
-      console.log("Processing refund for user:", existingMeeting.userId);
+      console.log("Processing refund for meeting:", {
+        meetingId: params.id,
+        userId: existingMeeting.userId,
+        amount: existingMeeting.amount
+      });
       
       // Update user's wallet with refund
       const updatedWallet = await Wallet.findOneAndUpdate(
-        { userId: existingMeeting.userId.toString() }, // Convert ObjectId to string
+        { userId: existingMeeting.userId },
         {
-          $inc: { balance: 1000 },
+          $inc: { balance: existingMeeting.amount }, // Use the actual meeting amount
           $push: {
             transactions: {
               type: 'credit',
-              amount: 1000,
+              amount: existingMeeting.amount,
               description: 'Meeting rejected - Refund'
             }
           }
@@ -56,18 +58,26 @@ export async function PATCH(
       );
 
       if (!updatedWallet) {
-        console.log("Failed to process refund - wallet not found");
+        console.error("Failed to process refund - wallet not found");
         return NextResponse.json(
           { error: "Failed to process refund" },
           { status: 500 }
         );
       }
 
+<<<<<<< HEAD
       await addNotification({
         name: existingMeeting.mentorId.name,
         message: "Your meeting has been rejected.",
         role: session.user.role!,
       }, existingMeeting.userId);
+=======
+      console.log("Refund processed successfully:", {
+        userId: existingMeeting.userId,
+        amount: existingMeeting.amount,
+        newBalance: updatedWallet.balance
+      });
+>>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
     }
 
     // Update meeting status
@@ -109,7 +119,7 @@ export async function PATCH(
                 <p>Hello ${meeting.userId.name},</p>
                 <p>Your meeting scheduled for ${new Date(meeting.date).toLocaleDateString()} 
                    at ${meeting.startTime} has been rejected.</p>
-                <p>A refund of ₹1000 has been processed to your wallet.</p>
+                <p>A refund of ₹${existingMeeting.amount} has been processed to your wallet.</p>
                 <p>Best regards,<br>${session.user.name}</p>
               `
             };
@@ -122,13 +132,14 @@ export async function PATCH(
       }
     } catch (emailError) {
       console.error("Failed to send email:", emailError);
-      // Continue with the response even if email fails
     }
 
     return NextResponse.json({
       success: true,
       meeting,
-      message: data.action === 'rejected' ? 'Meeting rejected and refund processed' : 'Meeting updated successfully'
+      message: data.action === 'rejected' 
+        ? `Meeting rejected and refund of ₹${existingMeeting.amount} processed` 
+        : 'Meeting updated successfully'
     });
 
   } catch (error) {

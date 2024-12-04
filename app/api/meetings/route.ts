@@ -5,7 +5,11 @@ import Wallet from "@/models/wallet.model";
 import { ensureWallet } from "@/lib/wallet";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+<<<<<<< HEAD
 import { addNotification } from "@/lib/notificationService";
+=======
+import Mentor from "@/models/mentor.model";
+>>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +31,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create meeting
+    // Get mentor details
+    const mentor = await Mentor.findOne({ userId: data.mentorId });
+    const meetingAmount = mentor?.hourlyRate || 1000; // Fallback to 1000 if not set
+
+    // Create meeting with mentor's rate
     const meeting = await Meeting.create({
       mentorId: data.mentorId,
       userId: session.user.id,
@@ -35,18 +43,23 @@ export async function POST(request: Request) {
       startTime: data.startTime,
       endTime: data.endTime,
       status: 'pending',
-      amount: 1000
+      amount: meetingAmount // Use mentor's rate
     });
 
     // Deduct amount from wallet
     const updatedWallet = await Wallet.findOneAndUpdate(
       { userId: session.user.id },
+<<<<<<< HEAD
       {
         $inc: { balance: -1000 },
+=======
+      { 
+        $inc: { balance: -meetingAmount },
+>>>>>>> 904f2845dbac69348a87e8e4bb91e87ea55a7012
         $push: {
           transactions: {
             type: 'debit',
-            amount: 1000,
+            amount: meetingAmount,
             description: `Meeting booking with mentor`
           }
         }

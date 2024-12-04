@@ -42,6 +42,8 @@ const formSubmissionSchema = new mongoose.Schema({
     pitchDeck: fileSchema,
     financialProjections: fileSchema,
     incorporationCertificate: fileSchema,
+    profilePicture: fileSchema,
+    cv:fileSchema,
   },
   submittedAt: {
     type: Date,

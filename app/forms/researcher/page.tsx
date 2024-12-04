@@ -165,7 +165,7 @@ export default function ResearcherRegistrationForm() {
 
   const onSubmit = async (data: any) => {
     try {
-      console.log(data);
+      console.log( "form data on submit ",data);
       setIsSubmitting(true);
 
       if (!session?.user) {
@@ -217,9 +217,9 @@ export default function ResearcherRegistrationForm() {
       });
 
       // Wait for 2 seconds before redirecting
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      // setTimeout(() => {
+      //   router.push("/");
+      // }, 2000);
 
     } catch (error: any) {
       console.error("Form submission error:", error);

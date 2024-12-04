@@ -26,9 +26,16 @@ export async function POST(request: Request) {
       cv: formData.files?.cv,
       identityProof: formData.files?.identityProof,
     };
-
+    
     // Remove files from formData to avoid duplication
     const { files: _, ...restFormData } = formData;
+    
+    
+    console.log("LOGIN ON ROUTE TO SEE THE FILE IS COMMING ", files)
+    
+    console.log(" CHECKING FORM DATA IF THE FORM DATA CONTENING THE FILE OR NOT  ", formData)
+
+
 
     // Create form submission
     const submission = await FormSubmission.create({
@@ -39,8 +46,13 @@ export async function POST(request: Request) {
       userEmail: session.user.email,
       userName: session.user.name,
       files,
+      profilePicture: formData.files?.profilePicture,
+      cv: formData.files?.cv,
+      identityProof: formData.files?.identityProof,
       submittedAt: new Date(),
     });
+
+
 
     console.log("Created researcher submission:", submission); // Debug log
 

@@ -19,10 +19,16 @@ import {
   Filter,
   History,
   Beaker,
-  Briefcase
+  Briefcase,
+  IndianRupee,
+  Pencil,
+  Check,
+  X
 } from "lucide-react";
 import { getNextMeetLink } from "@/lib/meet-links";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { motion } from "framer-motion";
+import { Label } from "@/components/ui/label";
 
 interface Meeting {
   _id: string;
@@ -47,9 +53,40 @@ export default function MentorMeetingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userTypeFilter, setUserTypeFilter] = useState<'all' | 'startup' | 'researcher'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [hourlyRate, setHourlyRate] = useState<number>(1000);
+  const [isEditingRate, setIsEditingRate] = useState(false);
+
+  const fetchMentorSettings = async () => {
+    try {
+      const res = await fetch('/api/mentor/settings');
+      const data = await res.json();
+      if (data.success) {
+        setHourlyRate(data.mentor.hourlyRate);
+      }
+    } catch (error) {
+      console.error('Error fetching mentor settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch mentor settings",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
-    fetchMeetings();
+    const initializeData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchMeetings(),
+          fetchMentorSettings()
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
   }, []);
 
   const fetchMeetings = async () => {
@@ -139,6 +176,31 @@ export default function MentorMeetingsPage() {
     if (a.status !== 'pending' && b.status === 'pending') return 1;
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
+
+  const updateHourlyRate = async (newRate: number) => {
+    try {
+      const response = await fetch('/api/mentor/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hourlyRate: newRate })
+      });
+
+      if (!response.ok) throw new Error('Failed to update rate');
+
+      setHourlyRate(newRate);
+      setIsEditingRate(false);
+      toast({
+        title: "Success",
+        description: "Hourly rate updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update hourly rate",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -232,6 +294,108 @@ export default function MentorMeetingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mb-6 overflow-hidden">
+        <CardHeader className="border-b bg-muted/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <IndianRupee className="h-5 w-5 text-primary" />
+              <CardTitle>Mentoring Rate Settings</CardTitle>
+            </div>
+            {!isEditingRate && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsEditingRate(true)}
+                className="gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Adjust Rate
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex flex-col gap-4">
+            {isEditingRate ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="hourlyRate">Set Your Hourly Rate</Label>
+                  <div className="relative">
+                    <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="hourlyRate"
+                      type="number"
+                      value={hourlyRate}
+                      onChange={(e) => setHourlyRate(Number(e.target.value))}
+                      className="pl-9"
+                      placeholder="Enter amount"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Set your hourly rate for mentoring sessions. This amount will be charged to mentees per session.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={() => updateHourlyRate(hourlyRate)}
+                    className="gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    Save Rate
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    onClick={() => setIsEditingRate(false)}
+                    className="gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Current Rate</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold">₹{hourlyRate}</span>
+                      <span className="text-sm text-muted-foreground">/hour</span>
+                    </div>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <IndianRupee className="h-6 w-6 text-primary" />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <p className="text-sm font-medium">Monthly Earnings</p>
+                    <p className="text-2xl font-semibold text-green-600">
+                      ₹{(hourlyRate * 20).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Based on 20 sessions</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Session Duration</p>
+                    <p className="text-2xl font-semibold">60 mins</p>
+                    <p className="text-xs text-muted-foreground">Standard duration</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Meetings List */}
       <div className="grid gap-4">
