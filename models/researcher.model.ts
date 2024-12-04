@@ -116,7 +116,7 @@ const researcherSchema = new mongoose.Schema({
         originalName: { type: String, default: '' }
       
     },
-    _id: false // Prevents MongoDB from creating _id for subdocuments
+    _id: false
   }
 }, { timestamps: true });
 
