@@ -2,28 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar, 
-  Globe, 
-  Users, 
-  Building2, 
-  Mail, 
-  Phone, 
-  MapPin,
-  Briefcase,
-  Award,
-  Target,
-  Link,
-  FileText
-} from "lucide-react";
-import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Image from "next/image";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
+import { 
+  Building2, Mail, Phone, MapPin, Globe, Users,
+  Calendar, Target, Briefcase, Shield, Award,
+  FileText, Link as LinkIcon, Facebook, Twitter, Linkedin,
+  Rocket, ChevronRight
+} from "lucide-react";
 
 interface StartupDetails {
   _id: string;
+  userId: string;
   owner: {
     fullName: string;
     email: string;
@@ -34,17 +27,15 @@ interface StartupDetails {
       state: string;
       pincode: string;
     };
-    dateOfBirth: string;
-    gender: string;
-    identityProof: {
-      type: string;
-      number: string;
-      secure_url: string;
-    };
   };
   startupDetails: {
+    startupLogo?: {
+      secure_url: string;
+    };
     startupName: string;
-    industry: string;
+    about: string;
+    industries: string[];
+    sectors: string[];
     stage: string;
     registrationNumber: string;
     incorporationDate: string;
@@ -59,19 +50,9 @@ interface StartupDetails {
       ownerName: string;
       equityPercentage: number;
     }>;
-    directors: Array<{
-      name: string;
-      role: string;
-      contactDetails: string;
-    }>;
-    ownershipPercentage: number;
   };
   businessActivities: {
     missionAndVision: string;
-    intellectualProperty: Array<{
-      type: string;
-      details: string;
-    }>;
   };
   legalAndCompliance: {
     gstin: string;
@@ -80,21 +61,8 @@ interface StartupDetails {
       number: string;
       validUntil: string;
     }>;
-    certifications: Array<{
-      type: string;
-      certificationNumber: string;
-      issuingAuthority: string;
-      validUntil: string;
-      certificationDetails: string;
-    }>;
-    auditorDetails: {
-      name: string;
-      firm: string;
-      contact: string;
-      email: string;
-      registrationNumber: string;
-    };
   };
+  isActivelyFundraising: boolean;
   additionalInfo: {
     website?: string;
     socialMedia?: {
@@ -105,15 +73,9 @@ interface StartupDetails {
     pitchDeck?: {
       secure_url: string;
     };
-    documents: Array<{
+    incorporationCertificate?: {
       secure_url: string;
-    }>;
   };
-  createdAt: string;
-  supportAndNetworking: {
-    supportRequested: Array<string>;
-    mentorshipPrograms: string;
-    potentialInvestors: string;
   };
 }
 
@@ -163,399 +125,388 @@ export default function StartupDetails({ params }: { params: { projectid: string
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">{startup.startupDetails.startupName}</h1>
-        <div className="flex gap-2 mt-2">
-          <Badge variant="secondary">{startup.startupDetails.industry}</Badge>
-          <Badge variant="outline">{startup.startupDetails.stage}</Badge>
-          <Badge>{startup.startupDetails.businessModel}</Badge>
+    <div className="container py-4 space-y-6">
+      {/* Header Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-8">
+        <div className="relative flex flex-col md:flex-row items-start justify-between gap-8">
+          {/* Basic Info */}
+          <div>
+            <div className="flex items-center gap-6 mb-6">
+              {startup?.startupDetails.startupLogo ? (
+                <img 
+                  src={startup.startupDetails.startupLogo.secure_url}
+                  alt={startup.startupDetails.startupName}
+                  className="h-20 w-20 object-contain rounded-xl bg-background p-2"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-xl bg-background p-2 flex items-center justify-center">
+                  <Building2 className="h-10 w-10 text-blue-500/70" />
+                </div>
+              )}
+              <div>
+                <h1 className="text-3xl font-bold">{startup?.startupDetails.startupName}</h1>
+                <p className="text-muted-foreground mt-1">{startup?.owner.fullName}</p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Badge variant="secondary" className="px-3 py-1">{startup?.startupDetails.stage}</Badge>
+                  <Badge variant="secondary" className="px-3 py-1">{startup?.startupDetails.businessModel}</Badge>
+                  {startup?.isActivelyFundraising && (
+                    <Badge variant="outline" className="border-emerald-500 text-emerald-500 px-3 py-1">
+                      Actively Fundraising
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4 min-w-[240px]">
+            <div className="bg-background/50 p-4 rounded-xl text-center">
+              <Users className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+              <p className="text-2xl font-bold">{startup?.startupDetails.founders.length}</p>
+              <p className="text-sm text-muted-foreground">Founders</p>
+            </div>
+            <div className="bg-background/50 p-4 rounded-xl text-center">
+              <Calendar className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+              <p className="text-2xl font-bold">
+                {format(new Date(startup?.startupDetails.incorporationDate || ""), 'yyyy')}
+              </p>
+              <p className="text-sm text-muted-foreground">Founded</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="legal">Legal & Compliance</TabsTrigger>
-          <TabsTrigger value="intellectual">Intellectual Property</TabsTrigger>
-          <TabsTrigger value="support">Support & Networking</TabsTrigger>
-          <TabsTrigger value="documents">Documents & Images</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Registration Number</span>
-                  <p>{startup.startupDetails.registrationNumber}</p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Incorporation Date</span>
-                  <p>{format(new Date(startup.startupDetails.incorporationDate), 'MMM dd, yyyy')}</p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Revenue Model</span>
-                  <p>{startup.startupDetails.revenueModel}</p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Business Model</span>
-                  <p>{startup.startupDetails.businessModel}</p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Industry</span>
-                  <p>{startup.startupDetails.industry}</p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Stage</span>
-                  <p>{startup.startupDetails.stage}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Owner Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Full Name</span>
-                  <p>{startup.owner.fullName}</p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Gender</span>
-                  <p>{startup.owner.gender}</p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Date of Birth</span>
-                  <p>{format(new Date(startup.owner.dateOfBirth), 'MMM dd, yyyy')}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <p>{startup.owner.email}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <p>{startup.owner.phone}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <p>
-                    {startup.owner.businessAddress.physicalAddress}, 
-                    {startup.owner.businessAddress.city}, 
-                    {startup.owner.businessAddress.state} - 
-                    {startup.owner.businessAddress.pincode}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Mission & Vision</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  {startup.businessActivities.missionAndVision}
+      {/* Main Content */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Contact Information */}
+        <div className="bg-gradient-to-br from-blue-500/5 via-cyan-500/5 to-transparent rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Mail className="h-5 w-5 text-blue-500" />
+            Contact Information
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Mail className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{startup?.owner.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Phone className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Phone</p>
+                <p className="font-medium">{startup?.owner.phone}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <MapPin className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Address</p>
+                <p className="font-medium">
+                  {startup?.owner.businessAddress.physicalAddress}<br />
+                  {startup?.owner.businessAddress.city}, {startup?.owner.businessAddress.state}<br />
+                  {startup?.owner.businessAddress.pincode}
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="team">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Founders */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Founders</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {startup.startupDetails.founders.map((founder, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <h3 className="font-semibold">{founder.name}</h3>
-                      <p className="text-sm text-muted-foreground">{founder.role}</p>
-                      <p className="text-sm">{founder.contactDetails}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Equity Splits */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Equity Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {startup.startupDetails.equitySplits.map((split, index) => (
-                    <div key={index} className="flex justify-between items-center p-4 border rounded-lg">
-                      <span>{split.ownerName}</span>
-                      <Badge variant="secondary">{split.equityPercentage}%</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Directors Card */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Directors</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {startup.startupDetails.directors.map((director, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <h3 className="font-semibold">{director.name}</h3>
-                      <p className="text-sm text-muted-foreground">{director.role}</p>
-                      <p className="text-sm">{director.contactDetails}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="legal">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Licenses */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Licenses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {startup.legalAndCompliance.licenses.map((license, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <h3 className="font-semibold">{license.type}</h3>
-                      <p className="text-sm">Number: {license.number}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Valid until: {format(new Date(license.validUntil), 'MMM dd, yyyy')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Certifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Certifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {startup.legalAndCompliance.certifications.map((cert, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <h3 className="font-semibold">{cert.type}</h3>
-                      <p className="text-sm">Number: {cert.certificationNumber}</p>
-                      <p className="text-sm">Issuing Authority: {cert.issuingAuthority}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Valid until: {format(new Date(cert.validUntil), 'MMM dd, yyyy')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* GSTIN Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>GSTIN Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{startup.legalAndCompliance.gstin || "Not provided"}</p>
-              </CardContent>
-            </Card>
-
-            {/* Auditor Details Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Auditor Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {startup.legalAndCompliance.auditorDetails && (
-                  <>
-                    <div>
-                      <span className="text-sm text-muted-foreground block">Name</span>
-                      <p>{startup.legalAndCompliance.auditorDetails.name}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground block">Firm</span>
-                      <p>{startup.legalAndCompliance.auditorDetails.firm}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground block">Contact</span>
-                      <p>{startup.legalAndCompliance.auditorDetails.contact}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground block">Email</span>
-                      <p>{startup.legalAndCompliance.auditorDetails.email}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground block">Registration Number</span>
-                      <p>{startup.legalAndCompliance.auditorDetails.registrationNumber}</p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="intellectual">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Intellectual Property</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {startup.businessActivities.intellectualProperty.map((ip, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <h3 className="font-semibold">{ip.type}</h3>
-                      <p className="text-sm text-muted-foreground">{ip.details}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="support">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Support Requested</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {startup.supportAndNetworking.supportRequested.map((support, index) => (
-                    <Badge key={index} variant="secondary">
-                      {support}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Mentorship & Investment</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <span className="text-sm text-muted-foreground block">Mentorship Programs</span>
-                  <p>{startup.supportAndNetworking.mentorshipPrograms}</p>
+        {/* Business Details */}
+        <div className="bg-gradient-to-br from-teal-500/5 via-emerald-500/5 to-transparent rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-teal-500" />
+            Business Details
+          </h2>
+          <div className="space-y-6">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Industries</p>
+              <div className="flex flex-wrap gap-2">
+                {startup?.startupDetails.industries.map((industry, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="bg-teal-500/10 text-teal-600 hover:bg-teal-500/20 px-3 py-1"
+                  >
+                    {industry}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Sectors</p>
+              <div className="flex flex-wrap gap-2">
+                {startup?.startupDetails.sectors.map((sector, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 px-3 py-1"
+                  >
+                    {sector}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-teal-500/10 rounded-lg">
+                  <Target className="h-4 w-4 text-teal-500" />
                 </div>
                 <div>
-                  <span className="text-sm text-muted-foreground block">Potential Investors</span>
-                  <p>{startup.supportAndNetworking.potentialInvestors}</p>
+              <p className="text-sm text-muted-foreground">Revenue Model</p>
+              <p className="font-medium mt-1">{startup?.startupDetails.revenueModel}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="documents">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Identity Proof */}
-            {startup.owner.identityProof && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Identity Proof</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-sm text-muted-foreground block">Type</span>
-                      <p>{startup.owner.identityProof.type}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground block">Number</span>
-                      <p>{startup.owner.identityProof.number}</p>
-                    </div>
-                    {startup.owner.identityProof.secure_url && (
-                      <div className="relative h-48 w-full">
-                        <Image
-                          src={startup.owner.identityProof.secure_url}
-                          alt="Identity Proof"
-                          fill
-                          className="object-contain rounded-lg"
-                        />
+        {/* Legal Information */}
+        <div className="bg-gradient-to-br from-violet-500/5 via-purple-500/5 to-transparent rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-violet-500" />
+            Legal Information
+          </h2>
+          <div className="space-y-4">
+            <div className="bg-background/50 p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground">Registration Number</p>
+              <p className="font-medium mt-1">{startup?.startupDetails.registrationNumber}</p>
+            </div>
+            <div className="bg-background/50 p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground">GSTIN</p>
+              <p className="font-medium mt-1">{startup?.legalAndCompliance.gstin}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Licenses</p>
+              <div className="grid gap-3">
+                {startup?.legalAndCompliance.licenses.map((license, index) => (
+                  <div 
+                    key={index} 
+                    className="bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-violet-500/10 rounded-lg">
+                        <Shield className="h-4 w-4 text-violet-500" />
                       </div>
-                    )}
+                      <p className="font-medium">{license.type}</p>
+                    </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>Number: {license.number}</p>
+                      <p>Valid until: {format(new Date(license.validUntil), 'MMM dd, yyyy')}</p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Team Information */}
+        <div className="bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Users className="h-5 w-5 text-amber-500" />
+            Team Information
+          </h2>
+          <div className="space-y-6">
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">Founders</p>
+              <div className="grid gap-3">
+                {startup?.startupDetails.founders.map((founder, index) => (
+                  <div 
+                    key={index} 
+                    className="bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-amber-500/10 rounded-lg">
+                        <Users className="h-4 w-4 text-amber-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{founder.name}</p>
+                        <p className="text-sm text-muted-foreground">{founder.role}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                      <Phone className="h-4 w-4" />
+                      <p>{founder.contactDetails}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">Equity Distribution</p>
+              <div className="grid gap-3">
+                {startup?.startupDetails.equitySplits.map((split, index) => (
+                  <div 
+                    key={index} 
+                    className="bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-500/10 rounded-lg">
+                          <Target className="h-4 w-4 text-amber-500" />
+                        </div>
+                        <p className="font-medium">{split.ownerName}</p>
+                      </div>
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
+                      >
+                        {split.equityPercentage}%
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Documents & Links Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Documents */}
+        <div className="bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-blue-500" />
+            Documents
+          </h2>
+          <div className="grid gap-4">
+            {startup?.additionalInfo.pitchDeck && (
+              <a 
+                href={startup.additionalInfo.pitchDeck.secure_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors group"
+              >
+                <div className="p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20">
+                  <FileText className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="font-medium">Pitch Deck</p>
+                  <p className="text-sm text-muted-foreground">View Document</p>
+                </div>
+              </a>
+            )}
+            
+            {startup?.additionalInfo.incorporationCertificate && (
+              <a 
+                href={startup.additionalInfo.incorporationCertificate.secure_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors group"
+              >
+                <div className="p-2 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20">
+                  <FileText className="h-5 w-5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="font-medium">Incorporation Certificate</p>
+                  <p className="text-sm text-muted-foreground">View Document</p>
+                </div>
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Online Presence */}
+        <div className="bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-transparent rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Globe className="h-5 w-5 text-emerald-500" />
+            Online Presence
+          </h2>
+          <div className="grid gap-4">
+            {startup?.additionalInfo.website && (
+              <a 
+                href={startup.additionalInfo.website.startsWith('http') ? 
+                  startup.additionalInfo.website : 
+                  `https://${startup.additionalInfo.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors group"
+              >
+                <div className="p-2 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20">
+                  <Globe className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="font-medium">Website</p>
+                  <p className="text-sm text-muted-foreground">{startup.additionalInfo.website}</p>
+                </div>
+              </a>
             )}
 
-            {/* Pitch Deck */}
-            {startup.additionalInfo.pitchDeck && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pitch Deck</CardTitle>
-                </CardHeader>
-                <CardContent>
+            {startup?.additionalInfo.socialMedia && (
+              <div className="grid gap-3">
+                {startup.additionalInfo.socialMedia.linkedIn && (
                   <a 
-                    href={startup.additionalInfo.pitchDeck.secure_url}
+                  href={startup.additionalInfo.socialMedia.linkedIn.startsWith('http') ? 
+                    startup.additionalInfo.socialMedia.linkedIn : 
+                    `https://${startup.additionalInfo.socialMedia.linkedIn}`}
+                    
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-500 hover:underline"
+                    className="flex items-center gap-3 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors group"
                   >
-                    <FileText className="h-4 w-4" />
-                    View Pitch Deck
+                    <div className="p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20">
+                      <Linkedin className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">LinkedIn</p>
+                      <p className="text-sm text-muted-foreground">View Profile</p>
+                    </div>
                   </a>
-                </CardContent>
-              </Card>
-            )}
+                )}
 
-            {/* Additional Documents */}
-            {startup.additionalInfo.documents && startup.additionalInfo.documents.length > 0 && (
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Additional Documents</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {startup.additionalInfo.documents.map((doc, index) => (
-                      <div key={index} className="p-4 border rounded-lg">
-                        <a 
-                          href={doc.secure_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-blue-500 hover:underline"
-                        >
-                          <FileText className="h-4 w-4" />
-                          View Document {index + 1}
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                {startup.additionalInfo.socialMedia.twitter && (
+                  <a 
+                    href={startup.additionalInfo.socialMedia.twitter.startsWith('http') ? 
+                      startup.additionalInfo.socialMedia.twitter : 
+                      `https://${startup.additionalInfo.socialMedia.twitter}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors group"
+                  >
+                    <div className="p-2 bg-sky-500/10 rounded-lg group-hover:bg-sky-500/20">
+                      <Twitter className="h-5 w-5 text-sky-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Twitter</p>
+                      <p className="text-sm text-muted-foreground">View Profile</p>
+                    </div>
+                  </a>
+                )}
+
+                {startup.additionalInfo.socialMedia.facebook && (
+                  <a 
+                    href={startup.additionalInfo.socialMedia.facebook.startsWith('http') ? 
+                      startup.additionalInfo.socialMedia.facebook : 
+                      `https://${startup.additionalInfo.socialMedia.facebook}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 bg-background/50 p-4 rounded-lg hover:bg-background/70 transition-colors group"
+                  >
+                    <div className="p-2 bg-indigo-500/10 rounded-lg group-hover:bg-indigo-500/20">
+                      <Facebook className="h-5 w-5 text-indigo-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Facebook</p>
+                      <p className="text-sm text-muted-foreground">View Profile</p>
+                    </div>
+                  </a>
+                )}
+              </div>
             )}
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
