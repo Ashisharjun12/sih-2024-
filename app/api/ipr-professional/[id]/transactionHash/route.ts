@@ -7,38 +7,49 @@ import { addNotification } from '@/lib/notificationService';
 import IPRProfessional from '@/models/ipr-professional.model';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    
+    // Check for authentication and authorization
+    if (!session || session.user.role !== "iprProfessional") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Connect to the database
+    await connectDB();
+
     try {
-        const session = await getServerSession(authOptions);
-        if (!session || session.user.role !== "iprProfessional") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
-        // Connect to database
-        await connectDB();
         const { transactionHash } = await request.json();
-        const { id } = await params;
+        const { id } = params;
+
+        // Find the IPR document by ID
         const ipr = await IPR.findById(id).populate("owner");
+        if (!ipr) {
+            return NextResponse.json({ error: "IPR not found" }, { status: 404 });
+        }
+
+        // Update the transaction hash
         ipr.transactionHash = transactionHash;
-        const iprProfessional = await IPRProfessional.findById(session.user.id).select("name");
 
-        if (ipr.status === "Accepted") {
-            await addNotification({
-                name: iprProfessional.name,
-                message: `Your ${ipr.type} has been accepted.`,
-                role: session.user.role,
-            }, ipr.owner.userId);
-        }
-        else if (ipr.status === "Rejected") {
-            await addNotification({
-                name: iprProfessional.name,
-                message: `Your ${ipr.type} has been rejected.`,
-                role: session.user.role,
-            }, ipr.owner.userId);
+        // Find the IPR professional's name
+        const iprProfessional = await IPRProfessional.findOne({ userId: session.user.id }).select("name");
+        if (!iprProfessional) {
+            return NextResponse.json({ error: "IPR Professional not found" }, { status: 404 });
         }
 
+        // Notify the owner based on the IPR status
+        const notificationMessage = `Your ${ipr.type} has been ${ipr.status.toLowerCase()}.`;
+        await addNotification({
+            name: iprProfessional.name,
+            message: notificationMessage,
+            role: session.user.role,
+        }, ipr.owner.userId);
+
+        // Save the updated IPR document
         await ipr.save();
+
         return NextResponse.json({ message: "Transaction hash received" });
     } catch (error) {
-        console.log(error);
+        console.error("Error processing transaction hash:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
