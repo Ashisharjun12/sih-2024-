@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,8 +26,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface FileData {
@@ -139,8 +137,6 @@ interface StepProps {
   handleFileChange: (fileData: { file: File | null | File[]; uploadData?: any }) => void;
   selectedFields?: string[];
   setSelectedFields?: React.Dispatch<React.SetStateAction<string[]>>;
-  handleRemoveResearch?: (index: number, isOngoing: boolean) => void;
-  handleAddResearch?: (research: ResearchPaper, isOngoing: boolean) => void;
 }
 
 // Add this component before the main ResearcherRegistrationForm
@@ -327,95 +323,83 @@ function PersonalInfoStep({
 function AcademicInfoStep({ 
   form, 
   handleFileChange,
-  handleRemoveResearch,
-  handleAddResearch 
 }: StepProps) {
   const [showResearchModal, setShowResearchModal] = useState(false);
-  const [isOngoing, setIsOngoing] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [doi, setDoi] = useState("");
-  const [stage, setStage] = useState(isOngoing ? "Identifying a Research Problem or Question" : "Completed");
   const [images, setImages] = useState<Array<{ public_id: string; secure_url: string }>>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
-  const handleResearchImageUpload = async (fileData: { file: File | null | File[]; uploadData?: any }) => {
-    if (!fileData.file || !fileData.uploadData?.fileType) return;
+  const handleResearchImageUpload = async (fileData: { file: File | null; uploadData?: any }) => {
+    console.log("Research image upload started:", fileData);
+    
+    if (!fileData.file) {
+      console.log("No file provided for upload");
+      return;
+    }
 
     try {
-      if (Array.isArray(fileData.file)) {
-        // Track progress for each file
-        const newProgress: Record<string, number> = {};
-        fileData.file.forEach((file) => {
-          newProgress[file.name] = 0;
-        });
-        setUploadProgress(newProgress);
+      const formData = new FormData();
+      formData.append("file", fileData.file);
 
-        const uploadPromises = fileData.file.map(async (file) => {
-          const formData = new FormData();
-          formData.append('file', file);
+      console.log("Sending research image upload request...");
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-          const response = await uploadFile(file, {
-            onUploadProgress: (progressEvent: UploadProgressEvent) => {
-              if (progressEvent.total) {
-                const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                setUploadProgress(prev => ({
-                  ...prev,
-                  [file.name]: progress
-                }));
-              }
-            }
-          });
+      console.log("Research image upload response status:", response.status);
 
-          if (!response.ok) {
-            throw new Error('Upload failed');
-          }
-
-          // Clear progress after successful upload
-          setUploadProgress(prev => {
-            const newProgress = { ...prev };
-            delete newProgress[file.name];
-            return newProgress;
-          });
-
-          return await response.json();
-        });
-
-        const uploadResults = await Promise.allSettled(uploadPromises);
-        
-        const successfulUploads = uploadResults
-          .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
-          .map(result => ({
-            public_id: result.value.public_id,
-            secure_url: result.value.secure_url
-          }));
-
-        if (successfulUploads.length > 0) {
-          setImages(prev => [...prev, ...successfulUploads]);
-        }
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Research image upload failed:", errorData);
+        throw new Error("Failed to upload image");
       }
+
+      const uploadedFile = await response.json();
+      console.log("Research image upload successful:", uploadedFile);
+
+      setImages(prev => {
+        const newImages = [...prev, uploadedFile];
+        console.log("Updated images state:", newImages);
+        return newImages;
+      });
+
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Research image upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive"
+      });
     }
   };
 
   const handleSubmission = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Adding new research with data:", {
+      title,
+      description,
+      doi,
+      images
+    });
+
     const research = {
       title,
       description,
       images,
       publicationDate: new Date(),
       doi,
-      stage
     };
-    handleAddResearch?.(research, isOngoing);
-    setShowResearchModal(false);
+
+    console.log("Research added successfully:", research);
+
     // Reset form
+    setShowResearchModal(false);
     setTitle("");
     setDescription("");
     setDoi("");
-    setStage(isOngoing ? "Identifying a Research Problem or Question" : "Completed");
     setImages([]);
   };
 
@@ -604,229 +588,9 @@ function AcademicInfoStep({
           onFileChange={handleFileChange}
         />
       </div>
-
-      {/* Research Papers Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Research Papers</h3>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setIsOngoing(false);
-              setShowResearchModal(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Research Paper
-          </Button>
-        </div>
-
-        <div className="grid gap-4">
-          {form.watch("researchPapers")?.map((paper: ResearchPaper, index: number) => (
-            <Card key={index}>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{paper.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {paper.description}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge>Completed</Badge>
-                      {paper.doi && (
-                        <Badge variant="outline">DOI: {paper.doi}</Badge>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveResearch?.(index, false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Ongoing Research Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Ongoing Research</h3>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setIsOngoing(true);
-              setShowResearchModal(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Ongoing Research
-          </Button>
-        </div>
-
-        <div className="grid gap-4">
-          {form.watch("onGoingResearches")?.map((research: ResearchPaper, index: number) => (
-            <Card key={index}>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{research.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {research.description}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="secondary">{research.stage}</Badge>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveResearch?.(index, true)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Research Modal */}
-      <Dialog open={showResearchModal} onOpenChange={setShowResearchModal}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {isOngoing ? "Add Ongoing Research" : "Add Research Paper"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmission} className="space-y-4">
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input 
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Research title"
-                  required
-                />
-              </FormControl>
-            </FormItem>
-
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Research description"
-                  required
-                />
-              </FormControl>
-            </FormItem>
-
-            <FormItem>
-              <FormLabel>DOI (optional)</FormLabel>
-              <FormControl>
-                <Input 
-                  value={doi}
-                  onChange={(e) => setDoi(e.target.value)}
-                  placeholder="Digital Object Identifier"
-                />
-              </FormControl>
-            </FormItem>
-
-            {isOngoing && (
-              <FormItem>
-                <FormLabel>Stage</FormLabel>
-                <Select value={stage} onValueChange={setStage}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select research stage" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {researchStages.map((stage) => (
-                      <SelectItem key={stage} value={stage}>
-                        {stage}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-
-            <FormItem>
-              <FormLabel>Research Images</FormLabel>
-              <div className="space-y-4">
-                <FileUpload
-                  label="Upload Images"
-                  fileType="researchImages"
-                  accept="image/*"
-                  multiple={true}
-                  onFileChange={handleResearchImageUpload}
-                />
-                
-                {/* Upload Progress */}
-                {renderProgressBars()}
-
-              </div>
-              {images.length === 0 && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Upload one or more images related to your research
-                </p>
-              )}
-            </FormItem>
-
-            <div className="flex justify-end gap-2 mt-4">
-              <Button type="button" variant="outline" onClick={() => setShowResearchModal(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Add Research
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
-
-// Add this interface near the top with other interfaces
-interface ResearchPaper {
-  title: string;
-  description: string;
-  images: Array<{
-    public_id: string;
-    secure_url: string;
-  }>;
-  publicationDate: Date;
-  doi?: string;
-  stage: string;
-}
-
-const researchStages = [
-  "Identifying a Research Problem or Question",
-  "Conducting a Literature Review",
-  "Formulating a Hypothesis or Research Objective",
-  "Designing the Research Methodology",
-  "Data Collection",
-  "Data Analysis",
-  "Interpreting Results",
-  "Drawing Conclusions",
-  "Reporting and Presenting Findings",
-  "Publishing or Disseminating Results",
-  "Reflection and Future Research"
-] as const;
 
 interface ResearchImage {
   public_id: string;
@@ -907,8 +671,6 @@ interface ResearcherFormValues {
     googleScholar?: string;
     researchGate?: string;
   };
-  researchPapers: ResearchPaper[];
-  onGoingResearches: ResearchPaper[];
 }
 
 export default function ResearcherRegistrationForm() {
@@ -952,8 +714,6 @@ export default function ResearcherRegistrationForm() {
         googleScholar: "",
         researchGate: ""
       },
-      researchPapers: [],
-      onGoingResearches: []
     }
   });
 
@@ -1143,22 +903,6 @@ export default function ResearcherRegistrationForm() {
   const nextStep = (e: React.MouseEvent) => {e.preventDefault();setCurrentStep(2)};
   const prevStep = () => setCurrentStep(1);
 
-  const handleAddResearch = (research: ResearchPaper, isOngoing: boolean) => {
-    const currentResearches = form.getValues(isOngoing ? "onGoingResearches" : "researchPapers");
-    form.setValue(
-      isOngoing ? "onGoingResearches" : "researchPapers",
-      [...currentResearches, research] as ResearchPaper[]
-    );
-  };
-
-  const handleRemoveResearch = (index: number, isOngoing: boolean) => {
-    const currentResearches = form.getValues(isOngoing ? "onGoingResearches" : "researchPapers");
-    form.setValue(
-      isOngoing ? "onGoingResearches" : "researchPapers",
-      currentResearches.filter((_, i) => i !== index)
-    );
-  };
-
   return (
     <div className="container max-w-3xl py-8">
       <Card>
@@ -1226,8 +970,6 @@ export default function ResearcherRegistrationForm() {
                 <AcademicInfoStep 
                   form={form} 
                   handleFileChange={handleFileChange}
-                  handleRemoveResearch={handleRemoveResearch}
-                  handleAddResearch={handleAddResearch}
                 />
               )}
 

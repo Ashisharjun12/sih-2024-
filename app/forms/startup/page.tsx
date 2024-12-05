@@ -535,6 +535,34 @@ const StartupDetailsStep = ({ form, handleFileChange, handleFileUpload, isUpload
           />
         </div>
 
+        {/* Business Model */}
+      <FormField
+        control={form.control}
+        name="startupDetails.businessModel"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Business Model</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select business model" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="B2B">B2B</SelectItem>
+                <SelectItem value="B2C">B2C</SelectItem>
+                <SelectItem value="B2B2C">B2B2C</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+          )}
+        />
+
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Industry & Sector Information</h3>
           
@@ -1056,6 +1084,8 @@ const StartupDetailsStep = ({ form, handleFileChange, handleFileUpload, isUpload
           </div>
         ))}
       </div>
+
+      
     </div>
   );
 };
@@ -1158,21 +1188,21 @@ export default function StartupRegistrationForm() {
   const handleFileUpload = async (file: File | null, fileType: string) => {
     if (!file) return;
 
-    console.log("Starting file upload:", { fileType, fileName: file.name });
+    console.log("Starting file upload:", { fileType, fileName: file.name, fileSize: file.size });
     setIsUploading(true);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
 
-      console.log("Sending upload request...");
+      console.log("Sending upload request to /api/upload...");
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
       console.log("Upload response status:", response.status);
-      
+
       if (!response.ok) {
         const errorData = await response.text();
         console.error("Upload failed:", errorData);
@@ -1190,7 +1220,7 @@ export default function StartupRegistrationForm() {
           originalName: file.name
         }
       });
-      console.log("Files:", files);
+      console.log("Current files state after upload:", files);
 
       toast({
         title: "Success",
@@ -1211,7 +1241,8 @@ export default function StartupRegistrationForm() {
   const onSubmit = async (data: any) => {
     try {
       setIsSubmitting(true);
-      console.log("Files:", files);
+      console.log("Form submission started with data:", data);
+      console.log("Current files state:", files);
 
       // Prepare form data with files
       const formData = {
@@ -1227,8 +1258,7 @@ export default function StartupRegistrationForm() {
         }, {} as Record<string, any>)
       };
 
-
-      console.log("Form Data:", formData);
+      console.log("Prepared form data for submission:", formData);
 
       const response = await fetch("/api/forms/startup", {
         method: "POST",
@@ -1236,16 +1266,21 @@ export default function StartupRegistrationForm() {
         body: JSON.stringify({ formData })
       });
 
+      console.log("Form submission response status:", response.status);
+
       if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Form submission failed:", errorData);
         throw new Error("Failed to submit form");
       }
+
+      const result = await response.json();
+      console.log("Form submission successful:", result);
 
       toast({
         title: "Success",
         description: "Your startup registration has been submitted for review"
       });
-
-      // router.push("/dashboard");
 
     } catch (error) {
       console.error("Form submission error:", error);

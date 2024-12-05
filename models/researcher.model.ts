@@ -26,6 +26,16 @@ const researchSchema = new mongoose.Schema({
       "Completed"
     ],
     required: true
+  },
+  isFree: {
+    type:Boolean,
+    required:true
+  },
+  price:{
+    type:Number,
+    required:function(this:{isFree:boolean}){
+      return !this.isFree;
+    }
   }
 });
 
