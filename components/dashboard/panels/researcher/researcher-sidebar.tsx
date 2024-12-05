@@ -37,8 +37,8 @@ const sidebarItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Research Projects",
-    href: "/researcher/projects",
+    title: "Research Papers",
+    href: "/researcher/papers",
     icon: BookOpen,
   },
   {
