@@ -311,14 +311,6 @@ const fundingAgencySchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  owner: {
-    fullName: { type: String, required: true },
-    email: { type: String, required: true },
-    phone: { type: String, required: true },
-    businessAddress: {
-      physicalAddress: { type: String, required: true },
-    },
-  },
   agencyDetails: {
     name: { type: String, required: true },
     registrationNumber: { type: String, required: true },
@@ -369,4 +361,3 @@ const fundingAgencySchema = new mongoose.Schema({
 const FundingAgency = mongoose.models.FundingAgency || mongoose.model("FundingAgency", fundingAgencySchema);
 
 export default FundingAgency;
-
