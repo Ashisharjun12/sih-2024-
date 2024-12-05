@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
+      console.log("Upload error: Unauthorized");
       return NextResponse.json(
         { error: "Unauthorized" }, 
         { status: 401 }
@@ -24,25 +25,35 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File;
 
     if (!file) {
+      console.log("Upload error: No file provided");
       return NextResponse.json(
         { error: "No file provided" },
         { status: 400 }
       );
     }
 
+    console.log("Processing file upload:", {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
     // Convert file to base64
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const fileBase64 = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Set resource type based on file type
-    const resourceType = file.type.includes('pdf') ? 'raw' : 'auto';
-
     // Upload to Cloudinary
+    console.log("Uploading to Cloudinary...");
     const result = await cloudinary.uploader.upload(fileBase64, {
       folder: 'ipr_docs',
-      resource_type: resourceType,
+      resource_type: file.type.includes('pdf') ? 'raw' : 'auto',
       public_id: `ipr_${Date.now()}`,
+    });
+
+    console.log("Cloudinary upload successful:", {
+      public_id: result.public_id,
+      secure_url: result.secure_url
     });
 
     return NextResponse.json({

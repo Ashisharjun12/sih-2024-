@@ -12,7 +12,6 @@ export async function POST(
   { params }: { params: { formId: string; action: "approve" | "reject" } }
 ) {
   try {
-    console.log("CALEED")
     const session = await getServerSession(authOptions);
 
     if (session?.user?.role !== "admin") {
@@ -28,7 +27,6 @@ export async function POST(
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    console.log(" SUBMISSION FIND LOG ", submission);
 
     // Find the user
     const user = await User.findOne({ email: submission.userEmail });
@@ -50,15 +48,11 @@ export async function POST(
     // If approving, create researcher profile and update user role
     if (params.action === "approve") {
       try {
-        // Prepare researcher data with correct structure
-        console.log("Files from submission:", submission.files);
-
-
-
-
-
+        // Prepare researcher data with correct structure from form submission
         const researcherData = {
           userId: user._id,
+          
+          // Personal Information
           personalInfo: {
             name: submission.formData.personalInfo.name,
             email: {
@@ -75,6 +69,8 @@ export async function POST(
             },
             fieldOfResearch: submission.formData.personalInfo.fieldOfResearch
           },
+
+          // Academic Information
           academicInfo: {
             institution: submission.formData.academicInfo.institution,
             position: submission.formData.academicInfo.position,
@@ -82,72 +78,74 @@ export async function POST(
             highestQualification: submission.formData.academicInfo.highestQualification,
             yearsOfExperience: submission.formData.academicInfo.yearsOfExperience
           },
-          researchDetails: {
-            researchTopic: submission.formData.researchDetails.researchTopic,
-            expertiseAreas: submission.formData.researchDetails.expertiseAreas || [],
-            ongoingProjects: submission.formData.researchDetails.ongoingProjects || []
-          },
+
+          // Professional Credentials
           professionalCredentials: {
-            publicationNumber: submission.formData.professionalCredentials.publicationNumber || 0,
-            researchIds: {
-              orcid: submission.formData.professionalCredentials.researchIds?.orcid || '',
-              googleScholar: submission.formData.professionalCredentials.researchIds?.googleScholar || '',
-              researchGate: submission.formData.professionalCredentials.researchIds?.researchGate || ''
-            },
-            publications: submission.formData.professionalCredentials.publications || [],
-            fundingAgency: submission.formData.professionalCredentials.fundingAgency || '',
-            achievements: submission.formData.professionalCredentials.achievements || []
-          },
-          interests: {
-            preferredCollaboration: submission.formData.interests?.preferredCollaboration || "BOTH",
-            willingToMentor: submission.formData.interests?.willingToMentor || false
+            orcid: submission.formData.professionalCredentials.orcid || "",
+            googleScholar: submission.formData.professionalCredentials.googleScholar || "",
+            researchGate: submission.formData.professionalCredentials.researchGate || ""
           },
 
+          // Research Papers
+          researchPapers: submission.formData.researchPapers?.map((paper: any) => ({
+            title: paper.title,
+            description: paper.description,
+            images: paper.images || [],
+            publicationDate: paper.publicationDate,
+            doi: paper.doi,
+            stage: "Completed"
+          })) || [],
+
+          // Ongoing Researches
+          onGoingResearches: submission.formData.onGoingResearches?.map((research: any) => ({
+            title: research.title,
+            description: research.description,
+            images: research.images || [],
+            publicationDate: research.publicationDate,
+            doi: research.doi,
+            stage: research.stage
+          })) || [],
+
+          // Documents
           documents: {
             profilePicture: {
-              public_id: submission.files?.profilePicture?.public_id || '',
-              secure_url: submission.files?.profilePicture?.secure_url || '',
-              originalName: submission.files?.profilePicture?.originalName || '',
+              public_id: submission.formData.files.profilePicture.public_id,
+              secure_url: submission.formData.files.profilePicture.secure_url,
             },
             cv: {
-              public_id: submission.files?.cv?.public_id || '',
-              secure_url: submission.files?.cv?.secure_url || '',
-              originalName: submission.files?.cv?.originalName || '',
+              public_id: submission.formData.files.cv.public_id,
+              secure_url: submission.formData.files.cv.secure_url,
             },
-            identityProof: {
-              public_id: submission.files?.identityProof?.public_id || '',
-              secure_url: submission.files?.identityProof?.secure_url || '',
-              originalName: submission.files?.identityProof?.originalName || '',
-            }
+            _id: false
           }
         };
 
-        console.log("Final researcher data:", researcherData);
+        // Create researcher profile
+        const researcher = new Researcher(researcherData);
+        await researcher.save();
 
-        // Create researcher profile  
-        const researcherProfile = await Researcher.create(researcherData);
-        console.log("Created researcher profile with documents:", researcherProfile);
-
-        // Update user role and link researcher profile
+        // Update user role
         user.role = "researcher";
-        user.researcherProfile = researcherProfile._id;
         await user.save();
 
-        // Update submission with researcher profile reference
-        submission.researcherProfile = researcherProfile._id;
-        await submission.save();
-
+        // Add notification
         await addNotification({
           name: "Admin",
           message: "Your researcher application has been approved.",
           role: session.user.role!,
         }, user._id);
 
+        // Save submission status
+        await submission.save();
+
+        return NextResponse.json({ message: "Researcher approved successfully" });
+
       } catch (error) {
         console.error("Error creating researcher profile:", error);
-        return NextResponse.json({
-          error: "Failed to create researcher profile"
-        }, { status: 500 });
+        return NextResponse.json(
+          { error: "Failed to create researcher profile" },
+          { status: 500 }
+        );
       }
     }
 

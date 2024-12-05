@@ -35,41 +35,55 @@ interface FormSubmission {
       email: { address: string; verified: boolean };
       phone: { number: string; verified: boolean };
       uniqueId: { type: string; number: string };
-      fieldOfResearch: string;
+      fieldOfResearch: string[];
     };
     academicInfo: {
       institution: string;
       position: string;
       department: string;
       highestQualification: string;
-      yearsOfExperience: string;
-    };
-    researchDetails: {
-      researchTopic: string;
-      expertiseAreas: string[];
-      ongoingProjects: string[];
+      yearsOfExperience: number;
     };
     professionalCredentials: {
-      publicationNumber: number;
-      researchIds: {
-        orcid: string;
-        googleScholar: string;
-        researchGate: string;
-      };
-      publications: string[];
-      fundingAgency: string;
-      achievements: string[];
+      orcid: string;
+      googleScholar: string;
+      researchGate: string;
     };
-    interests: {
-      preferredCollaboration: string;
-      willingToMentor: boolean;
+    researchPapers: Array<{
+      title: string;
+      description: string;
+      images: Array<{
+        public_id: string;
+        secure_url: string;
+      }>;
+      publicationDate: Date;
+      doi?: string;
+      stage: string;
+    }>;
+    onGoingResearches: Array<{
+      title: string;
+      description: string;
+      images: Array<{
+        public_id: string;
+        secure_url: string;
+      }>;
+      publicationDate: Date;
+      doi?: string;
+      stage: string;
+    }>;
+    files: {
+      profilePicture: {
+        public_id: string;
+        secure_url: string;
+        originalName: string;
+      };
+      cv: {
+        public_id: string;
+        secure_url: string;
+        originalName: string;
+      };
     };
   };
-  files?: Record<string, {
-    secure_url: string;
-    originalName: string;
-    fileType: string;
-  }>;
 }
 
 const FormSection = ({ 
@@ -96,6 +110,50 @@ const InfoItem = ({ label, value }: { label: string; value: any }) => (
   <div>
     <p className="text-sm text-muted-foreground">{label}</p>
     <p className="text-base font-medium">{value || 'Not provided'}</p>
+  </div>
+);
+
+const ResearchSection = ({ 
+  title, 
+  researches 
+}: { 
+  title: string; 
+  researches: FormSubmission['formData']['researchPapers'] | FormSubmission['formData']['onGoingResearches'] | undefined;
+}) => (
+  <div>
+    <h4 className="text-sm font-medium text-muted-foreground mb-2">{title}</h4>
+    {researches && researches.length > 0 ? (
+      <div className="space-y-4">
+        {researches.map((research, index) => (
+          <Card key={index}>
+            <CardContent className="p-4">
+              <div className="space-y-2">
+                <h5 className="font-medium">{research.title}</h5>
+                <p className="text-sm text-muted-foreground">{research.description}</p>
+                {research.doi && (
+                  <Badge variant="outline">DOI: {research.doi}</Badge>
+                )}
+                <Badge>{research.stage}</Badge>
+                {research.images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {research.images.map((image, idx) => (
+                      <img
+                        key={idx}
+                        src={image.secure_url}
+                        alt={`Research image ${idx + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    ) : (
+      <p className="text-muted-foreground">No {title.toLowerCase()} listed</p>
+    )}
   </div>
 );
 
@@ -188,7 +246,7 @@ export default function ResearcherDetailPage() {
   console.log("Current submission state:", submission);
   console.log("Personal Info:", submission?.formData?.personalInfo);
   console.log("Academic Info:", submission?.formData?.academicInfo);
-  console.log("Files:", submission?.files);
+  console.log("Files:", submission?.formData?.files);
 
   return (
     <div className="container py-8 max-w-4xl">
@@ -277,92 +335,45 @@ export default function ResearcherDetailPage() {
 
         {/* Research Details */}
         <FormSection title="Research Details" icon={Microscope}>
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">Research Topic</h4>
-              <p className="text-base bg-muted p-4 rounded-lg">
-                {submission?.formData.researchDetails.researchTopic}
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">Expertise Areas</h4>
-              {submission?.formData.researchDetails.expertiseAreas && submission.formData.researchDetails.expertiseAreas.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {submission.formData.researchDetails.expertiseAreas.map((area, index) => (
-                    <Badge key={index} variant="secondary">{area}</Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No expertise areas listed</p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">Ongoing Projects</h4>
-              {submission?.formData.researchDetails.ongoingProjects && submission.formData.researchDetails.ongoingProjects.length > 0 ? (
-                <div className="space-y-2">
-                  {submission?.formData.researchDetails.ongoingProjects.map((project, index) => (
-                    <p key={index} className="bg-muted p-2 rounded">{project}</p>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No ongoing projects listed</p>
-              )}
-            </div>
+          <div className="space-y-6">
+            {/* Research Papers */}
+            <ResearchSection 
+              title="Research Papers" 
+              researches={submission?.formData.researchPapers} 
+            />
+
+            {/* Ongoing Research */}
+            <ResearchSection 
+              title="Ongoing Research" 
+              researches={submission?.formData.onGoingResearches} 
+            />
           </div>
         </FormSection>
 
         {/* Professional Credentials */}
         <FormSection title="Professional Credentials" icon={Award}>
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
               <InfoItem 
-                label="Publication Number" 
-                value={submission?.formData.professionalCredentials.publicationNumber} 
+                label="ORCID" 
+                value={submission?.formData.professionalCredentials.orcid} 
               />
               <InfoItem 
-                label="Funding Agency" 
-                value={submission?.formData.professionalCredentials.fundingAgency || 'Not provided'} 
+                label="Google Scholar" 
+                value={submission?.formData.professionalCredentials.googleScholar} 
+              />
+              <InfoItem 
+                label="Research Gate" 
+                value={submission?.formData.professionalCredentials.researchGate} 
               />
             </div>
-            
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">Research IDs</h4>
-              <div className="grid grid-cols-2 gap-4 pl-4">
-                <InfoItem 
-                  label="ORCID" 
-                  value={submission?.formData.professionalCredentials.researchIds.orcid} 
-                />
-                <InfoItem 
-                  label="Google Scholar" 
-                  value={submission?.formData.professionalCredentials.researchIds.googleScholar} 
-                />
-                <InfoItem 
-                  label="Research Gate" 
-                  value={submission?.formData.professionalCredentials.researchIds.researchGate} 
-                />
-              </div>
-            </div>
-          </div>
-        </FormSection>
-
-        {/* Research Interests */}
-        <FormSection title="Research Interests" icon={Brain}>
-          <div className="grid grid-cols-2 gap-6">
-            <InfoItem 
-              label="Preferred Collaboration" 
-              value={submission?.formData.interests.preferredCollaboration} 
-            />
-            <InfoItem 
-              label="Willing to Mentor" 
-              value={submission?.formData.interests.willingToMentor ? "Yes" : "No"} 
-            />
           </div>
         </FormSection>
 
         {/* Documents */}
         <FormSection title="Uploaded Documents" icon={FileText}>
           <div className="grid md:grid-cols-2 gap-4">
-            {Object.entries(submission?.files || {}).map(([key, file]) => (
+            {Object.entries(submission?.formData.files || {}).map(([key, file]) => (
               <Card key={key}>
                 <CardHeader className="border-b bg-muted">
                   <div className="flex items-center gap-2">

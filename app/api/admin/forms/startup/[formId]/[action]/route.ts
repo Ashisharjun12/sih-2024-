@@ -40,124 +40,102 @@ export async function POST(
         message: "Your startup application has been rejected.",
         role: session.user.role!,
       }, user._id);
+
+      await submission.save();
+      return NextResponse.json({
+        success: true,
+        message: "Application rejected successfully"
+      });
     }
 
-    // If approving, create startup profile and update user role
+    // Handle approval
     if (params.action === "approve") {
       try {
-        console.log("Form Submission Data:", JSON.stringify(submission, null, 2));
-
-        // Extract startup details to avoid duplicate properties
-        const {
-          startupName,
-          industry,
-          stage,
-          registrationNumber,
-          incorporationDate,
-          businessModel,
-          revenueModel,
-          founders,
-          equitySplits,
-          gstNumber,
-          panNumber,
-          cinNumber,
-          msmeRegistration,
-        } = submission.formData.startupDetails;
-
-        // Prepare startup data with required fields and files
+        // Prepare startup data with correct structure from form submission
         const startupData = {
           userId: user._id,
+          
+          // Owner Information
           owner: {
             fullName: submission.formData.owner.fullName || user.name,
             email: submission.formData.owner.email || user.email,
             phone: submission.formData.owner.phone,
             businessAddress: submission.formData.owner.businessAddress,
             dateOfBirth: submission.formData.owner.dateOfBirth,
-            gender: submission.formData.owner.gender,
+            gender: submission.formData.owner.gender
           },
+
+          // Startup Details
           startupDetails: {
-            startupName,
-            industry,
-            stage,
-            registrationNumber: registrationNumber || `REG-${Date.now()}`,
-            incorporationDate,
-            businessModel,
-            revenueModel,
-            founders,
-            equitySplits,
-            ownershipPercentage: 100,
-            gstNumber,
-            panNumber,
-            cinNumber,
-            msmeRegistration,
+            startupName: submission.formData.startupDetails.startupName,
+            startupLogo: submission.formData.startupDetails.startupLogo,
+            about: submission.formData.startupDetails.about,
+            industries: submission.formData.startupDetails.industries,
+            sectors: submission.formData.startupDetails.sectors,
+            stage: submission.formData.startupDetails.stage,
+            registrationNumber: submission.formData.startupDetails.registrationNumber,
+            incorporationDate: submission.formData.startupDetails.incorporationDate,
+            businessModel: submission.formData.startupDetails.businessModel,
+            revenueModel: submission.formData.startupDetails.revenueModel,
+            founders: submission.formData.startupDetails.founders || [],
+            equitySplits: submission.formData.startupDetails.equitySplits || []
           },
+
+          // Business Activities
           businessActivities: {
-            missionAndVision: submission.formData.businessActivities.missionAndVision,
-            intellectualProperty: submission.formData.businessActivities.intellectualProperty || [],
+            missionAndVision: submission.formData.businessActivities.missionAndVision
           },
+
+          // Legal and Compliance
           legalAndCompliance: {
             gstin: submission.formData.legalAndCompliance?.gstin,
-            licenses: submission.formData.legalAndCompliance?.licenses || [],
-            certifications: submission.formData.legalAndCompliance?.certifications || [],
-            auditorDetails: submission.formData.legalAndCompliance?.auditorDetails || {},
+            licenses: submission.formData.legalAndCompliance?.licenses || []
           },
-          supportAndNetworking: {
-            supportRequested: submission.formData.supportAndNetworking?.supportRequested || [],
-            mentorshipPrograms: submission.formData.supportAndNetworking?.mentorshipPrograms,
-            potentialInvestors: submission.formData.supportAndNetworking?.potentialInvestors,
-            isActivelyFundraising: submission.formData.supportAndNetworking?.isActivelyFundraising,
-          },
+
+          // Additional Info and Documents
           additionalInfo: {
             website: submission.formData.additionalInfo?.website,
             socialMedia: submission.formData.additionalInfo?.socialMedia || {},
-            pitchDeck: submission.files?.pitchDeck || {},
-            identityProof: submission.files?.identityProof || {},
-            businessPlan: submission.files?.businessPlan || {},
-            financialProjections: submission.files?.financialProjections || {},
-            incorporationCertificate: submission.files?.incorporationCertificate || {},
-            // documents: [
-            //   submission.files?.identityProof && {
-            //     public_id: submission.files.identityProof.public_id,
-            //     secure_url: submission.files.identityProof.secure_url,
-            //   },
-            //   submission.files?.businessPlan && {
-            //     public_id: submission.files.businessPlan.public_id,
-            //     secure_url: submission.files.businessPlan.secure_url,
-            //   },
-            //   submission.files?.financialProjections && {
-            //     public_id: submission.files.financialProjections.public_id,
-            //     secure_url: submission.files.financialProjections.secure_url,
-            //   },
-            //   submission.files?.incorporationCertificate && {
-            //     public_id: submission.files.incorporationCertificate.public_id,
-            //     secure_url: submission.files.incorporationCertificate.secure_url,
-            //   },
-            // ].filter(Boolean),
+            pitchDeck: submission.formData.additionalInfo?.pitchDeck,
+            identityProof: submission.formData.additionalInfo?.identityProof,
+            incorporationCertificate: submission.formData.additionalInfo?.incorporationCertificate
           },
+
+          isActivelyFundraising: submission.formData.isActivelyFundraising || false
         };
 
+        // Create startup profile
+        const startup = new Startup(startupData);
+        await startup.save();
 
-        // Create startup profile and update user
-        const startupProfile = await Startup.create(startupData);
-
+        // Update user role and profile reference
         user.role = "startup";
-        user.startupProfile = startupProfile._id;
         await user.save();
 
-        submission.startupProfile = startupProfile._id;
+        // Update submission with profile reference
         await submission.save();
+
+        // Add notification
         await addNotification({
           name: "Admin",
           message: "Your startup application has been approved.",
           role: session.user.role!,
         }, user._id);
 
+        return NextResponse.json({ 
+          success: true,
+          message: "Startup profile created and application approved" 
+        });
+
       } catch (error) {
         console.error("Error creating startup profile:", error);
-        return NextResponse.json({
-          error: "Failed to create startup profile",
-          details: error instanceof Error ? error.message : "Unknown error"
-        }, { status: 500 });
+        return NextResponse.json(
+          { 
+            error: "Failed to create startup profile",
+            details: error instanceof Error ? error.message : "Unknown error"
+          },
+          { status: 500 }
+        );
       }
     }
 

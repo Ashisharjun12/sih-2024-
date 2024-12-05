@@ -36,15 +36,6 @@ const formSubmissionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  files: {
-    identityProof: fileSchema,
-    businessPlan: fileSchema,
-    pitchDeck: fileSchema,
-    financialProjections: fileSchema,
-    incorporationCertificate: fileSchema,
-    profilePicture: fileSchema,
-    cv:fileSchema,
-  },
   submittedAt: {
     type: Date,
     default: Date.now,

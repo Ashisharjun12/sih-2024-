@@ -48,45 +48,66 @@ interface FormSubmission {
         state: string;
         pincode: string;
       };
-      gender: string;
-      identityProof: {
-        type: string;
-        number: string;
-      };
+      dateOfBirth: Date;
+      gender: "Male" | "Female" | "Other";
     };
     startupDetails: {
       startupName: string;
-      industry: string;
-      stage: string;
-      businessModel: string;
+      startupLogo?: {
+        public_id: string;
+        secure_url: string;
+      };
+      about: string;
+      industries: string[];
+      sectors: string[];
+      stage: "Ideation" | "Validation" | "Scaling" | "Expansion";
+      registrationNumber: string;
+      incorporationDate: Date;
+      businessModel: "B2B" | "B2C" | "B2B2C" | "Other";
       revenueModel: string;
-      gstNumber?: string;
-      panNumber?: string;
-      cinNumber?: string;
-      msmeRegistration?: string;
-      founders: any[];
-      equitySplits: any[];
-      customIndustry?: string;
-      customRevenueModel?: string;
+      founders: Array<{
+        name: string;
+        role: string;
+        contactDetails: string;
+      }>;
+      equitySplits: Array<{
+        ownerName: string;
+        equityPercentage: number;
+      }>;
     };
     businessActivities: {
       missionAndVision: string;
     };
+    legalAndCompliance: {
+      gstin?: string;
+      licenses?: Array<{
+        type: string;
+        number: string;
+        validUntil: Date;
+      }>;
+    };
+    isActivelyFundraising: boolean;
     additionalInfo: {
-      website: string;
-      socialMedia: {
-        linkedIn: string;
-        facebook: string;
-        twitter: string;
+      website?: string;
+      socialMedia?: {
+        linkedIn?: string;
+        facebook?: string;
+        twitter?: string;
+      };
+      pitchDeck?: {
+        public_id: string;
+        secure_url: string;
+      };
+      identityProof?: {
+        public_id: string;
+        secure_url: string;
+      };
+      incorporationCertificate?: {
+        public_id: string;
+        secure_url: string;
       };
     };
   };
-  files: Record<string, {
-    secure_url: string;
-    viewable_url: string;
-    originalName: string;
-    fileType: string;
-  }>;
 }
 
 const documentTypes = {
@@ -95,20 +116,10 @@ const documentTypes = {
     icon: User,
     description: "Personal identification document",
   },
-  businessPlan: {
-    title: "Business Plan",
-    icon: FileText,
-    description: "Detailed business strategy document",
-  },
   pitchDeck: {
     title: "Pitch Deck",
     icon: Building2,
     description: "Startup presentation slides",
-  },
-  financialProjections: {
-    title: "Financial Projections",
-    icon: Banknote,
-    description: "Financial forecasts and projections",
   },
   incorporationCertificate: {
     title: "Incorporation Certificate",
@@ -127,10 +138,9 @@ const DocumentCard = ({
   description: string; 
   icon: any; 
   file?: { 
+    public_id: string;
     secure_url: string;
-    viewable_url: string;
-    originalName: string;
-    fileType: string;
+    originalName?: string;
   }; 
 }) => (
   <Card>
@@ -147,34 +157,36 @@ const DocumentCard = ({
       {file ? (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground truncate">
-            {file.originalName}
+            {file.originalName || 'Document'}
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               className="w-full"
-              onClick={() => window.open(file.fileType.includes('pdf') ? file.viewable_url : file.secure_url, '_blank')}
+              onClick={() => window.open(file.secure_url, '_blank')}
             >
               <Eye className="h-4 w-4 mr-2" />
               View
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                const a = document.createElement('a');
-                a.href = file.secure_url;
-                a.download = file.originalName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
+            {file.originalName && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const a = document.createElement('a');
+                  a.href = file.secure_url;
+                  a.download = file.originalName!;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            )}
           </div>
         </div>
       ) : (
@@ -205,6 +217,32 @@ const InfoItem = ({ label, value }: { label: string; value: string | number | un
   </div>
 );
 
+const LegalSection = ({ data }: { data: FormSubmission['formData']['legalAndCompliance'] }) => (
+  <div className="space-y-4">
+    <InfoItem label="GSTIN" value={data.gstin} />
+    
+    {data.licenses && data.licenses.length > 0 && (
+      <div>
+        <h4 className="text-sm font-medium text-muted-foreground mb-2">Licenses</h4>
+        <div className="space-y-4">
+          {data.licenses.map((license, index) => (
+            <div key={index} className="border p-4 rounded-lg">
+              <div className="grid grid-cols-2 gap-4">
+                <InfoItem label="Type" value={license.type} />
+                <InfoItem label="Number" value={license.number} />
+                <InfoItem 
+                  label="Valid Until" 
+                  value={new Date(license.validUntil).toLocaleDateString()} 
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 export default function FormDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -219,11 +257,18 @@ export default function FormDetailPage() {
 
   const fetchFormDetails = async () => {
     try {
+      console.log("Fetching startup details for ID:", params.id);
+      
       const response = await fetch(`/api/admin/forms/${params.id}`);
-      if (!response.ok) throw new Error("Failed to fetch form details");
+      console.log("Response status:", response.status);
+      
       const data = await response.json();
+      console.log("Received startup data:", data);
+
+      if (!response.ok) throw new Error("Failed to fetch form details");
       setSubmission(data.submission);
     } catch (error) {
+      console.error("Error fetching startup details:", error);
       toast({
         title: "Error",
         description: "Failed to fetch form details",
@@ -436,39 +481,46 @@ export default function FormDetailPage() {
           </div>
         </FormSection>
 
+        {/* Legal & Compliance */}
+        <FormSection title="Legal & Compliance" icon={FileCheck}>
+          <LegalSection data={submission?.formData.legalAndCompliance} />
+        </FormSection>
+
         {/* Startup Details */}
         <FormSection title="Startup Details" icon={Building2}>
           <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-muted-foreground">Startup Name</p>
-              <p className="text-base font-medium">{submission?.formData.startupDetails.startupName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Industry</p>
-              <p className="text-base font-medium">{submission?.formData.startupDetails.industry}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Stage</p>
-              <p className="text-base font-medium">{submission?.formData.startupDetails.stage}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Business Model</p>
-              <p className="text-base font-medium">{submission?.formData.startupDetails.businessModel}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Revenue Model</p>
-              <p className="text-base font-medium">
-                {submission?.formData.startupDetails.revenueModel === "Other" 
-                  ? submission?.formData.startupDetails.customRevenueModel 
-                  : submission?.formData.startupDetails.revenueModel}
-              </p>
-            </div>
-            {submission?.formData.startupDetails.customIndustry && (
-              <div>
-                <p className="text-sm text-muted-foreground">Custom Industry</p>
-                <p className="text-base font-medium">{submission?.formData.startupDetails.customIndustry}</p>
+            <InfoItem 
+              label="Startup Name" 
+              value={submission?.formData.startupDetails.startupName} 
+            />
+            <InfoItem 
+              label="Registration Number" 
+              value={submission?.formData.startupDetails.registrationNumber} 
+            />
+            <InfoItem 
+              label="Incorporation Date" 
+              value={new Date(submission?.formData.startupDetails.incorporationDate || '').toLocaleDateString()} 
+            />
+            <InfoItem 
+              label="Stage" 
+              value={submission?.formData.startupDetails.stage} 
+            />
+            <div className="col-span-2">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Industries</h4>
+              <div className="flex flex-wrap gap-2">
+                {submission?.formData.startupDetails.industries.map((industry, index) => (
+                  <Badge key={index} variant="secondary">{industry}</Badge>
+                ))}
               </div>
-            )}
+            </div>
+            <div className="col-span-2">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Sectors</h4>
+              <div className="flex flex-wrap gap-2">
+                {submission?.formData.startupDetails.sectors.map((sector, index) => (
+                  <Badge key={index} variant="secondary">{sector}</Badge>
+                ))}
+              </div>
+            </div>
           </div>
         </FormSection>
 
@@ -482,10 +534,6 @@ export default function FormDetailPage() {
           {renderEquitySplits(submission?.formData.startupDetails.equitySplits)}
         </FormSection>
 
-        {/* Financial Details */}
-        <FormSection title="Financial Information" icon={BanknoteIcon}>
-          {renderFinancialDetails(submission?.formData)}
-        </FormSection>
 
         {/* Business Activities */}
         <FormSection title="Business Activities" icon={Activity}>
@@ -515,15 +563,22 @@ export default function FormDetailPage() {
         {/* Documents */}
         <FormSection title="Uploaded Documents" icon={FileText}>
           <div className="grid md:grid-cols-2 gap-4">
-            {Object.entries(documentTypes).map(([key, docType]) => (
-              <DocumentCard
-                key={key}
-                title={docType.title}
-                description={docType.description}
-                icon={docType.icon}
-                file={submission?.files?.[key]}
-              />
-            ))}
+            {Object.entries(documentTypes).map(([key, docType]) => {
+              const fileData = submission?.formData.additionalInfo?.[key as keyof typeof submission.formData.additionalInfo];
+              const file = typeof fileData === 'object' && 'public_id' in fileData && 'secure_url' in fileData
+                ? fileData as { public_id: string; secure_url: string; originalName?: string }
+                : undefined;
+
+              return (
+                <DocumentCard
+                  key={key}
+                  title={docType.title}
+                  description={docType.description}
+                  icon={docType.icon}
+                  file={file}
+                />
+              );
+            })}
           </div>
         </FormSection>
 

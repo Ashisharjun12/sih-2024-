@@ -1,10 +1,19 @@
-import { AuthOptions } from "next-auth";
-import NextAuth from "next-auth/next";
+import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { connectDB } from "@/lib/db";
+import { MongoDBAdapter } from "@auth/mongodb-adapter";
+import clientPromise from "@/lib/mongodb";
 import User from "@/models/user.model";
-import { MongoDBAdapter } from "@auth/mongodb-adapter"
-import clientPromise from "@/lib/mongodb"
+import { connectDB } from "@/lib/db";
+
+// Add proper type for User document
+interface UserDocument {
+  _id: string;
+  name: string;
+  email: string;
+  image?: string;
+  role: string;
+  __v: number;
+}
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -57,7 +66,7 @@ export const authOptions: AuthOptions = {
           await connectDB();
           const dbUser = await User.findOne({ email: token.email })
             .select('role _id')
-            .lean();
+            .lean() as UserDocument | null;  // Add proper type assertion
             
           if (dbUser) {
             token.role = dbUser.role;
