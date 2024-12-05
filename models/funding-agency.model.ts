@@ -243,6 +243,7 @@ const documentationSchema = new mongoose.Schema({
     public_id: String,
     secure_url: String,
   },
+
   taxDocuments: {
     public_id: String,
     secure_url: String,

@@ -4,11 +4,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
-  LineChart,
+  Users,
   Calendar,
   MessageSquare,
-  FileText,
-  File,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,32 +14,27 @@ import { usePathname } from "next/navigation";
 const bottomNavItems = [
   {
     title: "Overview",
-    href: "/startup",
+    href: "/mentor",
     icon: LayoutDashboard,
   },
   {
-    title: "Metrics",
-    href: "/startup/metrics",
-    icon: LineChart,
+    title: "Mentees",
+    href: "/mentor/mentees",
+    icon: Users,
   },
   {
     title: "Meetings",
-    href: "/startup/meetings",
+    href: "/mentor/meetings",
     icon: Calendar,
   },
   {
     title: "Messages",
-    href: "/startup/messages",
+    href: "/mentor/messages",
     icon: MessageSquare,
-  },
-  {
-    title: "ipr",
-    href: "/startup/ipr",
-    icon: File,
   },
 ];
 
-export default function BottomNav() {
+export default function MentorBottomNav() {
   const pathname = usePathname();
 
   return (

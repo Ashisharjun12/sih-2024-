@@ -169,7 +169,7 @@ const OwnerDetailsStep = ({ form, handleFileChange, handleFileUpload, isUploadin
           <FileUpload
             label="Upload Identity Proof"
             fileType="identityProof"
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
             onFileChange={(fileData) => handleFileUpload(fileData.file, 'identityProof')}
             isUploading={isUploading}
           />
@@ -496,7 +496,7 @@ const StartupDetailsStep = ({ form, handleFileChange, handleFileUpload, isUpload
               <FileUpload
                 label="Upload Logo"
                 fileType="startupLogo"
-                accept="image/*"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                 onFileChange={(fileData) => handleFileUpload(fileData.file, 'startupLogo')}
                 isUploading={isUploading}
               />
@@ -677,7 +677,7 @@ const StartupDetailsStep = ({ form, handleFileChange, handleFileUpload, isUpload
           <FileUpload
             label="Upload Pitch Deck"
             fileType="pitchDeck"
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
             onFileChange={(fileData) => handleFileUpload(fileData.file, 'pitchDeck')}
             isUploading={isUploading}
           />
@@ -689,7 +689,7 @@ const StartupDetailsStep = ({ form, handleFileChange, handleFileUpload, isUpload
           <FileUpload
             label="Upload Certificate"
             fileType="incorporationCertificate"
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
             onFileChange={(fileData) => handleFileUpload(fileData.file, 'incorporationCertificate')}
             isUploading={isUploading}
           />
