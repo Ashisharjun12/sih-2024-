@@ -105,6 +105,7 @@ export async function POST(
             supportRequested: submission.formData.supportAndNetworking?.supportRequested || [],
             mentorshipPrograms: submission.formData.supportAndNetworking?.mentorshipPrograms,
             potentialInvestors: submission.formData.supportAndNetworking?.potentialInvestors,
+            isActivelyFundraising: submission.formData.supportAndNetworking?.isActivelyFundraising,
           },
           additionalInfo: {
             website: submission.formData.additionalInfo?.website,

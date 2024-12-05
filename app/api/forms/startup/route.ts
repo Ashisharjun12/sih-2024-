@@ -1,60 +1,39 @@
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import FormSubmission from "@/models/form-submission.model";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { connectDB } from "@/lib/db";
+import Startup from "@/models/startup.model";
 
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" }, 
-        { status: 401 }
-      );
+export async function POST(req: NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        await connectDB();
+
+        const formData = await req.json();
+
+        // Validate required fields
+        const requiredFields = ['owner', 'startupDetails'];
+        for (const field of requiredFields) {
+            if (!formData[field]) {
+                return NextResponse.json({ error: `${field} is required` }, { status: 400 });
+            }
+        }
+
+        // Create new startup
+        const startup = new Startup({
+            userId: session.user.id,
+            ...formData,
+        });
+
+        await startup.save();
+
+        return NextResponse.json({ success: true, startup });
+    } catch (error) {
+        console.error("Error creating startup:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
-
-    await connectDB();
-
-    const formData = await request.json();
-
-    // Extract file data
-    const files = {
-      identityProof: formData.files?.identityProof,
-      businessPlan: formData.files?.businessPlan,
-      pitchDeck: formData.files?.pitchDeck,
-      financialProjections: formData.files?.financialProjections,
-      incorporationCertificate: formData.files?.incorporationCertificate,
-    };
-
-    // Remove files from formData to avoid duplication
-    const { files: _, ...restFormData } = formData;
-
-    // Create form submission
-    const submission = await FormSubmission.create({
-      userId: session.user.id,
-      formType: "startup",
-      formData: restFormData,
-      status: "pending",
-      userEmail: session.user.email,
-      userName: session.user.name,
-      files,
-      submittedAt: new Date(),
-    });
-
-    console.log("Created submission:", submission); // Debug log
-
-    return NextResponse.json({ 
-      success: true, 
-      message: "Form submitted successfully",
-      submission 
-    });
-  } catch (error) {
-    console.error("Form submission error:", error);
-    return NextResponse.json(
-      { error: "Failed to submit form" }, 
-      { status: 500 }
-    );
-  }
 } 
