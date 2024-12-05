@@ -34,8 +34,8 @@ const bottomNavItems = [
     icon: MessageSquare,
   },
   {
-    title: "IPR",
-    href: "/startup/ipr",
+    title: "Reports",
+    href: "/startup/reports",
     icon: FileText,
   },
 ];
@@ -44,24 +44,24 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <div className="bg-background/80 backdrop-blur-lg border-t px-2 py-2">
-      <div className="flex items-center justify-around max-w-md mx-auto">
+    <div className="bg-background/80 backdrop-blur-lg border-t">
+      <div className="flex items-center justify-around">
         {bottomNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
 
           return (
-            <Link 
+            <Link
               key={item.href} 
               href={item.href}
-              className="w-16 flex flex-col items-center"
+              className="w-16"
             >
               <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
                   "flex flex-col items-center gap-1 h-auto py-2 px-0 w-full hover:bg-transparent relative",
-                  isActive && "text-primary"
+                  isActive && "text-blue-600"
                 )}
               >
                 <Icon className={cn(
@@ -75,7 +75,7 @@ export default function BottomNav() {
                   {item.title}
                 </span>
                 {isActive && (
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-600" />
                 )}
               </Button>
             </Link>
