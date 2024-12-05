@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,16 +27,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { X, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface FundingAgencyFormData {
+  userId: string;
   agencyDetails: {
     name: string;
     registrationNumber: string;
@@ -54,43 +53,47 @@ interface FundingAgencyFormData {
     phone: string;
   }>;
   fundingPreferences: {
-    investmentRange: {
-      minimum: string;
-      maximum: string;
-    };
+    minimumInvestment: number;
     preferredStages: string[];
     fundingTypes: string[];
     preferredSectors: string[];
-    disbursementMode: string;
+    preferredIndustries: string[];
   };
-  experience: {
-    yearsOfOperation: string;
-    totalInvestments: string;
-    averageTicketSize: string;
-    successfulExits: string;
-  };
-  documents: {
-    registrationCertificate?: {
+  documentation: {
+    registrationCertificate: {
       public_id: string;
       secure_url: string;
     };
-    governmentApprovals?: {
+    governmentApprovals: {
       public_id: string;
       secure_url: string;
     };
-    addressProof?: {
-      public_id: string;
-      secure_url: string;
-    };
-    taxDocuments?: {
-      public_id: string;
-      secure_url: string;
-    };
-    portfolioDocument?: {
+    taxDocuments: {
       public_id: string;
       secure_url: string;
     };
   };
+  experience: {
+    yearsOfOperation: number;
+    totalInvestments: number;
+    averageTicketSize: number;
+  };
+  activeInvestments: Array<{
+    startup: string;
+    amount: number;
+    date: string;
+    status: string;
+    documents: Array<{
+      title: string;
+      public_id: string;
+      secure_url: string;
+    }>;
+  }>;
+}
+
+interface FileData {
+  file: File | null;
+  uploadData?: any;
 }
 
 const steps = [
@@ -106,102 +109,173 @@ const steps = [
   },
 ];
 
-const agencyTypes = [
-  { value: "Venture_Capital", label: "Venture Capital (VC) Firm" },
-  { value: "Angel_Network", label: "Angel Investor Network" },
-  { value: "Crowdfunding_Platform", label: "Crowdfunding Platform" },
-  { value: "Government_Body", label: "Government Grant Body" },
-  { value: "Financial_Institution", label: "Bank or Financial Institution" },
-  { value: "Corporate_Investor", label: "Corporate/Private Investor" },
-  { value: "NGO_Foundation", label: "NGO/Foundation" },
-];
+const AGENCY_TYPES = [
+  'Venture_Capital',
+  'Angel_Network',
+  'Crowdfunding_Platform',
+  'Government_Body',
+  'Financial_Institution',
+  'Corporate_Investor',
+  'NGO_Foundation'
+] as const;
 
-const sectorOptions = [
-  { value: "Technology", label: "Technology" },
-  { value: "Healthcare", label: "Healthcare" },
-  { value: "Education", label: "Education" },
-  { value: "Finance", label: "Finance" },
-  { value: "Agriculture", label: "Agriculture" },
-  { value: "Clean_Energy", label: "Clean Energy" },
-  { value: "Manufacturing", label: "Manufacturing" },
-  { value: "Other", label: "Other" },
-];
+const FUNDING_STAGES = [
+  'Ideation',
+  'Validation', 
+  'Early_Traction',
+  'Scaling',
+  'Growth'
+] as const;
 
-interface SubmissionData {
-  userId: string;
-  formType: "fundingAgency";
-  formData: {
-    owner: {
-      fullName: string;
-      email: string;
-      phone: string;
-      businessAddress: {
-        physicalAddress: string;
-      };
-      note: string;
-    };
-    agencyDetails: {
-      name: string;
-      registrationNumber: string;
-      type: string;
-      establishmentDate: string;
-      description: string;
-    };
-    contactInformation: {
-      officialAddress: string;
-      officialEmail: string;
-      phoneNumber: string;
-      websiteURL: string;
-    };
-    representatives: Array<{
-      name: string;
-      designation: string;
-      email: string;
-      phone: string;
-      note?: string;
-    }>;
-    fundingPreferences: {
-      investmentRange: {
-        minimum: string;
-        maximum: string;
-      };
-      preferredStages: string[];
-      fundingTypes: string[];
-      preferredSectors: string[];
-      disbursementMode: string;
-    };
-    experience: {
-      yearsOfOperation: string;
-      totalInvestments: string;
-      averageTicketSize: string;
-      successfulExits: string;
-    };
-    documents: {
-      registrationCertificate?: {
-        public_id: string;
-        secure_url: string;
-      };
-      governmentApprovals?: {
-        public_id: string;
-        secure_url: string;
-      };
-      addressProof?: {
-        public_id: string;
-        secure_url: string;
-      };
-      taxDocuments?: {
-        public_id: string;
-        secure_url: string;
-      };
-      portfolioDocument?: {
-        public_id: string;
-        secure_url: string;
-      };
-    };
-  };
-  userEmail: string;
-  userName: string;
-}
+const FUNDING_TYPES = [
+  'Private_Equity',
+  'Equity_Funding',
+  'Debt_Funding',
+  'Grants',
+  'Convertible_Notes',
+  'Revenue_Based_Financing',
+  'Scholarship'
+] as const;
+
+const INVESTMENT_STATUS = [
+  'Proposed',
+  'In_Progress',
+  'Completed',
+  'Cancelled'
+] as const;
+
+const PREFERRED_SECTORS = [
+  '3d printing',
+  'Accounting',
+  'AdTech',
+  'Advisory',
+  'Agri-Tech',
+  'Agricultural Chemicals',
+  'Animal Husbandry',
+  'Apparel',
+  'Apparel & Accessories',
+  'Application Development',
+  'Art',
+  'Assistance Technology',
+  'Auto & Truck Manufacturers',
+  'Auto Vehicles, Parts & Service Retailers',
+  'Auto, Truck & Motorcycle Parts',
+  'Aviation & Others',
+  'Baby Care',
+  'Big Data',
+  'Billing and Invoicing',
+  'Biotechnology',
+  'Bitcoin and Blockchain',
+  'BPO',
+  'Branding',
+  'Business Finance',
+  'Business Intelligence',
+  'Business Support Services',
+  'Business Support Supplies',
+  'Clean Tech',
+  'Cloud',
+  'Coaching',
+  'Collaboration',
+  'Commercial Printing Services',
+  'Commodity Chemicals',
+  'Comparison Shopping',
+  'Computer & Electronics Retailers',
+  'Construction & Engineering',
+  'Construction Materials',
+  'Construction Supplies & Fixtures',
+  'Corporate Social Responsibility',
+  'Coworking Spaces',
+  'Crowdfunding',
+  'Customer Support',
+  'CXM',
+  'Cyber Security',
+  'Dairy Farming',
+  'Data Science',
+  'Defence Equipment',
+  'Digital Marketing (SEO Automation)',
+  'Digital Media',
+  'Digital Media Blogging',
+  'Digital Media News',
+  'Digital Media Publishing',
+  'Digital Media Video',
+  'Discovery',
+  'Diversified Chemicals',
+  'Drones',
+  'E-Commerce',
+  'E-learning',
+  'Education',
+  'Education Technology',
+  'Electric Vehicles',
+  'Electronics',
+  'Embedded',
+  'Employment Services',
+  'Enterprise Mobility',
+  'Entertainment',
+  'Environmental Services & Equipment',
+  'ERP',
+  'Events Management',
+  'Experiential Travel'
+  // ... continue with all sectors from the model
+] as const;
+
+const PREFERRED_INDUSTRIES = [
+  'Advertising',
+  'Aeronautics Aerospace & Defence',
+  'Agriculture',
+  'AI',
+  'Airport Operations',
+  'Analytics',
+  'Animation',
+  'AR VR (Augmented + Virtual Reality)',
+  'Architecture Interior Design',
+  'Art & Photography',
+  'Automotive',
+  'Biotechnology',
+  'Chemicals',
+  'Computer Vision',
+  'Construction',
+  'Dating Matrimonial',
+  'Design',
+  'Education',
+  'Enterprise Software',
+  'Events',
+  'Fashion',
+  'Finance Technology',
+  'Food & Beverages',
+  'Green Technology',
+  'Healthcare & Lifesciences',
+  'House-Hold Services',
+  'Human Resources',
+  'Indic Language Startups',
+  'Internet of Things',
+  'IT Services',
+  'Logistics',
+  'Marketing',
+  'Media & Entertainment',
+  'Nanotechnology',
+  'Non- Renewable Energy',
+  'Other Specialty Retailers',
+  'Others',
+  'Passenger Experience',
+  'Pets & Animals',
+  'Professional & Commercial Services',
+  'Real Estate',
+  'Renewable Energy',
+  'Retail',
+  'Robotics',
+  'Safety',
+  'Security Solutions',
+  'Social Impact',
+  'Social Network',
+  'Sports',
+  'Technology Hardware',
+  'Telecommunication & Networking',
+  'Textiles & Apparel',
+  'Toys and Games',
+  'Transportation & Storage',
+  'Travel & Tourism',
+  'Waste Management'
+] as const;
 
 export default function FundingAgencyRegistrationForm() {
   const { data: session } = useSession();
@@ -209,7 +283,7 @@ export default function FundingAgencyRegistrationForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [files, setFiles] = useState<Record<string, any>>({});
+  const [files, setFiles] = useState<Record<string, FileData>>({});
 
   const form = useForm<FundingAgencyFormData>({
     defaultValues: {
@@ -218,156 +292,105 @@ export default function FundingAgencyRegistrationForm() {
         registrationNumber: "",
         type: "",
         establishmentDate: "",
-        description: "",
+        description: ""
       },
       contactInformation: {
         officialAddress: "",
-        officialEmail: session?.user?.email || "",
+        officialEmail: "",
         phoneNumber: "",
-        websiteURL: "",
+        websiteURL: ""
       },
-      representatives: [{
-        name: session?.user?.name || "",
-        designation: "",
-        email: session?.user?.email || "",
-        phone: "",
-      }],
+      representatives: [],
       fundingPreferences: {
-        investmentRange: {
-          minimum: "0",
-          maximum: "0",
-        },
+        minimumInvestment: 0,
         preferredStages: [],
         fundingTypes: [],
         preferredSectors: [],
-        disbursementMode: "",
+        preferredIndustries: []
       },
       experience: {
-        yearsOfOperation: "0",
-        totalInvestments: "0",
-        averageTicketSize: "0",
-        successfulExits: "0",
+        yearsOfOperation: 0,
+        totalInvestments: 0,
+        averageTicketSize: 0
       },
-      documents: {
-        registrationCertificate: {
-          public_id: "",
-          secure_url: "",
-        },
-        governmentApprovals: {
-          public_id: "",
-          secure_url: "",
-        },
-        addressProof: {
-          public_id: "",
-          secure_url: "",
-        },
-        taxDocuments: {
-          public_id: "",
-          secure_url: "",
-        },
-        portfolioDocument: {
-          public_id: "",
-          secure_url: "",
-        },
-      },
-    },
+      activeInvestments: []
+    }
   });
 
-  const handleFileChange = (fileType: string, fileData: { file: File | null; uploadData?: any }) => {
+  const handleFileChange = (fileType: string, fileData: FileData) => {
     setFiles(prev => ({
       ...prev,
-      [fileType]: {
-        file: fileData.file,
-        uploadData: fileData.uploadData
-      }
+      [fileType]: fileData
     }));
   };
 
   const onSubmit = async (data: FundingAgencyFormData) => {
     try {
       setIsSubmitting(true);
-
-      if (!session?.user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to submit this form",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const submissionData: SubmissionData = {
-        userId: session.user.id,
-        formType: "fundingAgency",
-        formData: {
-          owner: {
-            fullName: data.representatives[0].name,
-            email: data.representatives[0].email,
-            phone: data.representatives[0].phone,
-            businessAddress: {
-              physicalAddress: data.contactInformation.officialAddress,
-            },
-            note: "This is the primary representative (index 0)"
-          },
-          agencyDetails: data.agencyDetails,
-          contactInformation: data.contactInformation,
-          representatives: data.representatives.map((rep, index) => ({
-            ...rep,
-            note: index === 0 ? "This is also the owner" : "Additional representative"
-          })),
-          fundingPreferences: {
-            ...data.fundingPreferences,
-            investmentRange: {
-              minimum: String(data.fundingPreferences.investmentRange.minimum),
-              maximum: String(data.fundingPreferences.investmentRange.maximum)
-            }
-          },
-          experience: {
-            yearsOfOperation: String(data.experience.yearsOfOperation),
-            totalInvestments: String(data.experience.totalInvestments),
-            averageTicketSize: String(data.experience.averageTicketSize),
-            successfulExits: String(data.experience.successfulExits)
-          },
-          documents: {
-            registrationCertificate: files.registrationCertificate?.uploadData,
-            governmentApprovals: files.governmentApprovals?.uploadData,
-            addressProof: files.addressProof?.uploadData,
-            taxDocuments: files.taxDocuments?.uploadData,
-            portfolioDocument: files.portfolioDocument?.uploadData,
+      
+      // First upload all files
+      const uploadedFiles: Record<string, { public_id: string; secure_url: string }> = {};
+      
+      for (const [fileType, fileData] of Object.entries(files)) {
+        if (fileData.file) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error(`Failed to upload ${fileType}`);
           }
-        },
-        userEmail: session.user.email || "",
-        userName: session.user.name || "",
-      };
-
-      console.log("Form Submission Data:", submissionData);
-
-      try {
-        const response = await fetch("/api/forms/fundingAgency", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(submissionData),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to submit form");
+          
+          uploadedFiles[fileType] = await uploadResponse.json();
         }
-
-        const result = await response.json();
-        console.log("Form submission response:", result);
-
-        toast({
-          title: "Success!",
-          description: "Your funding agency registration has been submitted.",
-        });
-        router.push("/");
-      } catch (err) {
-        throw new Error(err instanceof Error ? err.message : "Failed to submit form");
       }
 
-    } catch (error: unknown) {
+      // Log the form data being sent
+      console.log("Submitting form data:", {
+        formData: {
+          ...data,
+          documentation: {
+            registrationCertificate: uploadedFiles.registrationCertificate,
+            governmentApprovals: uploadedFiles.governmentApprovals,
+            taxDocuments: uploadedFiles.taxDocuments
+          }
+        }
+      });
+
+      // Submit form data
+      const response = await fetch('/api/forms/fundingAgency', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          formData: {
+            ...data,
+            documentation: {
+              registrationCertificate: uploadedFiles.registrationCertificate,
+              governmentApprovals: uploadedFiles.governmentApprovals,
+              taxDocuments: uploadedFiles.taxDocuments
+            }
+          }
+        })
+      });
+
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit form');
+      }
+
+      toast({
+        title: "Success",
+        description: "Your funding agency application has been submitted for review",
+      });
+
+      // router.push("/dashboard");
+    } catch (error) {
       console.error("Form submission error:", error);
       toast({
         title: "Error",
@@ -452,7 +475,7 @@ export default function FundingAgencyRegistrationForm() {
                               <FormItem>
                                 <FormLabel>Agency Name</FormLabel>
                                 <FormControl>
-                                  <Input {...field} />
+                                  <Input {...field} placeholder="Enter agency name" />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -478,15 +501,13 @@ export default function FundingAgencyRegistrationForm() {
                               <FormItem>
                                 <FormLabel>Agency Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select agency type" />
-                                    </SelectTrigger>
-                                  </FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select agency type" />
+                                  </SelectTrigger>
                                   <SelectContent>
-                                    {agencyTypes.map((type) => (
-                                      <SelectItem key={type.value} value={type.value}>
-                                        {type.label}
+                                    {AGENCY_TYPES.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {type.replace(/_/g, ' ')}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -502,7 +523,11 @@ export default function FundingAgencyRegistrationForm() {
                               <FormItem>
                                 <FormLabel>Establishment Date</FormLabel>
                                 <FormControl>
-                                  <Input {...field} type="date" />
+                                  <Input 
+                                    type="date" 
+                                    {...field}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -678,23 +703,10 @@ export default function FundingAgencyRegistrationForm() {
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
-                            name="fundingPreferences.investmentRange.minimum"
+                            name="fundingPreferences.minimumInvestment"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Minimum Investment (INR)</FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="number" min="0" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="fundingPreferences.investmentRange.maximum"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Maximum Investment (INR)</FormLabel>
+                                <FormLabel>Minimum Investment</FormLabel>
                                 <FormControl>
                                   <Input {...field} type="number" min="0" />
                                 </FormControl>
@@ -724,11 +736,11 @@ export default function FundingAgencyRegistrationForm() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="Ideation">Ideation</SelectItem>
-                                  <SelectItem value="Validation">Validation</SelectItem>
-                                  <SelectItem value="Early_Traction">Early Traction</SelectItem>
-                                  <SelectItem value="Scaling">Scaling</SelectItem>
-                                  <SelectItem value="Growth">Growth</SelectItem>
+                                  {FUNDING_STAGES.map((stage) => (
+                                    <SelectItem key={stage} value={stage}>
+                                      {stage.replace(/_/g, ' ')}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                               <div className="flex flex-wrap gap-2 mt-2">
@@ -779,12 +791,11 @@ export default function FundingAgencyRegistrationForm() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="Equity_Funding">Equity Funding</SelectItem>
-                                  <SelectItem value="Debt_Funding">Debt Funding</SelectItem>
-                                  <SelectItem value="Grants">Grants</SelectItem>
-                                  <SelectItem value="Convertible_Notes">Convertible Notes</SelectItem>
-                                  <SelectItem value="Revenue_Based_Financing">Revenue Based Financing</SelectItem>
-                                  <SelectItem value="Scholarship">Scholarship</SelectItem>
+                                  {FUNDING_TYPES.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type.replace(/_/g, ' ')}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                               <div className="flex flex-wrap gap-2 mt-2">
@@ -822,22 +833,21 @@ export default function FundingAgencyRegistrationForm() {
                             <FormItem>
                               <FormLabel>Preferred Sectors</FormLabel>
                               <Select
-                                onValueChange={(value: string) => {
+                                onValueChange={(value) => {
                                   const current = field.value || [];
                                   if (!current.includes(value)) {
                                     field.onChange([...current, value]);
                                   }
                                 }}
+                                value=""
                               >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select sectors" />
-                                  </SelectTrigger>
-                                </FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select sectors" />
+                                </SelectTrigger>
                                 <SelectContent>
-                                  {sectorOptions.map((sector) => (
-                                    <SelectItem key={sector.value} value={sector.value}>
-                                      {sector.label}
+                                  {PREFERRED_SECTORS.map((sector) => (
+                                    <SelectItem key={sector} value={sector}>
+                                      {sector}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -849,7 +859,7 @@ export default function FundingAgencyRegistrationForm() {
                                     variant="secondary"
                                     className="flex items-center gap-1"
                                   >
-                                    {sector.replace(/_/g, ' ')}
+                                    {sector}
                                     <Button
                                       type="button"
                                       variant="ghost"
@@ -872,22 +882,53 @@ export default function FundingAgencyRegistrationForm() {
 
                         <FormField
                           control={form.control}
-                          name="fundingPreferences.disbursementMode"
+                          name="fundingPreferences.preferredIndustries"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Disbursement Mode</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select disbursement mode" />
-                                  </SelectTrigger>
-                                </FormControl>
+                              <FormLabel>Preferred Industries</FormLabel>
+                              <Select
+                                onValueChange={(value) => {
+                                  const current = field.value || [];
+                                  if (!current.includes(value)) {
+                                    field.onChange([...current, value]);
+                                  }
+                                }}
+                                value=""
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select industries" />
+                                </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="Direct_Transfer">Direct Bank Transfer</SelectItem>
-                                  <SelectItem value="Installments">Installments</SelectItem>
-                                  <SelectItem value="Milestone_Based">Milestone Based</SelectItem>
+                                  {PREFERRED_INDUSTRIES.map((industry) => (
+                                    <SelectItem key={industry} value={industry}>
+                                      {industry}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {field.value?.map((industry: string, index: number) => (
+                                  <Badge 
+                                    key={index}
+                                    variant="secondary"
+                                    className="flex items-center gap-1"
+                                  >
+                                    {industry}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0 hover:bg-transparent"
+                                      onClick={() => {
+                                        const newValue = field.value?.filter((_, i) => i !== index);
+                                        field.onChange(newValue);
+                                      }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </Badge>
+                                ))}
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -937,19 +978,6 @@ export default function FundingAgencyRegistrationForm() {
                               </FormItem>
                             )}
                           />
-                          <FormField
-                            control={form.control}
-                            name="experience.successfulExits"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Successful Exits</FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="number" min="0" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
                         </div>
                       </div>
 
@@ -960,9 +988,9 @@ export default function FundingAgencyRegistrationForm() {
                           <FormItem>
                             <FormLabel>Registration Certificate</FormLabel>
                             <FileUpload
-                              label="Registration Certificate"
+                              label="Upload Registration Certificate"
                               fileType="registrationCertificate"
-                              accept="image/*,.pdf"
+                              accept=".pdf,.jpg,.jpeg,.png"
                               onFileChange={(fileData) => handleFileChange('registrationCertificate', fileData)}
                             />
                           </FormItem>
@@ -970,44 +998,113 @@ export default function FundingAgencyRegistrationForm() {
                           <FormItem>
                             <FormLabel>Government Approvals</FormLabel>
                             <FileUpload
-                              label="Government Approvals"
+                              label="Upload Government Approvals"
                               fileType="governmentApprovals"
-                              accept="image/*,.pdf"
+                              accept=".pdf,.jpg,.jpeg,.png"
                               onFileChange={(fileData) => handleFileChange('governmentApprovals', fileData)}
-                            />
-                          </FormItem>
-
-                          <FormItem>
-                            <FormLabel>Address Proof</FormLabel>
-                            <FileUpload
-                              label="Address Proof"
-                              fileType="addressProof"
-                              accept="image/*,.pdf"
-                              onFileChange={(fileData) => handleFileChange('addressProof', fileData)}
                             />
                           </FormItem>
 
                           <FormItem>
                             <FormLabel>Tax Documents</FormLabel>
                             <FileUpload
-                              label="Tax Documents"
+                              label="Upload Tax Documents"
                               fileType="taxDocuments"
-                              accept="image/*,.pdf"
+                              accept=".pdf,.jpg,.jpeg,.png"
                               onFileChange={(fileData) => handleFileChange('taxDocuments', fileData)}
-                            />
-                          </FormItem>
-
-                          <FormItem>
-                            <FormLabel>Portfolio Document</FormLabel>
-                            <FileUpload
-                              label="Portfolio Document"
-                              fileType="portfolioDocument"
-                              accept="image/*,.pdf"
-                              onFileChange={(fileData) => handleFileChange('portfolioDocument', fileData)}
                             />
                           </FormItem>
                         </div>
                       </div>
+
+                      {/* Active Investments */}
+                      <FormField
+                        control={form.control}
+                        name="activeInvestments"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Active Investments</FormLabel>
+                            <div className="space-y-4">
+                              {field.value.map((investment, index) => (
+                                <div key={index} className="flex gap-4">
+                                  <Input
+                                    placeholder="Startup Name"
+                                    value={investment.startup}
+                                    onChange={(e) => {
+                                      const newValue = [...field.value];
+                                      newValue[index].startup = e.target.value;
+                                      field.onChange(newValue);
+                                    }}
+                                  />
+                                  <Input
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={investment.amount}
+                                    onChange={(e) => {
+                                      const newValue = [...field.value];
+                                      newValue[index].amount = Number(e.target.value);
+                                      field.onChange(newValue);
+                                    }}
+                                  />
+                                  <Input
+                                    type="date"
+                                    value={investment.date}
+                                    onChange={(e) => {
+                                      const newValue = [...field.value];
+                                      newValue[index].date = e.target.value;
+                                      field.onChange(newValue);
+                                    }}
+                                  />
+                                  <Select
+                                    value={investment.status}
+                                    onValueChange={(value) => {
+                                      const newValue = [...field.value];
+                                      newValue[index].status = value;
+                                      field.onChange(newValue);
+                                    }}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {INVESTMENT_STATUS.map((status) => (
+                                        <SelectItem key={status} value={status}>
+                                          {status.replace(/_/g, ' ')}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={() => {
+                                      const newValue = field.value.filter((_, i) => i !== index);
+                                      field.onChange(newValue);
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  field.onChange([
+                                    ...field.value,
+                                    { startup: '', amount: 0, date: '', status: '', documents: [] }
+                                  ]);
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Investment
+                              </Button>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   )}
 
