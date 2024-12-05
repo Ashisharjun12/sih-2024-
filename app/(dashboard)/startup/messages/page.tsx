@@ -1,22 +1,51 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSession } from "next-auth/react";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { Send, Search, Users, Beaker, Building2, MessageCircle, UserCircle2, X } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Search,
+  Send,
+  User,
+  MoreVertical,
+  Phone,
+  Video,
+  Image as ImageIcon,
+  Paperclip,
+  Smile,
+  ArrowLeft,
+  MessageSquare,
+  Check,
+  CheckCheck,
+  Clock,
+  Users as UsersIcon,
+  Beaker as BeakerIcon,
+  Building as Building2Icon,
+  Rocket,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface User {
   _id: string;
   name: string;
   image?: string;
   role: string;
+  isOnline?: boolean;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
 }
 
 interface Message {
@@ -25,11 +54,15 @@ interface Message {
   sender: User;
   receiver: User;
   createdAt: string;
+  isRead?: boolean;
 }
 
-export default function StartupMessagesPage() {
+type UserRole = 'all' | 'mentor' | 'researcher' | 'fundingAgency' | 'startup';
+
+export default function MessagesPage() {
   const { data: session } = useSession();
   const { toast } = useToast();
+  
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -41,6 +74,7 @@ export default function StartupMessagesPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [isMobileUsersOpen, setIsMobileUsersOpen] = useState(false);
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole>('all');
 
   useEffect(() => {
     fetchUsers();
@@ -77,9 +111,9 @@ export default function StartupMessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const generateChatId = useCallback((userId1: string, userId2: string) => {
+  const generateChatId = (userId1: string, userId2: string) => {
     return [userId1, userId2].sort().join('_');
-  }, []);
+  };
 
   const setupMessageStream = () => {
     if (!selectedUser || !session?.user) return;
@@ -144,27 +178,26 @@ export default function StartupMessagesPage() {
     }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser || !newMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedUser || !session?.user) return;
 
     try {
-      const res = await fetch('/api/messages', {
+      const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          content: newMessage,
           receiverId: selectedUser._id,
-          content: newMessage
         }),
       });
 
-      const data = await res.json();
-      if (res.ok) {
-        setNewMessage('');
+      if (!response.ok) throw new Error('Failed to send message');
+
+      const data = await response.json();
+      if (data.success) {
         setMessages(prev => [...prev, data.message]);
-        setLastMessageTimestamp(data.message.createdAt);
-      } else {
-        throw new Error('Failed to send message');
+        setNewMessage('');
+        scrollToBottom();
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -176,293 +209,305 @@ export default function StartupMessagesPage() {
     }
   };
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getFilteredUsers = () => {
+    let filtered = users.filter(user => 
+      user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  const getFilteredUsers = (role: string) => {
-    return filteredUsers.filter(user => user.role === role);
+    if (selectedRole !== 'all') {
+      filtered = filtered.filter(user => user.role.toLowerCase() === selectedRole);
+    }
+
+    return filtered;
   };
 
   const getRoleIcon = (role: string) => {
-    switch (role) {
+    switch (role.toLowerCase()) {
       case 'mentor':
-        return <Users className="h-4 w-4 text-purple-500" />;
+        return {
+          icon: UsersIcon,
+          color: 'text-purple-500',
+          bgColor: 'bg-purple-50',
+          label: 'Mentor'
+        };
       case 'researcher':
-        return <Beaker className="h-4 w-4 text-green-500" />;
-      case 'fundingAgency':
-        return <Building2 className="h-4 w-4 text-orange-500" />;
+        return {
+          icon: BeakerIcon,
+          color: 'text-green-500',
+          bgColor: 'bg-green-50',
+          label: 'Researcher'
+        };
+      case 'fundingagency':
+        return {
+          icon: Building2Icon,
+          color: 'text-orange-500',
+          bgColor: 'bg-orange-50',
+          label: 'Funding Agency'
+        };
+      case 'startup':
+        return {
+          icon: Rocket,
+          color: 'text-blue-500',
+          bgColor: 'bg-blue-50',
+          label: 'Startup'
+        };
       default:
-        return null;
+        return {
+          icon: User,
+          color: 'text-gray-500',
+          bgColor: 'bg-gray-50',
+          label: role
+        };
     }
   };
 
   return (
-    <div className="container py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Users List */}
-        <div className={`
-          lg:col-span-4 space-y-4
-          ${selectedUser && !isMobileUsersOpen ? 'hidden lg:block' : 'block'}
-        `}>
-          {/* Search and User Stats */}
-          <Card className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">Messages</h2>
-              <UserCircle2 className="h-5 w-5 text-muted-foreground" />
+    <div className="h-[calc(100vh-4rem)]">
+      <div className="grid grid-cols-1 md:grid-cols-12 h-full">
+        <div className={`md:col-span-4 lg:col-span-3 h-full bg-background ${
+          selectedUser ? 'hidden md:block' : 'block'
+        }`}>
+          <div className="p-4 md:p-4 bg-primary/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src="/your-avatar.png" />
+                  <AvatarFallback>
+                    <User className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+                <h2 className="font-semibold">Messages</h2>
+              </div>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
             </div>
-            
-            {/* Enhanced Search */}
-            <div className="space-y-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, role..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-muted"
-                />
-                {searchTerm && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                    onClick={() => setSearchTerm('')}
+            <div className="mt-4">
+              <Select
+                value={selectedRole}
+                onValueChange={(value) => setSelectedRole(value as UserRole)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  <SelectItem value="mentor">Mentors</SelectItem>
+                  <SelectItem value="researcher">Researchers</SelectItem>
+                  <SelectItem value="fundingAgency">Funding Agencies</SelectItem>
+                  <SelectItem value="startup">Startups</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="relative mt-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search messages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-9 pl-9 bg-background"
+              />
+            </div>
+          </div>
+          <ScrollArea className="h-[calc(100vh-12rem)]">
+            <div className="flex flex-col">
+              {getFilteredUsers().map((user) => {
+                const roleInfo = getRoleIcon(user.role);
+                const RoleIcon = roleInfo.icon;
+                
+                return (
+                  <motion.div
+                    key={user._id}
+                    whileHover={{ backgroundColor: "rgba(0,0,0,0.05)" }}
+                    className={`p-3 cursor-pointer hover:bg-accent/50 ${
+                      selectedUser?._id === user._id ? "bg-accent" : ""
+                    }`}
+                    onClick={() => setSelectedUser(user)}
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              {searchTerm && (
-                <p className="text-sm text-muted-foreground">
-                  Found {getFilteredUsers(activeTab).length} results
-                </p>
-              )}
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={user.image} />
+                          <AvatarFallback className={cn(roleInfo.bgColor, roleInfo.color)}>
+                            <RoleIcon className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        {user.isOnline && (
+                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium truncate">{user.name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn(
+                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                                roleInfo.bgColor,
+                                roleInfo.color
+                              )}>
+                                <RoleIcon className="h-3 w-3" />
+                                {roleInfo.label}
+                              </span>
+                            </div>
+                          </div>
+                          {user.lastMessageTime && (
+                            <p className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                              {new Date(user.lastMessageTime).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm text-muted-foreground truncate max-w-[180px]">
+                            {user.lastMessage}
+                          </p>
+                          {user.unreadCount ? (
+                            <span className={cn(
+                              "ml-2 text-xs rounded-full h-5 min-w-[20px] flex items-center justify-center px-1",
+                              roleInfo.bgColor,
+                              roleInfo.color
+                            )}>
+                              {user.unreadCount}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-2 text-center text-sm">
-              <div className="bg-muted p-2 rounded-lg">
-                <p className="text-muted-foreground">Total</p>
-                <p className="font-medium">{users.length}</p>
-              </div>
-              <div className="bg-muted p-2 rounded-lg">
-                <p className="text-muted-foreground">Online</p>
-                <p className="font-medium text-green-500">
-                  {users.length > 0 ? Math.floor(users.length * 0.6) : 0}
-                </p>
-              </div>
-              <div className="bg-muted p-2 rounded-lg">
-                <p className="text-muted-foreground">Filtered</p>
-                <p className="font-medium text-primary">
-                  {getFilteredUsers(activeTab).length}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-4 mb-4">
-                <TabsTrigger value="all" className="text-xs">
-                  All
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({getFilteredUsers('all').length})
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="mentor" className="text-xs">
-                  Mentors
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({getFilteredUsers('mentor').length})
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="researcher" className="text-xs">
-                  Research
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({getFilteredUsers('researcher').length})
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="fundingAgency" className="text-xs">
-                  Funding
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({getFilteredUsers('fundingAgency').length})
-                  </span>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all">
-                <ScrollArea className="flex-1">
-                  <div className="space-y-2 p-4">
-                    {filteredUsers.map((user) => (
-                      <div
-                        key={user._id}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
-                          ${selectedUser?._id === user._id ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <Avatar>
-                          <AvatarImage src={user.image} />
-                          <AvatarFallback>{user.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="mentor">
-                <ScrollArea className="flex-1">
-                  <div className="space-y-2 p-4">
-                    {getFilteredUsers('mentor').map((user) => (
-                      <div
-                        key={user._id}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
-                          ${selectedUser?._id === user._id ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <Avatar>
-                          <AvatarImage src={user.image} />
-                          <AvatarFallback>{user.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="researcher">
-                <ScrollArea className="flex-1">
-                  <div className="space-y-2 p-4">
-                    {getFilteredUsers('researcher').map((user) => (
-                      <div
-                        key={user._id}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
-                          ${selectedUser?._id === user._id ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <Avatar>
-                          <AvatarImage src={user.image} />
-                          <AvatarFallback>{user.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="fundingAgency">
-                <ScrollArea className="flex-1">
-                  <div className="space-y-2 p-4">
-                    {getFilteredUsers('fundingAgency').map((user) => (
-                      <div
-                        key={user._id}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
-                          ${selectedUser?._id === user._id ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <Avatar>
-                          <AvatarImage src={user.image} />
-                          <AvatarFallback>{user.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-          </Card>
+          </ScrollArea>
         </div>
 
-        {/* Chat Area */}
-        <div className={`
-          lg:col-span-8
-          ${!selectedUser || isMobileUsersOpen ? 'hidden lg:block' : 'block'}
-        `}>
-          <Card className="h-[calc(100vh-8rem)] flex flex-col shadow-lg">
-            {selectedUser ? (
-              <>
-                {/* Chat Header */}
-                <div className="p-4 border-b">
+        <div className={`md:col-span-8 lg:col-span-9 h-full bg-background ${
+          selectedUser ? 'block' : 'hidden md:block'
+        }`}>
+          {selectedUser ? (
+            <div className="flex flex-col h-full">
+              <div className="p-2 md:p-4 bg-primary/5 border-b">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="md:hidden"
+                      onClick={() => setSelectedUser(null)}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={selectedUser.image} />
-                      <AvatarFallback>{selectedUser.name[0]}</AvatarFallback>
+                      <AvatarFallback>
+                        <User className="h-5 w-5" />
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{selectedUser.name}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{selectedUser.role}</p>
+                      <h2 className="text-base">{selectedUser.name}</h2>
+                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                        {selectedUser.isOnline ? (
+                          <>
+                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            Online
+                          </>
+                        ) : 'Last seen recently'}
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div
-                        key={message._id}
-                        className={`flex ${message.sender._id === session?.user?.id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
-                            message.sender._id === session?.user?.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
-                        >
-                          <p>{message.content}</p>
-                          <p className="text-xs mt-1 opacity-70">
-                            {format(new Date(message.createdAt), 'HH:mm')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-
-                {/* Message Input */}
-                <form onSubmit={sendMessage} className="p-4 border-t">
-                  <div className="flex gap-2">
-                    <Input
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type a message..."
-                    />
-                    <Button type="submit" size="icon">
-                      <Send className="h-4 w-4" />
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+                      <Phone className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+                      <Video className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
                   </div>
-                </form>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center p-4">
-                <div className="text-center space-y-3 max-w-md mx-auto">
-                  <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto">
-                    <MessageCircle className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold">Welcome to Messages</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Connect with mentors, researchers, and funding agencies. Select a user to start chatting.
-                  </p>
                 </div>
               </div>
-            )}
-          </Card>
+
+              <ScrollArea className="flex-1 p-2 md:p-4 bg-accent/20">
+                <AnimatePresence>
+                  {messages.map((message) => (
+                    <motion.div
+                      key={message._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${
+                        message.sender._id === session?.user?.id ? "justify-end" : "justify-start"
+                      } mb-4`}
+                    >
+                      <div
+                        className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-3 ${
+                          message.sender._id === session?.user?.id
+                            ? "bg-primary text-primary-foreground rounded-br-none"
+                            : "bg-muted rounded-bl-none"
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <p className="text-xs opacity-70">
+                            {new Date(message.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                          {message.sender._id === session?.user?.id && (
+                            message.isRead ? (
+                              <CheckCheck className="h-3 w-3 text-blue-400" />
+                            ) : (
+                              <Check className="h-3 w-3 opacity-70" />
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                <div ref={messagesEndRef} />
+              </ScrollArea>
+
+              <div className="p-2 md:p-4 bg-background border-t">
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="shrink-0 hidden md:inline-flex">
+                    <Smile className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="shrink-0 hidden md:inline-flex">
+                    <Paperclip className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                  <Input
+                    placeholder="Type a message"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={handleSendMessage} 
+                    size="icon"
+                    className="shrink-0"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                <h3 className="text-lg font-medium mb-2">Your Messages</h3>
+                <p className="text-sm max-w-sm">
+                  Send private messages to your mentors, investors, and other startup connections
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

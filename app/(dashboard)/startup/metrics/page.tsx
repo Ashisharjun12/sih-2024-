@@ -54,82 +54,113 @@ ChartJS.register(
   Legend
 );
 
+// Demo data for one year (2023)
+const yearlyData = {
+  roi: {
+    actual: [15.2, 16.8, 17.5, 18.2, 19.8, 21.5, 22.1, 23.4, 24.8, 25.2, 26.5, 28.0],
+    target: [15.0, 16.5, 18.0, 19.5, 21.0, 22.5, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0]
+  },
+  kpi: {
+    'Burn Rate': [3.0, 2.9, 2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9],
+    'Revenue': [15, 17, 19, 22, 24, 26, 28, 30, 32, 35, 38, 40],
+    'CAR': [82, 85, 88, 90, 93, 95, 98, 100, 103, 105, 108, 110],
+    'Gross Margin': [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71],
+    'Churn Rate': [3.0, 2.9, 2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9]
+  },
+  customerMetrics: {
+    acquisition: [850, 920, 980, 1050, 1120, 1200, 1280, 1350, 1420, 1500, 1580, 1650],
+    churnRate: [2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8, 1.7]
+  },
+  financialMetrics: {
+    revenue: [150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315],
+    expenses: [120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175]
+  }
+};
+
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Update getRoiData to use yearlyData
+const getRoiData = () => ({
+  labels: months,
+  datasets: [
+    {
+      label: 'ROI (%)',
+      data: yearlyData.roi.actual,
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1,
+      fill: false,
+    },
+    {
+      label: 'Target',
+      data: yearlyData.roi.target,
+      borderColor: 'rgba(255, 99, 132, 0.5)',
+      borderDash: [5, 5],
+      tension: 0.1,
+      fill: false,
+    }
+  ],
+});
+
+const getKpiData = (metric: string) => ({
+  labels: months,
+  datasets: [
+    {
+      label: metric,
+      data: yearlyData.kpi[metric as keyof typeof yearlyData.kpi],
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1,
+      fill: false,
+    }
+  ],
+});
+
+const getCustomerMetricsData = () => ({
+  labels: months,
+  datasets: [
+    {
+      label: 'Customer Acquisition',
+      data: yearlyData.customerMetrics.acquisition,
+      borderColor: 'rgb(34, 197, 94)',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      tension: 0.4,
+      fill: true,
+    },
+    {
+      label: 'Churn Rate (%)',
+      data: yearlyData.customerMetrics.churnRate,
+      borderColor: 'rgb(239, 68, 68)',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      tension: 0.4,
+      fill: true,
+    }
+  ],
+});
+
+const getFinancialMetricsData = () => ({
+  labels: months,
+  datasets: [
+    {
+      label: 'Revenue (₹L)',
+      data: yearlyData.financialMetrics.revenue,
+      borderColor: 'rgb(34, 197, 94)',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      tension: 0.4,
+      fill: true,
+    },
+    {
+      label: 'Expenses (₹L)',
+      data: yearlyData.financialMetrics.expenses,
+      borderColor: 'rgb(239, 68, 68)',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      tension: 0.4,
+      fill: true,
+    }
+  ],
+});
+
 export default function StartupMetrics() {
   const [timeFrame, setTimeFrame] = useState('monthly');
-
-  // Dynamic data based on timeFrame
-  const getEbitdaData = (period: string) => {
-    switch(period) {
-      case 'weekly':
-        return {
-          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-          datasets: [
-            {
-              label: 'EBITDA (₹ Lakhs)',
-              data: [2.1, 2.3, 2.0, 2.5],
-              borderColor: 'rgb(75, 192, 192)',
-              tension: 0.1,
-              fill: false,
-            },
-            {
-              label: 'Target',
-              data: [2.0, 2.2, 2.4, 2.6],
-              borderColor: 'rgba(255, 99, 132, 0.5)',
-              borderDash: [5, 5],
-              tension: 0.1,
-              fill: false,
-            }
-          ],
-        };
-      case 'monthly':
-        return {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-          datasets: [
-            {
-              label: 'EBITDA (₹ Lakhs)',
-              data: [5.2, 5.8, 5.5, 6.2, 6.8, 6.5, 7.1, 7.4, 7.8, 8.2, 8.5, 9.0],
-              borderColor: 'rgb(75, 192, 192)',
-              tension: 0.1,
-              fill: false,
-            },
-            {
-              label: 'Target',
-              data: [5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0, 10.5],
-              borderColor: 'rgba(255, 99, 132, 0.5)',
-              borderDash: [5, 5],
-              tension: 0.1,
-              fill: false,
-            }
-          ],
-        };
-      case 'yearly':
-        return {
-          labels: ['2019', '2020', '2021', '2022', '2023'],
-          datasets: [
-            {
-              label: 'EBITDA (₹ Lakhs)',
-              data: [45.0, 52.0, 63.0, 75.0, 89.0],
-              borderColor: 'rgb(75, 192, 192)',
-              tension: 0.1,
-              fill: false,
-            },
-            {
-              label: 'Target',
-              data: [40.0, 50.0, 60.0, 70.0, 85.0],
-              borderColor: 'rgba(255, 99, 132, 0.5)',
-              borderDash: [5, 5],
-              tension: 0.1,
-              fill: false,
-            }
-          ],
-        };
-      default:
-        return {
-          labels: [],
-          datasets: [],
-        };
-    }
-  };
+  const [selectedKpi, setSelectedKpi] = useState('Burn Rate');
 
   // MoU Status Data
   const mouData = {
@@ -357,12 +388,12 @@ export default function StartupMetrics() {
 
         {/* Charts Grid */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* EBITDA Trends */}
+          {/* ROI Chart */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <LineChart className="h-5 w-5" />
-                EBITDA Trends
+                Return on Investment (ROI)
               </CardTitle>
               <Select
                 value={timeFrame}
@@ -380,12 +411,122 @@ export default function StartupMetrics() {
             </CardHeader>
             <CardContent>
               <Line 
-                data={getEbitdaData(timeFrame)}
+                data={getRoiData()}
                 options={{
                   responsive: true,
                   plugins: {
                     legend: { position: 'top' },
                   },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'Return on Investment (%)',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      },
+                      ticks: {
+                        callback: function(value) {
+                          return value + '%';
+                        }
+                      }
+                    },
+                    x: {
+                      title: {
+                        display: true,
+                        text: timeFrame === 'weekly' ? 'Weeks' : 
+                              timeFrame === 'monthly' ? 'Months' : 'Years',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    }
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* KPI Chart */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <LineChart className="h-5 w-5" />
+                Key Performance Indicators
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedKpi}
+                  onValueChange={setSelectedKpi}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select KPI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Burn Rate">Burn Rate</SelectItem>
+                    <SelectItem value="Revenue">Revenue</SelectItem>
+                    <SelectItem value="CAR">CAR</SelectItem>
+                    <SelectItem value="Gross Margin">Gross Margin</SelectItem>
+                    <SelectItem value="Churn Rate">Churn Rate</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={timeFrame}
+                  onValueChange={setTimeFrame}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Select period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Line 
+                data={getKpiData(selectedKpi)}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: selectedKpi === 'Revenue' ? 'Amount (₹L)' : 
+                              selectedKpi.includes('Rate') ? 'Percentage (%)' : 
+                              'Count',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    },
+                    x: {
+                      title: {
+                        display: true,
+                        text: timeFrame === 'weekly' ? 'Weeks' : 
+                              timeFrame === 'monthly' ? 'Months' : 'Years',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    }
+                  }
                 }}
               />
             </CardContent>
@@ -420,6 +561,32 @@ export default function StartupMetrics() {
                   plugins: {
                     legend: { position: 'top' },
                   },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'Number of Customers / Churn Rate (%)',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    },
+                    x: {
+                      title: {
+                        display: true,
+                        text: timeFrame === 'weekly' ? 'Weeks' : 
+                              timeFrame === 'monthly' ? 'Months' : 'Years',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    }
+                  }
                 }}
               />
             </CardContent>
@@ -454,6 +621,32 @@ export default function StartupMetrics() {
                   plugins: {
                     legend: { position: 'top' },
                   },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'Amount (₹L) / Percentage (%)',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    },
+                    x: {
+                      title: {
+                        display: true,
+                        text: timeFrame === 'weekly' ? 'Weeks' : 
+                              timeFrame === 'monthly' ? 'Months' : 'Years',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    }
+                  }
                 }}
               />
             </CardContent>
@@ -488,6 +681,31 @@ export default function StartupMetrics() {
                   plugins: {
                     legend: { position: 'top' },
                   },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'Number of MoUs',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    },
+                    x: {
+                      title: {
+                        display: true,
+                        text: 'MoU Status',
+                        font: {
+                          size: 12,
+                          weight: 500
+                        },
+                        padding: 10
+                      }
+                    }
+                  }
                 }}
               />
             </CardContent>
