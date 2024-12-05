@@ -9,7 +9,7 @@ import { addNotification } from "@/lib/notificationService";
 
 export async function POST(
   request: Request,
-  { params }: { params: { formId: string; action: "approve" | "reject" } }
+  { params }: { params: { formId: string; action: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,9 +20,12 @@ export async function POST(
 
     await connectDB();
 
+    const { formId, action } = params;
+
     // Find the form submission
-    const submission = await FormSubmission.findById(params.formId);
+    const submission = await FormSubmission.findById(formId);
     if (!submission) {
+      console.log("Form not found:", formId);
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
@@ -33,71 +36,105 @@ export async function POST(
     }
 
     // Update submission status
-    submission.status = params.action === "approve" ? "approved" : "rejected";
-    if (params.action === "reject") {
+    submission.status = action === "approve" ? "approved" : "rejected";
+    
+    if (action === "reject") {
       await addNotification({
         name: "Admin",
         message: "Your funding agency application has been rejected.",
         role: session.user.role!,
       }, user._id);
+      await submission.save();
+      return NextResponse.json({
+        success: true,
+        message: "Application rejected successfully"
+      });
     }
 
-    // If approving, create funding agency profile and update user role
-    if (params.action === "approve") {
+    // If approving, create funding agency profile
+    if (action === "approve") {
       try {
-        // Prepare funding agency data
+        // Prepare funding agency data from form submission
         const fundingAgencyData = {
           userId: user._id,
-          owner: {
-            fullName: submission.formData.owner.fullName,
-            email: submission.formData.owner.email,
-            phone: submission.formData.owner.phone,
-            businessAddress: {
-              physicalAddress: submission.formData.owner.businessAddress.physicalAddress,
-            },
+          agencyDetails: {
+            name: submission.formData.agencyDetails.name,
+            registrationNumber: submission.formData.agencyDetails.registrationNumber,
+            type: submission.formData.agencyDetails.type,
+            establishmentDate: new Date(submission.formData.agencyDetails.establishmentDate),
+            description: submission.formData.agencyDetails.description,
           },
-          agencyDetails: submission.formData.agencyDetails,
-          contactInformation: submission.formData.contactInformation,
-          representatives: submission.formData.representatives,
-          fundingPreferences: submission.formData.fundingPreferences,
-          experience: submission.formData.experience,
+          contactInformation: {
+            officialAddress: submission.formData.contactInformation.officialAddress,
+            officialEmail: submission.formData.contactInformation.officialEmail,
+            phoneNumber: submission.formData.contactInformation.phoneNumber,
+            websiteURL: submission.formData.contactInformation.websiteURL,
+          },
+          representatives: submission.formData.representatives.map((rep: any) => ({
+            name: rep.name,
+            designation: rep.designation,
+            email: rep.email,
+            phone: rep.phone,
+          })),
+          fundingPreferences: {
+            minimumInvestment: Number(submission.formData.fundingPreferences.minimumInvestment),
+            preferredStages: submission.formData.fundingPreferences.preferredStages,
+            fundingTypes: submission.formData.fundingPreferences.fundingTypes,
+            preferredSectors: submission.formData.fundingPreferences.preferredSectors,
+            preferredIndustries: submission.formData.fundingPreferences.preferredIndustries,
+          },
           documentation: {
-            registrationCertificate: submission.formData.documents.registrationCertificate,
-            governmentApprovals: submission.formData.documents.governmentApprovals,
-            addressProof: submission.formData.documents.addressProof,
-            taxDocuments: submission.formData.documents.taxDocuments,
-            portfolioDocument: submission.formData.documents.portfolioDocument,
+            registrationCertificate: submission.formData.documentation.registrationCertificate,
+            governmentApprovals: submission.formData.documentation.governmentApprovals,
+            taxDocuments: submission.formData.documentation.taxDocuments,
           },
-          status: "Active",
+          experience: {
+            yearsOfOperation: Number(submission.formData.experience.yearsOfOperation),
+            totalInvestments: Number(submission.formData.experience.totalInvestments),
+            averageTicketSize: Number(submission.formData.experience.averageTicketSize),
+          },
+          activeInvestments: submission.formData.activeInvestments || []
         };
 
-        // Create funding agency profile and update user
-        const fundingAgencyProfile = await FundingAgency.create(fundingAgencyData);
+        console.log("Creating funding agency with data:", fundingAgencyData);
 
+        // Create funding agency profile
+        const fundingAgency = await FundingAgency.create(fundingAgencyData);
+
+        // Update user role
         user.role = "fundingAgency";
-        user.fundingAgencyProfile = fundingAgencyProfile._id;
         await user.save();
 
-        submission.fundingAgencyProfile = fundingAgencyProfile._id;
-        await submission.save();
+        // Add notification
         await addNotification({
           name: "Admin",
           message: "Your funding agency application has been approved.",
           role: session.user.role!,
         }, user._id);
 
+        // Save submission
+        await submission.save();
+
+        return NextResponse.json({
+          success: true,
+          message: "Funding agency profile created and application approved"
+        });
+
       } catch (error) {
         console.error("Error creating funding agency profile:", error);
-        return NextResponse.json({
-          error: "Failed to create funding agency profile",
-          details: error instanceof Error ? error.message : "Unknown error"
-        }, { status: 500 });
+        return NextResponse.json(
+          { 
+            error: "Failed to create funding agency profile",
+            details: error instanceof Error ? error.message : "Unknown error"
+          },
+          { status: 500 }
+        );
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Application ${params.action}d successfully`
+      message: `Application ${action}d successfully`
     });
 
   } catch (error) {

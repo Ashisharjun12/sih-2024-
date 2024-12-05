@@ -1,29 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { Loader2, XCircle, CheckCircle } from "lucide-react";
+import { 
+  CheckCircle, 
+  XCircle, 
+  FileText,
+  Building,
+  Phone,
+  Mail,
+  Globe,
+  Users,
+  DollarSign,
+  Target,
+  Briefcase,
+  Clock,
+} from "lucide-react";
 
 interface FormSubmission {
   _id: string;
   userId: string;
+  userName: string;
+  userEmail: string;
   formType: string;
+  status: "pending" | "approved" | "rejected";
+  submittedAt: string;
   formData: {
-    owner: {
-      fullName: string;
-      email: string;
-      phone: string;
-      businessAddress: {
-        physicalAddress: string;
-      };
-      note: string;
-    };
     agencyDetails: {
       name: string;
       registrationNumber: string;
@@ -42,84 +50,105 @@ interface FormSubmission {
       designation: string;
       email: string;
       phone: string;
-      note?: string;
     }>;
     fundingPreferences: {
-      investmentRange: {
-        minimum: string;
-        maximum: string;
-      };
+      minimumInvestment: string;
       preferredStages: string[];
       fundingTypes: string[];
       preferredSectors: string[];
-      disbursementMode: string;
+      preferredIndustries: string[];
+    };
+    documentation: {
+      registrationCertificate: {
+        public_id: string;
+        secure_url: string;
+      };
+      governmentApprovals: {
+        public_id: string;
+        secure_url: string;
+      };
+      taxDocuments: {
+        public_id: string;
+        secure_url: string;
+      };
     };
     experience: {
       yearsOfOperation: string;
       totalInvestments: string;
       averageTicketSize: string;
-      successfulExits: string;
     };
-    documents: {
-      registrationCertificate?: {
-        public_id: string;
-        secure_url: string;
-      };
-      governmentApprovals?: {
-        public_id: string;
-        secure_url: string;
-      };
-      addressProof?: {
-        public_id: string;
-        secure_url: string;
-      };
-      taxDocuments?: {
-        public_id: string;
-        secure_url: string;
-      };
-      portfolioDocument?: {
-        public_id: string;
-        secure_url: string;
-      };
-    };
+    activeInvestments: Array<any>;
   };
-  status: "pending" | "approved" | "rejected";
-  userEmail: string;
-  userName: string;
-  submittedAt: string;
 }
 
-export default function FundingAgencyDetailPage() {
+// Helper component for sections
+const FormSection = ({ title, icon: Icon, children }: any) => (
+  <Card className="shadow-sm">
+    <CardHeader className="border-b bg-muted">
+      <CardTitle className="text-lg flex items-center gap-2">
+        <Icon className="h-5 w-5" />
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="pt-6">{children}</CardContent>
+  </Card>
+);
+
+// Helper component for info items
+const InfoItem = ({ label, value }: { label: string; value: string | number | undefined }) => (
+  <div>
+    <p className="text-sm font-medium text-muted-foreground">{label}</p>
+    <p className="mt-1">{value || 'Not provided'}</p>
+  </div>
+);
+
+// Helper component for representatives
+const RepresentativeCard = ({ rep }: { rep: any }) => (
+  <Card>
+    <CardContent className="pt-6">
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Users className="h-5 w-5 text-primary" />
+          <h3 className="font-medium">{rep.name}</h3>
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+            <span>{rep.designation}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-muted-foreground" />
+            <span>{rep.email}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <span>{rep.phone}</span>
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+export default function FundingAgencyFormDetails() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const [formData, setFormData] = useState<FormSubmission | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [submission, setSubmission] = useState<FormSubmission | null>(null);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     const fetchFormDetails = async () => {
       try {
-        console.log("Fetching form details for ID:", params.id);
-        
         const response = await fetch(`/api/admin/forms/${params.id}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch form details");
-        }
-        
         const data = await response.json();
-        console.log("Fetched Form Data:", data);
-        
-        setFormData(data.submission);
+        setSubmission(data.submission);
       } catch (error) {
-        console.error("Error fetching form details:", error);
         toast({
           title: "Error",
           description: "Failed to fetch form details",
           variant: "destructive",
         });
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -131,35 +160,20 @@ export default function FundingAgencyDetailPage() {
   const handleAction = async (action: "approve" | "reject") => {
     try {
       setProcessing(true);
-
-      const userEmail = formData?.formData.owner.email;
       
-      const response = await fetch(
-        `/api/admin/forms/fundingAgency/${params.id}/${action}`, 
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            reason: action === "reject" ? "Your application does not meet our current requirements. Please try again." : undefined,
-            userEmail,
-            formType: formData?.formType,
-            userName: formData?.formData.owner.fullName
-          }),
-        }
-      );
+      const response = await fetch(`/api/admin/forms/fundingAgency/${params.id}/${action}`, {
+        method: "POST",
+      });
 
       const data = await response.json();
-      console.log("Action response:", data);
-      
+
       if (!response.ok) {
-        throw new Error(data.error || `Failed to ${action} application`);
+        throw new Error(data.error || "Failed to process application");
       }
 
       toast({
         title: "Success",
-        description: `Application ${action}ed successfully`,
+        description: data.message,
       });
 
       router.push("/admin/forms");
@@ -167,7 +181,7 @@ export default function FundingAgencyDetailPage() {
       console.error("Action error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : `Failed to ${action} application`,
+        description: error instanceof Error ? error.message : "Failed to process application",
         variant: "destructive",
       });
     } finally {
@@ -175,229 +189,177 @@ export default function FundingAgencyDetailPage() {
     }
   };
 
-  if (loading) {
+  if (!submission) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading form details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!formData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">No form data found</p>
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="container py-8">
-      <div className="space-y-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Agency Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold">Agency Name</h3>
-                <p>{formData.formData.agencyDetails.name}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Registration Number</h3>
-                <p>{formData.formData.agencyDetails.registrationNumber}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Type</h3>
-                <p>{formData.formData.agencyDetails.type.replace(/_/g, ' ')}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Establishment Date</h3>
-                <p>{format(new Date(formData.formData.agencyDetails.establishmentDate), "PP")}</p>
-              </div>
+    <div className="container max-w-4xl py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Funding Agency Application</h1>
+            <p className="text-muted-foreground">
+              Submitted by {submission.userName} ({submission.userEmail})
+            </p>
+          </div>
+          <Badge
+            variant={
+              submission.status === "approved"
+                ? "default"
+                : submission.status === "rejected"
+                ? "destructive"
+                : "secondary"
+            }
+          >
+            {submission.status.toUpperCase()}
+          </Badge>
+        </div>
+
+        {/* Agency Details */}
+        <FormSection title="Agency Details" icon={Building}>
+          <div className="grid gap-6 md:grid-cols-2">
+            <InfoItem label="Agency Name" value={submission.formData.agencyDetails.name} />
+            <InfoItem label="Registration Number" value={submission.formData.agencyDetails.registrationNumber} />
+            <InfoItem label="Type" value={submission.formData.agencyDetails.type.replace(/_/g, ' ')} />
+            <InfoItem label="Establishment Date" value={new Date(submission.formData.agencyDetails.establishmentDate).toLocaleDateString()} />
+            <div className="md:col-span-2">
+              <InfoItem label="Description" value={submission.formData.agencyDetails.description} />
             </div>
-            <div>
-              <h3 className="font-semibold">Description</h3>
-              <p>{formData.formData.agencyDetails.description}</p>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
 
         {/* Contact Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold">Official Email</h3>
-                <p>{formData.formData.contactInformation.officialEmail}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Phone Number</h3>
-                <p>{formData.formData.contactInformation.phoneNumber}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Website</h3>
-                <p>{formData.formData.contactInformation.websiteURL}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Address</h3>
-                <p>{formData.formData.contactInformation.officialAddress}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <FormSection title="Contact Information" icon={Phone}>
+          <div className="grid gap-6 md:grid-cols-2">
+            <InfoItem label="Official Address" value={submission.formData.contactInformation.officialAddress} />
+            <InfoItem label="Official Email" value={submission.formData.contactInformation.officialEmail} />
+            <InfoItem label="Phone Number" value={submission.formData.contactInformation.phoneNumber} />
+            <InfoItem label="Website" value={submission.formData.contactInformation.websiteURL} />
+          </div>
+        </FormSection>
 
         {/* Representatives */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Representatives</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {formData.formData.representatives.map((rep, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-semibold">Name</h3>
-                      <p>{rep.name}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Designation</h3>
-                      <p>{rep.designation}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Email</h3>
-                      <p>{rep.email}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Phone</h3>
-                      <p>{rep.phone}</p>
-                    </div>
+        <FormSection title="Representatives" icon={Users}>
+          <div className="space-y-6">
+            {submission.formData.representatives.map((rep, index) => (
+              <Card key={index}>
+                <CardContent className="pt-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <InfoItem label="Name" value={rep.name} />
+                    <InfoItem label="Designation" value={rep.designation} />
+                    <InfoItem label="Email" value={rep.email} />
+                    <InfoItem label="Phone" value={rep.phone} />
                   </div>
-                  {rep.note && (
-                    <p className="mt-2 text-sm text-muted-foreground">{rep.note}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </FormSection>
 
         {/* Funding Preferences */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Funding Preferences</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold">Investment Range</h3>
-                <p>₹{formData.formData.fundingPreferences.investmentRange.minimum} - 
-                   ₹{formData.formData.fundingPreferences.investmentRange.maximum}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Preferred Stages</h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {formData.formData.fundingPreferences.preferredStages.map((stage, index) => (
-                    <Badge key={index} variant="secondary">
-                      {stage.replace(/_/g, ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold">Funding Types</h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {formData.formData.fundingPreferences.fundingTypes.map((type, index) => (
-                    <Badge key={index} variant="secondary">
-                      {type.replace(/_/g, ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold">Preferred Sectors</h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {formData.formData.fundingPreferences.preferredSectors.map((sector, index) => (
-                    <Badge key={index} variant="secondary">
-                      {sector.replace(/_/g, ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold">Disbursement Mode</h3>
-                <p>{formData.formData.fundingPreferences.disbursementMode.replace(/_/g, ' ')}</p>
+        <FormSection title="Funding Preferences" icon={DollarSign}>
+          <div className="space-y-6">
+            <InfoItem 
+              label="Minimum Investment" 
+              value={`₹${parseInt(submission.formData.fundingPreferences.minimumInvestment).toLocaleString()}`} 
+            />
+            
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Preferred Stages</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {submission.formData.fundingPreferences.preferredStages.map((stage, index) => (
+                  <Badge key={index} variant="secondary">
+                    {stage.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Funding Types</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {submission.formData.fundingPreferences.fundingTypes.map((type, index) => (
+                  <Badge key={index} variant="secondary">
+                    {type.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Preferred Sectors</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {submission.formData.fundingPreferences.preferredSectors.map((sector, index) => (
+                  <Badge key={index} variant="secondary">
+                    {sector.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Preferred Industries</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {submission.formData.fundingPreferences.preferredIndustries.map((industry, index) => (
+                  <Badge key={index} variant="secondary">
+                    {industry}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </FormSection>
+
+        {/* Experience */}
+        <FormSection title="Experience" icon={Briefcase}>
+          <div className="grid gap-6 md:grid-cols-3">
+            <InfoItem 
+              label="Years of Operation" 
+              value={`${submission.formData.experience.yearsOfOperation} years`} 
+            />
+            <InfoItem 
+              label="Total Investments" 
+              value={`₹${parseInt(submission.formData.experience.totalInvestments).toLocaleString()}`} 
+            />
+            <InfoItem 
+              label="Average Ticket Size" 
+              value={`₹${parseInt(submission.formData.experience.averageTicketSize).toLocaleString()}`} 
+            />
+          </div>
+        </FormSection>
 
         {/* Documents */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Documents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {Object.entries(formData.formData.documents).map(([key, doc]) => (
-                doc && (
-                  <div key={key}>
-                    <h3 className="font-semibold">{key.replace(/([A-Z])/g, ' $1').trim()}</h3>
-                    <a
-                      href={doc.secure_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline"
-                    >
-                      View Document
-                    </a>
-                  </div>
-                )
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Form Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Form Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold">Status</h3>
-                <Badge variant={
-                  formData.status === "approved" ? "default" :
-                  formData.status === "rejected" ? "destructive" :
-                  "secondary"
-                } className={
-                  formData.status === "approved" ? "bg-green-500" :
-                  formData.status === "rejected" ? "bg-red-500" :
-                  "bg-yellow-500"
-                }>
-                  {formData.status.toUpperCase()}
-                </Badge>
-              </div>
-              <div>
-                <h3 className="font-semibold">Submitted At</h3>
-                <p>{format(new Date(formData.submittedAt), "PPpp")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <FormSection title="Documents" icon={FileText}>
+          <div className="grid gap-4 md:grid-cols-3">
+            {Object.entries(submission.formData.documentation).map(([key, doc]) => (
+              <Card key={key}>
+                <CardContent className="pt-6">
+                  <h3 className="font-medium mb-2 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h3>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => window.open(doc.secure_url, '_blank')}
+                  >
+                    View Document
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </FormSection>
 
         {/* Action Buttons */}
-        {formData?.status === "pending" && (
+        {submission.status === "pending" && (
           <motion.div 
             className="flex justify-end gap-4 sticky bottom-6 p-4 rounded-xl border backdrop-blur-sm bg-background/95 shadow-lg"
           >
@@ -430,7 +392,7 @@ export default function FundingAgencyDetailPage() {
             </Button>
           </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
