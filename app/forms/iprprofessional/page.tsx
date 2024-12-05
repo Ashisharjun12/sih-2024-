@@ -247,7 +247,7 @@ const IPRProfessionalForm = () => {
                 type="file"
                 onChange={handleFileUpload}
                 multiple
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                 disabled={isFormDisabled}
               />
               {isUploading && (
