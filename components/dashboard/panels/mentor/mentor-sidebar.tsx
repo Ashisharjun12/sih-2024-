@@ -45,40 +45,12 @@ const mentorLinks = [
     icon: Calendar,
   },
   {
-    title: "Progress Tracking",
-    href: "/mentor/progress",
-    icon: Target,
-  },
-  {
-    title: "Resources",
-    href: "/mentor/resources",
-    icon: GraduationCap,
-  },
-  {
-    title: "Feedback",
-    href: "/mentor/feedback",
-    icon: Star,
-  },
-  {
-    title: "Tasks",
-    href: "/mentor/tasks",
-    icon: ClipboardList,
-  },
-  {
     title: "Messages",
     href: "/mentor/messages",
     icon: MessageSquare,
   },
-  {
-    title: "Insights",
-    href: "/mentor/insights",
-    icon: Lightbulb,
-  },
-  {
-    title: "Settings",
-    href: "/mentor/settings",
-    icon: Settings,
-  },
+ 
+ 
 ];
 
 export function MentorSidebar() {

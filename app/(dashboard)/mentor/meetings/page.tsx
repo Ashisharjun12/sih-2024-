@@ -23,12 +23,16 @@ import {
   IndianRupee,
   Pencil,
   Check,
-  X
+  X,
+  Users,
+  CheckCircle2
 } from "lucide-react";
 import { getNextMeetLink } from "@/lib/meet-links";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
 
 interface Meeting {
   _id: string;
@@ -55,6 +59,8 @@ export default function MentorMeetingsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [hourlyRate, setHourlyRate] = useState<number>(1000);
   const [isEditingRate, setIsEditingRate] = useState(false);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   const fetchMentorSettings = async () => {
     try {
@@ -89,12 +95,30 @@ export default function MentorMeetingsPage() {
     initializeData();
   }, []);
 
+  const calculateTotalEarnings = (meetings: Meeting[]) => {
+    return meetings
+      .filter(meeting => meeting.status === 'approved')
+      .reduce((total, meeting) => {
+        // Calculate duration in hours
+        const start = new Date(`2000/01/01 ${meeting.startTime}`);
+        const end = new Date(`2000/01/01 ${meeting.endTime}`);
+        const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        
+        // Calculate meeting cost based on hourly rate
+        const meetingCost = durationHours * hourlyRate;
+        return total + meetingCost;
+      }, 0);
+  };
+
   const fetchMeetings = async () => {
     try {
       const res = await fetch('/api/mentor/meetings');
       const data = await res.json();
       if (data.success) {
         setMeetings(data.meetings);
+        // Calculate and set total earnings whenever meetings are fetched
+        const total = calculateTotalEarnings(data.meetings);
+        setTotalEarnings(total);
       }
     } catch (error) {
       console.error('Error fetching meetings:', error);
@@ -107,6 +131,12 @@ export default function MentorMeetingsPage() {
       setLoading(false);
     }
   };
+
+  // Update total earnings whenever hourly rate changes
+  useEffect(() => {
+    const total = calculateTotalEarnings(meetings);
+    setTotalEarnings(total);
+  }, [hourlyRate, meetings]);
 
   const handleMeetingAction = async (meetingId: string, action: 'approved' | 'rejected') => {
     try {
@@ -211,282 +241,211 @@ export default function MentorMeetingsPage() {
   }
 
   return (
-    <div className="container py-8 space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
-        <h1 className="text-3xl font-bold">Meetings</h1>
-        
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search by name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-[200px]"
-            />
+    <div className="container py-6 space-y-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+        <div className="relative flex justify-between items-start">
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl font-bold">Upcoming Meetings</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Manage your scheduled mentoring sessions and requests
+            </p>
           </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-2">
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* User Type Filter */}
-            <Select value={userTypeFilter} onValueChange={(value: any) => setUserTypeFilter(value)}>
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="User Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="startup">Startups</SelectItem>
-                <SelectItem value="researcher">Researchers</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Hourly Rate:</span>
+              {isEditingRate ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={hourlyRate}
+                    onChange={(e) => setHourlyRate(Number(e.target.value))}
+                    className="w-24 h-8"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => updateHourlyRate(hourlyRate)}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">₹{hourlyRate}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsEditingRate(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Total Earnings:</span>
+              <span className="font-semibold text-green-600">₹{totalEarnings.toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-yellow-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold">{meetings.filter(m => m.status === 'pending').length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Approved</p>
-                <p className="text-2xl font-bold">{meetings.filter(m => m.status === 'approved').length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Rejected</p>
-                <p className="text-2xl font-bold">{meetings.filter(m => m.status === 'rejected').length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center gap-2 pb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setActiveFilter('all')}
+          className={cn(
+            "rounded-full",
+            activeFilter === 'all' && "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20"
+          )}
+        >
+          All
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setActiveFilter('pending')}
+          className={cn(
+            "rounded-full",
+            activeFilter === 'pending' && "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20"
+          )}
+        >
+          Pending
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setActiveFilter('approved')}
+          className={cn(
+            "rounded-full",
+            activeFilter === 'approved' && "bg-green-500/10 text-green-600 hover:bg-green-500/20"
+          )}
+        >
+          Approved
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setActiveFilter('rejected')}
+          className={cn(
+            "rounded-full",
+            activeFilter === 'rejected' && "bg-red-500/10 text-red-600 hover:bg-red-500/20"
+          )}
+        >
+          Rejected
+        </Button>
       </div>
 
-      <Card className="mb-6 overflow-hidden">
-        <CardHeader className="border-b bg-muted/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <IndianRupee className="h-5 w-5 text-primary" />
-              <CardTitle>Mentoring Rate Settings</CardTitle>
-            </div>
-            {!isEditingRate && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setIsEditingRate(true)}
-                className="gap-2"
-              >
-                <Pencil className="h-4 w-4" />
-                Adjust Rate
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-4">
-            {isEditingRate ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="hourlyRate">Set Your Hourly Rate</Label>
-                  <div className="relative">
-                    <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="hourlyRate"
-                      type="number"
-                      value={hourlyRate}
-                      onChange={(e) => setHourlyRate(Number(e.target.value))}
-                      className="pl-9"
-                      placeholder="Enter amount"
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Set your hourly rate for mentoring sessions. This amount will be charged to mentees per session.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button 
-                    onClick={() => updateHourlyRate(hourlyRate)}
-                    className="gap-2"
-                  >
-                    <Check className="h-4 w-4" />
-                    Save Rate
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    onClick={() => setIsEditingRate(false)}
-                    className="gap-2"
-                  >
-                    <X className="h-4 w-4" />
-                    Cancel
-                  </Button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="space-y-6"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Current Rate</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold">₹{hourlyRate}</span>
-                      <span className="text-sm text-muted-foreground">/hour</span>
+      <div className="grid gap-4">
+        {meetings.length > 0 ? (
+          meetings
+            .filter(meeting => activeFilter === 'all' || meeting.status === activeFilter)
+            .map((meeting) => (
+              <Card key={meeting._id} className="hover:shadow-md transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex gap-4">
+                      <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Users className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <h3 className="font-medium">{meeting.userId.name}</h3>
+                          <Badge variant={meeting.userType === 'startup' ? 'default' : 'secondary'}>
+                            {meeting.userType}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(meeting.date), 'PPP')} at {meeting.startTime}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {meeting.status === 'pending' ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                            onClick={() => handleMeetingAction(meeting._id, 'approved')}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            onClick={() => handleMeetingAction(meeting._id, 'rejected')}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <Badge 
+                          variant="secondary"
+                          className={cn(
+                            meeting.status === 'approved' && "bg-green-500/10 text-green-600",
+                            meeting.status === 'rejected' && "bg-red-500/10 text-red-600"
+                          )}
+                        >
+                          {meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1)}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <IndianRupee className="h-6 w-6 text-primary" />
+                  <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{meeting.startTime} - {meeting.endTime}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">₹{hourlyRate}</span>
+                      </div>
+                    </div>
+                    {meeting.meetLink && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                        <a 
+                          href={meeting.meetLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          Join Meeting
+                        </a>
+                      </div>
+                    )}
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                  <div>
-                    <p className="text-sm font-medium">Monthly Earnings</p>
-                    <p className="text-2xl font-semibold text-green-600">
-                      ₹{(hourlyRate * 20).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Based on 20 sessions</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Session Duration</p>
-                    <p className="text-2xl font-semibold">60 mins</p>
-                    <p className="text-xs text-muted-foreground">Standard duration</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Meetings List */}
-      <div className="grid gap-4">
-        {sortedMeetings.map((meeting) => (
-          <Card key={meeting._id}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="font-medium">{meeting.userId.name}</h3>
-                    <Badge variant={meeting.userType === 'startup' ? 'default' : 'secondary'}>
-                      {meeting.userType}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(meeting.date), 'PPP')} at {meeting.startTime}
-                  </div>
-                </div>
-                <Badge 
-                  variant={
-                    meeting.status === 'approved' 
-                      ? 'default'
-                      : meeting.status === 'rejected'
-                      ? 'destructive'
-                      : 'secondary'
-                  }
-                >
-                  {meeting.status}
-                </Badge>
-              </div>
-
-              {meeting.status === 'pending' ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Enter Google Meet link (optional - auto-generated if empty)"
-                      value={meetLinks[meeting._id] || ''}
-                      onChange={(e) => setMeetLinks(prev => ({
-                        ...prev,
-                        [meeting._id]: e.target.value
-                      }))}
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleMeetingAction(meeting._id, 'approved')}
-                      className="flex-1"
-                      variant="outline"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      Approve
-                    </Button>
-                    <Button
-                      onClick={() => handleMeetingAction(meeting._id, 'rejected')}
-                      className="flex-1"
-                      variant="outline"
-                    >
-                      <XCircle className="h-4 w-4 mr-2 text-red-500" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ) : meeting.status === 'approved' && meeting.meetLink ? (
-                <Button
-                  variant="link"
-                  className="mt-4"
-                  asChild
-                >
-                  <a
-                    href={meeting.meetLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2"
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                    Join Meeting
-                  </a>
-                </Button>
-              ) : null}
-            </CardContent>
-          </Card>
-        ))}
-
-        {sortedMeetings.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No meetings found
-          </div>
+                </CardContent>
+              </Card>
+            ))
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12"
+          >
+            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+              <Calendar className="h-8 w-8 text-blue-500" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">
+              {activeFilter === 'all' 
+                ? 'No Meetings Available'
+                : `No ${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} Meetings`}
+            </h3>
+            <p className="text-muted-foreground max-w-sm mx-auto">
+              {activeFilter === 'all'
+                ? "You don't have any scheduled meetings at the moment."
+                : `You don't have any ${activeFilter} meetings at the moment.`}
+            </p>
+          </motion.div>
         )}
       </div>
     </div>
