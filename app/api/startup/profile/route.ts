@@ -46,13 +46,9 @@ export async function PUT(request: Request) {
 
     const { formData } = await request.json();
 
-    const profile = await FormSubmission.findOneAndUpdate(
-      {
-        userEmail: session.user.email,
-        formType: "startup",
-        status: "approved"
-      },
-      { $set: { formData } },
+    const profile = await Startup.findOneAndUpdate(
+      { userId: session.user.id },
+      { $set: formData },
       { new: true }
     );
 
