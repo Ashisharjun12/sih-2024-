@@ -886,7 +886,7 @@ export default function ResearcherRegistrationForm() {
         description: "Your researcher registration has been submitted for review"
       });
 
-      router.push("/dashboard");
+      // router.push("/dashboard");
 
     } catch (error) {
       console.error("Form submission error:", error);
