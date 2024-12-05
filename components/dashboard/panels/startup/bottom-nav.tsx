@@ -8,6 +8,7 @@ import {
   Calendar,
   MessageSquare,
   FileText,
+  File,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -34,9 +35,9 @@ const bottomNavItems = [
     icon: MessageSquare,
   },
   {
-    title: "Reports",
-    href: "/startup/reports",
-    icon: FileText,
+    title: "ipr",
+    href: "/startup/ipr",
+    icon: File,
   },
 ];
 
