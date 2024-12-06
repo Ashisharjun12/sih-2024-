@@ -13,6 +13,8 @@ import {
   FileText, Link as LinkIcon, Facebook, Twitter, Linkedin,
   Rocket, ChevronRight
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface StartupDetails {
   _id: string;
@@ -80,6 +82,9 @@ interface StartupDetails {
 }
 
 export default function StartupDetails({ params }: { params: { projectid: string } }) {
+  const router = useRouter();
+
+  console.log("params id ",params.id)
   const { data: session } = useSession();
   const [startup, setStartup] = useState<StartupDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,7 +94,7 @@ export default function StartupDetails({ params }: { params: { projectid: string
     const fetchStartupDetails = async () => {
       try {
         
-        const response = await fetch(`/api/startup/projects/${params.projectid}`);
+        const response = await fetch(`/api/startup/projects/${params.id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch startup details");
         }
@@ -160,20 +165,31 @@ export default function StartupDetails({ params }: { params: { projectid: string
             </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-4 min-w-[240px]">
-            <div className="bg-background/50 p-4 rounded-xl text-center">
-              <Users className="h-6 w-6 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold">{startup?.startupDetails.founders.length}</p>
-              <p className="text-sm text-muted-foreground">Founders</p>
+          {/* Quick Stats and Metrics Button */}
+          <div className="space-y-4 min-w-[240px]">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-background/50 p-4 rounded-xl text-center">
+                <Users className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                <p className="text-2xl font-bold">{startup?.startupDetails.founders.length}</p>
+                <p className="text-sm text-muted-foreground">Founders</p>
+              </div>
+              <div className="bg-background/50 p-4 rounded-xl text-center">
+                <Calendar className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                <p className="text-2xl font-bold">
+                  {format(new Date(startup?.startupDetails.incorporationDate || ""), 'yyyy')}
+                </p>
+                <p className="text-sm text-muted-foreground">Founded</p>
+              </div>
             </div>
-            <div className="bg-background/50 p-4 rounded-xl text-center">
-              <Calendar className="h-6 w-6 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold">
-                {format(new Date(startup?.startupDetails.incorporationDate || ""), 'yyyy')}
-              </p>
-              <p className="text-sm text-muted-foreground">Founded</p>
-            </div>
+            
+            {/* New Metrics Button */}
+            <Button 
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-700 hover:to-cyan-600"
+              onClick={() => router.push(`/explore/startupDetails/${startup?._id}/startupsmatrics`)}
+            >
+              <Target className="mr-2 h-4 w-4" />
+              View Startup Metrics
+            </Button>
           </div>
         </div>
       </div>

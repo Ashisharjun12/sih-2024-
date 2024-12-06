@@ -22,7 +22,7 @@ export async function GET(
 
     const startup = await Startup.findOne({
       _id: params.projectid,
-      userId: session.user.id
+      // userId: session.user.id
     }).lean();
 
     if (!startup) {

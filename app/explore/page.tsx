@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Startup {
   _id: string;
@@ -26,46 +27,65 @@ interface Startup {
   };
 }
 
+interface Researcher {
+  _id: string;
+  // Add researcher interface properties
+}
+
+interface Mentor {
+  _id: string;
+  // Add mentor interface properties
+}
+
 export default function ExplorePage() {
   const { toast } = useToast();
   const [startups, setStartups] = useState<Startup[]>([]);
+  const [researchers, setResearchers] = useState<Researcher[]>([]);
+  const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    fetchStartups();
+    fetchData();
   }, []);
 
-  const fetchStartups = async () => {
+  const fetchData = async () => {
     try {
       const response = await fetch('/api/explore');
-      if (!response.ok) throw new Error('Failed to fetch startups');
+      if (!response.ok) throw new Error('Failed to fetch data');
       
       const data = await response.json();
-      console.log('Fetched startups data:', {
-        totalStartups: data.startups.length,
-        startups: data.startups
+      
+      console.log('Explore Page - Fetched Data:', {
+        startups: {
+          count: data.startups.length,
+          sample: data.startups[0]
+        },
+        researchers: {
+          count: data.researchers.length,
+          sample: data.researchers[0]
+        },
+        mentors: {
+          count: data.mentors.length,
+          sample: data.mentors[0]
+        }
       });
+
       setStartups(data.startups);
+      setResearchers(data.researchers);
+      setMentors(data.mentors);
     } catch (error) {
-      console.error('Error fetching startups:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch startups",
+        description: "Failed to fetch data",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  const filteredStartups = startups.filter(startup => 
-    startup.startupDetails.startupName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    startup.startupDetails.industries.some(industry => 
-      industry.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
 
   return (
     <div className="container py-6 space-y-8">
@@ -109,33 +129,47 @@ export default function ExplorePage() {
         </Button>
       </motion.div>
 
-      {/* Startups Grid */}
-      {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="h-[300px] animate-pulse" />
-          ))}
-        </div>
-      ) : filteredStartups.length > 0 ? (
-        <ScrollArea className="w-full">
-          <div className="flex space-x-6 pb-4">
-            {filteredStartups.map((startup, index) => (
-              <div
-                key={startup._id}
-                onClick={() => router.push(`/explore/${startup._id}`)}
-                className="w-[400px] flex-none"
-              >
-                <StartupCard startup={startup} index={index} />
+      {/* Tabs for different sections */}
+      <Tabs defaultValue="startups" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="startups">Startups</TabsTrigger>
+          <TabsTrigger value="researchers">Researchers</TabsTrigger>
+          <TabsTrigger value="mentors">Mentors</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="startups">
+          {isLoading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="h-[300px] animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <ScrollArea className="w-full">
+              <div className="flex space-x-6 pb-4">
+                {startups.map((startup, index) => (
+                  <div
+                    key={startup._id}
+                    onClick={() => router.push(`/explore/startupDetails/${startup._id}`)}
+                    className="w-[400px] flex-none"
+                  >
+                    <StartupCard startup={startup} index={index} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No startups found</p>
-        </div>
-      )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          )}
+        </TabsContent>
+
+        <TabsContent value="researchers">
+          {/* Add Researcher cards here */}
+        </TabsContent>
+
+        <TabsContent value="mentors">
+          {/* Add Mentor cards here */}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
