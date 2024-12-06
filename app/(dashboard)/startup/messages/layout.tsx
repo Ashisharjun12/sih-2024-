@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { MessagesProvider, useMessages } from "@/contexts/messages-context";
 import {
   Search,
   MessageSquare,
@@ -34,23 +34,44 @@ export default function MessagesLayout({
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <MessagesProvider>
+      <MessagesLayoutContent>{children}</MessagesLayoutContent>
+    </MessagesProvider>
+  );
+}
+
+function MessagesLayoutContent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showChat, setShowChat] = useState(false);
+  const { showChat, setShowChat } = useMessages();
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    if (showChat) {
+      console.log("ShowChat is true, re-fetching users");
+      fetchUsers();
+    }
+  }, [showChat]);
+
   const fetchUsers = async () => {
     try {
+      console.log("Fetching users...");
       const res = await fetch('/api/users/available');
       const data = await res.json();
       if (data.success) {
         setAvailableUsers(data.users);
+        console.log("Users fetched successfully:", data.users.length);
       }
     } catch (error) {
       console.error('Error fetching users:', error);

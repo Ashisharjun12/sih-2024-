@@ -3,57 +3,48 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Globe, Users, TrendingUp, Briefcase, Linkedin } from "lucide-react";
+import { User2, Globe, BookOpen, Trophy, GraduationCap, Linkedin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-interface StartupCardProps {
-  startup: {
+interface ResearcherCardProps {
+  researcher: {
     _id: string;
-    startupDetails: {
-      startupName: string;
-      startupLogo?: {
+    personalInfo: {
+      fullName: string;
+      profilePicture?: {
         secure_url: string;
       };
-      industries: string[];
-      sectors: string[];
-      stage: string;
-      businessModel: string;
-      revenueModel: string;
-      founders: Array<{
-        name: string;
-        role: string;
-        contactDetails: string;
-      }>;
-      equitySplits: Array<{
-        ownerName: string;
-        equityPercentage: number;
-      }>;
+      designation: string;
+      department: string;
+      institution: string;
+      expertise: string[];
+      researchInterests: string[];
       about: string;
     };
-    businessActivities: {
-      missionAndVision: string;
+    academicInfo: {
+      publications: number;
+      citations: number;
+      hIndex: number;
     };
-    additionalInfo: {
+    additionalInfo?: {
       website?: string;
       socialMedia?: {
         linkedIn?: string;
-        twitter?: string;
-        facebook?: string;
       };
     };
-    isActivelyFundraising: boolean;
+    isOpenToCollaboration?: boolean;
   };
   index: number;
 }
 
 const BANNER_GRADIENTS = [
-  "from-blue-600/90 to-cyan-600/90",
   "from-purple-600/90 to-blue-600/90",
-  "from-emerald-600/90 to-cyan-600/90",
+  "from-blue-600/90 to-cyan-600/90",
+  "from-indigo-600/90 to-purple-600/90",
 ];
 
-export function StartupCard({ startup, index }: StartupCardProps) {
+export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
   const router = useRouter();
 
   return (
@@ -68,37 +59,37 @@ export function StartupCard({ startup, index }: StartupCardProps) {
           <div className="relative">
             {/* Banner Image with Gradient Overlay */}
             <div className="h-24 relative overflow-hidden">
-              <div className="absolute inset-0 bg-[url('/startup-banner.jpg')] bg-cover bg-center" />
+              <div className="absolute inset-0 bg-[url('/researcher-banner.jpg')] bg-cover bg-center" />
               <div className={`absolute inset-0 bg-gradient-to-r ${BANNER_GRADIENTS[index % BANNER_GRADIENTS.length]} mix-blend-multiply`} />
               <div className="absolute inset-0 bg-black/20" />
             </div>
 
-            {/* Logo and Title Section */}
+            {/* Profile Picture and Title Section */}
             <div className="relative px-4 -mt-8">
               <div className="flex items-center gap-3">
-                {startup.startupDetails.startupLogo ? (
+                {researcher.personalInfo.profilePicture ? (
                   <img
-                    src={startup.startupDetails.startupLogo.secure_url}
-                    alt={startup.startupDetails.startupName}
+                    src={researcher.personalInfo.profilePicture.secure_url}
+                    alt={researcher.personalInfo.fullName}
                     className="h-14 w-14 rounded-full object-cover bg-white p-1 ring-2 ring-white shadow-lg"
                   />
                 ) : (
                   <div className="h-14 w-14 rounded-full bg-white/90 flex items-center justify-center ring-2 ring-white shadow-lg">
-                    <Building2 className="h-7 w-7 text-primary" />
+                    <User2 className="h-7 w-7 text-primary" />
                   </div>
                 )}
                 <div>
                   <h3 className="text-lg font-bold text-white">
-                    {startup.startupDetails.startupName}
+                    {researcher.personalInfo.fullName}
                   </h3>
                   <div className="flex gap-1.5 flex-wrap mt-1">
-                    {startup.isActivelyFundraising && (
+                    {researcher.isOpenToCollaboration && (
                       <Badge variant="secondary" className="bg-green-500 mt-1.5 text-white border-none text-xs">
-                        Actively Fundraising
+                        Open to Collaborate
                       </Badge>
                     )}
                     <Badge variant="secondary" className="bg-white/20 text-white border-none text-xs">
-                      {startup.startupDetails.stage}
+                      {researcher.personalInfo.designation}
                     </Badge>
                   </div>
                 </div>
@@ -110,40 +101,40 @@ export function StartupCard({ startup, index }: StartupCardProps) {
               {/* Key Metrics */}
               <div className="grid grid-cols-3 gap-3 pt-1.5">
                 <div className="flex items-center gap-1.5 text-xs">
-                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{startup.startupDetails.founders.length} Founders</span>
+                  <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{researcher.academicInfo.publications} Publications</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
-                  <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{startup.startupDetails.revenueModel}</span>
+                  <Trophy className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>h-index: {researcher.academicInfo.hIndex}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
-                  <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{startup.startupDetails.businessModel}</span>
+                  <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{researcher.personalInfo.department}</span>
                 </div>
               </div>
 
-              {/* Industries & Sectors */}
+              {/* Expertise & Research Interests */}
               <div className="space-y-1.5">
                 <div className="flex flex-wrap gap-1.5">
-                  {startup.startupDetails.industries.map((industry, i) => (
+                  {researcher.personalInfo.expertise.map((skill, i) => (
                     <Badge 
                       key={i} 
                       variant="outline"
                       className="bg-transparent text-xs"
                     >
-                      {industry}
+                      {skill}
                     </Badge>
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {startup.startupDetails.sectors.map((sector, i) => (
+                  {researcher.personalInfo.researchInterests.map((interest, i) => (
                     <Badge 
                       key={i} 
                       variant="outline"
                       className="bg-blue-500/10 text-blue-600 text-xs border-none"
                     >
-                      {sector}
+                      {interest}
                     </Badge>
                   ))}
                 </div>
@@ -151,15 +142,15 @@ export function StartupCard({ startup, index }: StartupCardProps) {
 
               {/* About */}
               <p className="text-xs text-muted-foreground line-clamp-2">
-                {startup.startupDetails.about || startup.businessActivities.missionAndVision}
+                {researcher.personalInfo.about}
               </p>
 
               {/* Social Links */}
-              {startup.additionalInfo && (
+              {researcher.additionalInfo && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-                  {startup.additionalInfo.website && (
+                  {researcher.additionalInfo.website && (
                     <Link 
-                      href={startup.additionalInfo.website} 
+                      href={researcher.additionalInfo.website} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
@@ -167,9 +158,9 @@ export function StartupCard({ startup, index }: StartupCardProps) {
                       <Globe className="h-3.5 w-3.5 text-blue-600" />
                     </Link>
                   )}
-                  {startup.additionalInfo.socialMedia?.linkedIn && (
+                  {researcher.additionalInfo.socialMedia?.linkedIn && (
                     <Link 
-                      href={startup.additionalInfo.socialMedia.linkedIn} 
+                      href={researcher.additionalInfo.socialMedia.linkedIn} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
@@ -185,4 +176,4 @@ export function StartupCard({ startup, index }: StartupCardProps) {
       </Card>
     </motion.div>
   );
-} 
+}
