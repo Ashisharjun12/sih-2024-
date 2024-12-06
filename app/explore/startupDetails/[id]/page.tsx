@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import {
   Building2,
@@ -99,7 +97,6 @@ export default function StartupDetails({
 }) {
   const router = useRouter();
 
-  console.log("params id ", params.id);
   const { data: session } = useSession();
   const [startup, setStartup] = useState<StartupDetails | null>(null);
   const [loading, setLoading] = useState(true);
