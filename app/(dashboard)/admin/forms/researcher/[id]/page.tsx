@@ -16,7 +16,6 @@ import {
   User,
   GraduationCap,
   Award,
-  Brain,
   FileCheck,
   Microscope,
 } from "lucide-react";
@@ -242,12 +241,6 @@ export default function ResearcherDetailPage() {
     );
   }
 
-  // Debug logs for the fetched data
-  console.log("Current submission state:", submission);
-  console.log("Personal Info:", submission?.formData?.personalInfo);
-  console.log("Academic Info:", submission?.formData?.academicInfo);
-  console.log("Files:", submission?.formData?.files);
-
   return (
     <div className="container py-8 max-w-4xl">
       <motion.div
@@ -291,10 +284,6 @@ export default function ResearcherDetailPage() {
             <InfoItem 
               label="Phone" 
               value={submission?.formData.personalInfo.phone.number} 
-            />
-            <InfoItem 
-              label="Field of Research" 
-              value={submission?.formData.personalInfo.fieldOfResearch} 
             />
             <InfoItem 
               label="ID Type" 

@@ -22,6 +22,10 @@ export async function POST(req: NextRequest) {
                 { status: 400 }
             );
         }
+        console.log(formData.files.identityProof);
+        console.log(formData.files.incorporationCertificate);
+        console.log(formData.files.pitchDeck);
+        console.log(formData.files.startupLogo);
 
         // Create form submission
         const submission = new FormSubmission({

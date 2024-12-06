@@ -295,6 +295,8 @@ const PatentsPage = () => {
 
         // Wait for transaction confirmation
         const receipt = await transaction.wait();
+        console.log(receipt.hash);
+        console.log(receipt);
 
         // Update transaction hash in database
         await fetch(

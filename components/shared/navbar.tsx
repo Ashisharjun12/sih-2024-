@@ -36,6 +36,7 @@ interface Notification {
   _id: string;
   name: string;
   message: string;
+  role: string;
 }
 
 const roleApplications = [
@@ -74,10 +75,22 @@ const roleApplications = [
 const roleRoutes = {
   admin: { path: "/admin", label: "Admin Panel", icon: Settings },
   startup: { path: "/startup", label: "Startup Panel", icon: Rocket },
-  researcher: { path: "/researcher", label: "Researcher Panel", icon: Microscope },
-  iprProfessional: { path: "/ipr-professional", label: "IPR Panel", icon: Scale },
+  researcher: {
+    path: "/researcher",
+    label: "Researcher Panel",
+    icon: Microscope,
+  },
+  iprProfessional: {
+    path: "/ipr-professional",
+    label: "IPR Panel",
+    icon: Scale,
+  },
   policyMaker: { path: "/policy-maker", label: "Policy Panel", icon: FileText },
-  fundingAgency: { path: "/funding-agency", label: "Funding Panel", icon: Banknote },
+  fundingAgency: {
+    path: "/funding-agency",
+    label: "Funding Panel",
+    icon: Banknote,
+  },
   mentor: { path: "/mentor", label: "Mentor Panel", icon: UserCog },
 };
 
@@ -122,10 +135,10 @@ export default function Navbar() {
   }, [session]);
 
   const handleProfileClick = () => {
-    if (session?.user?.role === 'startup') {
-      router.push('/startup/profile');
+    if (session?.user?.role === "startup") {
+      router.push("/startup/profile");
     } else {
-      router.push('/profile');
+      router.push("/profile");
     }
   };
 
@@ -187,7 +200,11 @@ export default function Navbar() {
                         className="mb-2 rounded-lg p-3 hover:bg-muted"
                       >
                         <p className="font-medium text-sm">
-                          {notification.name}
+                          {notification.role[0].toUpperCase() +
+                            notification.role.slice(1)}{" "}
+                          <span className="text-gray-500 ">
+                            {notification.name !== "Admin" && notification.name}
+                          </span>
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {notification.message}
@@ -275,14 +292,14 @@ export default function Navbar() {
                   )}
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="focus:bg-primary/10"
                   onClick={handleProfileClick}
                 >
                   <div className="flex items-center gap-2 w-full">
                     <User className="h-4 w-4" />
                     <span className="flex-1">Profile</span>
-                    {session.user?.role === 'startup' && (
+                    {session.user?.role === "startup" && (
                       <span className="text-xs text-muted-foreground">
                         Startup Profile
                       </span>
@@ -307,11 +324,7 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button 
-              onClick={handleSignIn} 
-              size="sm"
-              className="h-8 md:h-10"
-            >
+            <Button onClick={handleSignIn} size="sm" className="h-8 md:h-10">
               <User className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Sign In</span>
             </Button>

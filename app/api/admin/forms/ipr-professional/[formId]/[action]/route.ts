@@ -63,12 +63,12 @@ export async function POST(
         message: "Your IPR Professional application has been rejected.",
         role: session.user.role!,
       }, user._id);
-
-      return NextResponse.json({
-        success: true,
-        message: `Application ${action}ed successfully`
-      });
     }
+    return NextResponse.json({
+      success: true,
+      message: `Application ${action}ed successfully`
+    });
+
   } catch (error) {
     console.error(`Error ${params.action}ing IPR Professional application:`, error);
     return NextResponse.json(

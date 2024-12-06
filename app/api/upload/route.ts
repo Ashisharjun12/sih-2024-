@@ -1,77 +1,84 @@
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from 'cloudinary';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { Client, Storage, ID } from 'appwrite';
 
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Initialize Appwrite
+const client = new Client()
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
+
+const storage = new Storage(client);
+const BUCKET_ID = process.env.NEXT_PUBLIC_APPWRITE_PDF_BUCKET_ID!;
 
 export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user) {
-      console.log("Upload error: Unauthorized");
-      return NextResponse.json(
-        { error: "Unauthorized" }, 
-        { status: 401 }
-      );
+    try {
+        // Check authentication
+        const session = await getServerSession(authOptions);
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const formData = await request.formData();
+        const file = formData.get('file') as File;
+
+        if (!file) {
+            return NextResponse.json(
+                { error: "No file provided" },
+                { status: 400 }
+            );
+        }
+
+        console.log('Starting file upload to Appwrite...', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type
+        });
+
+        // Upload to Appwrite
+        const fileId = ID.unique();
+        const response = await storage.createFile(
+            BUCKET_ID,
+            fileId,
+            file
+        );
+
+        // Generate URLs
+        const viewUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${fileId}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+        const previewUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${fileId}/preview?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+
+        console.log('File upload successful:', {
+            fileId: response.$id,
+            fileName: response.name,
+            viewUrl,
+            previewUrl
+        });
+
+        // Return in Cloudinary-like format
+        return NextResponse.json({
+            public_id: previewUrl,  // Use Appwrite file ID as public_id
+            secure_url: viewUrl,      // Use view URL as secure_url
+            // Additional preview URL
+           
+        });
+
+    } catch (error) {
+        console.error('Upload error:', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+        });
+        return NextResponse.json(
+            { error: "Failed to upload file" },
+            { status: 500 }
+        );
     }
-
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-
-    if (!file) {
-      console.log("Upload error: No file provided");
-      return NextResponse.json(
-        { error: "No file provided" },
-        { status: 400 }
-      );
-    }
-
-    console.log("Processing file upload:", {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
-
-    // Convert file to base64
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const fileBase64 = `data:${file.type};base64,${buffer.toString('base64')}`;
-
-    // Upload to Cloudinary
-    console.log("Uploading to Cloudinary...");
-    const result = await cloudinary.uploader.upload(fileBase64, {
-      folder: 'ipr_docs',
-      resource_type: file.type.includes('pdf') ? 'raw' : 'auto',
-      public_id: `ipr_${Date.now()}`,
-    });
-
-    console.log("Cloudinary upload successful:", {
-      public_id: result.public_id,
-      secure_url: result.secure_url
-    });
-
-    return NextResponse.json({
-      public_id: result.public_id,
-      secure_url: result.secure_url,
-    });
-    
-  } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json(
-      { error: "Failed to upload file" },
-      { status: 500 }
-    );
-  }
 }
 
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+    api: {
+        bodyParser: false,
+    },
 }; 

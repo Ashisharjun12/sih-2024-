@@ -311,7 +311,7 @@ function PersonalInfoStep({
         <FileUpload
           label="Profile Picture"
           fileType="profilePicture"
-          accept="image/*"
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
           onFileChange={handleFileChange}
         />
       </div>
@@ -584,7 +584,7 @@ function AcademicInfoStep({
         <FileUpload
           label="CV"
           fileType="cv"
-          accept=".pdf,.jpg,.jpeg,.png"
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
           onFileChange={handleFileChange}
         />
       </div>

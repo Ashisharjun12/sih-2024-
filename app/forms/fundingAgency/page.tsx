@@ -990,7 +990,7 @@ export default function FundingAgencyRegistrationForm() {
                             <FileUpload
                               label="Upload Registration Certificate"
                               fileType="registrationCertificate"
-                              accept=".pdf,.jpg,.jpeg,.png"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                               onFileChange={(fileData) => handleFileChange('registrationCertificate', fileData)}
                             />
                           </FormItem>
@@ -1000,7 +1000,7 @@ export default function FundingAgencyRegistrationForm() {
                             <FileUpload
                               label="Upload Government Approvals"
                               fileType="governmentApprovals"
-                              accept=".pdf,.jpg,.jpeg,.png"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                               onFileChange={(fileData) => handleFileChange('governmentApprovals', fileData)}
                             />
                           </FormItem>
@@ -1010,7 +1010,7 @@ export default function FundingAgencyRegistrationForm() {
                             <FileUpload
                               label="Upload Tax Documents"
                               fileType="taxDocuments"
-                              accept=".pdf,.jpg,.jpeg,.png"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                               onFileChange={(fileData) => handleFileChange('taxDocuments', fileData)}
                             />
                           </FormItem>

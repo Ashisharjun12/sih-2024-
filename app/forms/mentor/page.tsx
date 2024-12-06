@@ -365,7 +365,7 @@ const MentorForm = () => {
               <Input
                 type="file"
                 onChange={handleFileUpload}
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                 multiple
                 disabled={isSubmitting || isUploading}
               />
