@@ -55,14 +55,16 @@ function MessagesLayoutContent({
 
   useEffect(() => {
     fetchUsers();
-  }, []);
 
-  useEffect(() => {
-    if (showChat) {
-      console.log("ShowChat is true, re-fetching users");
+    const interval = setInterval(async () => {
+      console.log("Polling users...");
       fetchUsers();
-    }
-  }, [showChat]);
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -70,8 +72,11 @@ function MessagesLayoutContent({
       const res = await fetch('/api/users/available');
       const data = await res.json();
       if (data.success) {
-        setAvailableUsers(data.users);
-        console.log("Users fetched successfully:", data.users.length);
+        const hasChanges = JSON.stringify(data.users) !== JSON.stringify(availableUsers);
+        if (hasChanges) {
+          console.log("Users updated, new count:", data.users.length);
+          setAvailableUsers(data.users);
+        }
       }
     } catch (error) {
       console.error('Error fetching users:', error);
