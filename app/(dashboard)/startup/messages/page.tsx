@@ -99,7 +99,14 @@ export default function StartupMessagesPage() {
     sse.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.success && data.message) {
-        handleNewMessage(data.message);
+        const newMessage = data.message;
+        setMessages(prev => {
+          const messageExists = prev.some(m => m._id === newMessage._id);
+          if (messageExists) {
+            return prev;
+          }
+          return [...prev, newMessage];
+        });
       }
     };
 
@@ -153,7 +160,13 @@ export default function StartupMessagesPage() {
   };
 
   const handleNewMessage = (message: Message) => {
-    setMessages(prev => [...prev, message]);
+    setMessages(prev => {
+      const messageExists = prev.some(m => m._id === message._id);
+      if (messageExists) {
+        return prev;
+      }
+      return [...prev, message];
+    });
     scrollToBottom();
   };
 
@@ -175,7 +188,6 @@ export default function StartupMessagesPage() {
 
       const data = await response.json();
       if (data.success) {
-        handleNewMessage(data.message);
         setNewMessage('');
       }
     } catch (error) {
@@ -246,51 +258,29 @@ export default function StartupMessagesPage() {
   };
 
   return (
-    <div className="container py-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8 mb-6">
-        <div className="relative space-y-2">
-          {showChat && selectedUser ? (
-            <div className="flex items-center gap-2 md:hidden">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowChat(false)}
-                className="p-0 hover:bg-transparent"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="text-xl font-bold">{selectedUser.name}</h1>
-            </div>
-          ) : (
-            <>
-              <h1 className="text-2xl md:text-3xl font-bold">Messages</h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                Chat with mentors and connect with your network
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-6 h-[calc(100vh-280px)]">
-        <div className={cn(
-          "col-span-12 md:col-span-4 transition-all duration-300",
-          showChat ? "hidden md:block" : "block"
-        )}>
-          <div className="bg-background rounded-lg">
-            <div className="p-4 border-b border-muted">
+    <div className="h-[calc(100vh-4rem)]">
+      <div className="h-full bg-background overflow-hidden md:border md:rounded-lg">
+        <div className="grid grid-cols-12 h-full">
+          <div 
+            className={cn(
+              "col-span-12 md:col-span-4 md:border-r",
+              showChat ? "hidden md:block" : "block"
+            )}
+          >
+            <div className="p-4 bg-muted/30 border-b">
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search conversations..."
-                  className="pl-9 bg-transparent border-muted"
+                  className="pl-9 bg-background"
                 />
               </div>
             </div>
-            <ScrollArea className="h-[calc(100vh-400px)]">
-              <div className="space-y-1 p-2">
+
+            <ScrollArea className="h-[calc(100vh-8rem)]">
+              <div className="divide-y divide-muted/50">
                 {getFilteredUsers().map((user) => (
                   <motion.div
                     key={user._id}
@@ -300,8 +290,7 @@ export default function StartupMessagesPage() {
                     <button
                       onClick={() => handleUserSelect(user)}
                       className={cn(
-                        "w-full p-3 rounded-lg transition-colors",
-                        "hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/10",
+                        "w-full p-4 text-left transition-colors hover:bg-muted/50",
                         selectedUser?._id === user._id && "bg-muted"
                       )}
                     >
@@ -312,15 +301,12 @@ export default function StartupMessagesPage() {
                             {user.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{user.name}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium truncate">{user.name}</span>
                             <Badge 
                               variant="secondary" 
-                              className={cn(
-                                "text-xs",
-                                getRoleIcon(user.role).color
-                              )}
+                              className={cn("text-xs", getRoleIcon(user.role).color)}
                             >
                               {getRoleIcon(user.role).label}
                             </Badge>
@@ -336,45 +322,45 @@ export default function StartupMessagesPage() {
               </div>
             </ScrollArea>
           </div>
-        </div>
 
-        <div className={cn(
-          "col-span-12 md:col-span-8 transition-all duration-300",
-          !showChat ? "hidden md:block" : "block"
-        )}>
-          <div className="bg-background rounded-lg h-full flex flex-col">
+          <div 
+            className={cn(
+              "col-span-12 md:col-span-8 flex flex-col h-full overflow-y-auto",
+              !showChat ? "hidden md:flex" : "flex"
+            )}
+          >
             {selectedUser ? (
               <>
-                <div className="p-4 border-b border-muted hidden md:block">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={selectedUser.image} />
-                      <AvatarFallback>
-                        {selectedUser.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{selectedUser.name}</h3>
-                        <Badge 
-                          variant="secondary" 
-                          className={cn(
-                            "text-xs",
-                            getRoleIcon(selectedUser.role).color
-                          )}
-                        >
-                          {getRoleIcon(selectedUser.role).label}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedUser.email}
-                      </p>
-                    </div>
+                <div className="p-4 bg-muted/30 border-b flex items-center gap-3">
+                  {showChat && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowChat(false)}
+                      className="md:hidden -ml-2"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                  )}
+                  <Avatar>
+                    <AvatarImage src={selectedUser.image} />
+                    <AvatarFallback>
+                      {selectedUser.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{selectedUser.name}</h3>
+                    <Badge 
+                      variant="secondary" 
+                      className={cn("text-xs", getRoleIcon(selectedUser.role).color)}
+                    >
+                      {getRoleIcon(selectedUser.role).label}
+                    </Badge>
                   </div>
                 </div>
 
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
+                <ScrollArea className="flex-1 p-4 bg-muted/10">
+                  <div className="space-y-4 max-w-3xl mx-auto">
                     {messages.map((message) => (
                       <motion.div
                         key={message._id}
@@ -387,15 +373,18 @@ export default function StartupMessagesPage() {
                       >
                         <div
                           className={cn(
-                            "max-w-[70%] rounded-2xl px-4 py-2",
-                            message.sender._id === selectedUser._id
-                              ? "bg-muted"
-                              : "bg-blue-600 text-white"
+                            "max-w-[75%] px-4 py-2 rounded-2xl",
+                            message.sender._id === selectedUser._id 
+                              ? "bg-muted rounded-tl-none" 
+                              : "bg-blue-600 text-white rounded-tr-none"
                           )}
                         >
-                          <p>{message.content}</p>
-                          <span className="text-[10px] opacity-70 mt-1 block">
-                            {new Date(message.createdAt).toLocaleTimeString()}
+                          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                          <span className="text-[10px] opacity-70 mt-1 block text-right">
+                            {new Date(message.createdAt).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
                           </span>
                         </div>
                       </motion.div>
@@ -404,28 +393,27 @@ export default function StartupMessagesPage() {
                   </div>
                 </ScrollArea>
 
-                <div className="p-4 border-t border-muted">
-                  <form onSubmit={handleSendMessage}>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type a message..."
-                        className="flex-1 bg-muted border-0"
-                      />
-                      <Button 
-                        type="submit" 
-                        size="icon"
-                        className="bg-blue-600 hover:bg-blue-700 rounded-full"
-                      >
-                        <Send className="h-4 w-4 text-white" />
-                      </Button>
-                    </div>
+                <div className="p-4 bg-background border-t max-md:mb-[49px]">
+                  <form onSubmit={handleSendMessage} className="flex items-center gap-2 max-w-3xl mx-auto">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1"
+                      autoComplete="off"
+                    />
+                    <Button 
+                      type="submit" 
+                      size="icon"
+                      className="bg-blue-600 hover:bg-blue-700 rounded-full shrink-0"
+                    >
+                      <Send className="h-4 w-4 text-white" />
+                    </Button>
                   </form>
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center">
+              <div className="flex-1 flex items-center justify-center bg-muted/10">
                 <div className="text-center">
                   <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="font-medium mb-2">No Chat Selected</h3>
