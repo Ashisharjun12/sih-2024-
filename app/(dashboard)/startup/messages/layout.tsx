@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { MessagesProvider, useMessages } from "@/contexts/messages-context";
 import {
   Search,
   MessageSquare,
@@ -51,7 +50,7 @@ function MessagesLayoutContent({
   const [loading, setLoading] = useState(true);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const { showChat, setShowChat } = useMessages();
+  
 
   useEffect(() => {
     fetchUsers();
