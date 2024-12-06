@@ -15,12 +15,14 @@ import {
   Clock,
   Wallet,
   TrendingUp,
+  LinkIcon,
 } from "lucide-react";
 import {
   ScrollArea,
   ScrollBar
 } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
+import { format } from "date-fns";
 
 interface MenteeData {
   _id: string;
@@ -32,15 +34,62 @@ interface MenteeData {
   nextMeeting?: string;
 }
 
+interface Meeting {
+  _id: string;
+  userId: {
+    name: string;
+    email: string;
+    image?: string;
+  };
+  userType: 'startup' | 'researcher';
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: 'pending' | 'approved' | 'rejected';
+  meetLink?: string;
+}
+
 export default function MentorDashboard() {
   const { data: session } = useSession();
   const router = useRouter();
   const [mentees, setMentees] = useState<MenteeData[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+
+  const calculateEarnings = (meetings: Meeting[]) => {
+    return meetings
+      .filter(meeting => meeting.status === 'approved')
+      .reduce((total, meeting) => {
+        const start = new Date(`2000/01/01 ${meeting.startTime}`);
+        const end = new Date(`2000/01/01 ${meeting.endTime}`);
+        const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        
+        const hourlyRate = 1000;
+        const meetingCost = durationHours * hourlyRate;
+        return total + meetingCost;
+      }, 0);
+  };
 
   useEffect(() => {
-    // Fetch mentees data
-    setLoading(false);
+    const initializeData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/mentor/meetings');
+        const data = await res.json();
+        if (data.success) {
+          setMeetings(data.meetings);
+          const earnings = calculateEarnings(data.meetings);
+          setTotalEarnings(earnings);
+        }
+      } catch (error) {
+        console.error('Error fetching meetings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
   }, []);
 
   if (loading) {
@@ -53,9 +102,9 @@ export default function MentorDashboard() {
 
   return (
     <div className="container py-6 space-y-8">
-      {/* Welcome Section */}
+      {/* Welcome Section - Remove Schedule Button */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
-        <div className="relative flex justify-between items-start">
+        <div className="relative">
           <div className="space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold">
               Welcome back, {session?.user?.name}! ✨
@@ -64,14 +113,6 @@ export default function MentorDashboard() {
               Track your mentoring activities and manage your mentees.
             </p>
           </div>
-          <Button
-            onClick={() => router.push('/mentor/meetings/schedule')}
-            size="lg"
-            className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-700 hover:to-cyan-600 hidden md:flex"
-          >
-            <Calendar className="h-5 w-5 mr-2" />
-            Schedule Session
-          </Button>
         </div>
       </div>
 
@@ -94,7 +135,7 @@ export default function MentorDashboard() {
         </div>
         <div className="bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent rounded-xl p-4 md:p-6">
           <Wallet className="h-6 w-6 text-violet-500 mb-2" />
-          <p className="text-2xl font-bold">₹24K</p>
+          <p className="text-2xl font-bold">₹{totalEarnings.toLocaleString('en-IN')}</p>
           <p className="text-sm text-violet-600/70">Earnings</p>
         </div>
         <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent rounded-xl p-4 md:p-6">
@@ -125,31 +166,59 @@ export default function MentorDashboard() {
 
         <ScrollArea className="w-full">
           <div className="flex space-x-4 pb-4">
-            {[1, 2, 3].map((_, i) => (
-              <Card key={i} className="flex-none w-[300px] hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-blue-500" />
+            {meetings
+              .filter((meeting: Meeting) => meeting.status === 'approved')
+              .map((meeting: Meeting) => (
+                <Card key={meeting._id} className="flex-none w-[300px] hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-500/10 overflow-hidden">
+                        {meeting.userId?.image ? (
+                          <img 
+                            src={meeting.userId.image} 
+                            alt={meeting.userId.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Users className="h-5 w-5 text-blue-500 m-auto mt-2.5" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{meeting.userId.name}</h3>
+                        <p className="text-sm text-muted-foreground">{meeting.userType}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium">Mentee Name {i + 1}</h3>
-                      <p className="text-sm text-muted-foreground">Startup {i + 1}</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>{format(new Date(meeting.date), 'PPP')}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span>{meeting.startTime} - {meeting.endTime}</span>
+                      </div>
+                      {meeting.meetLink && (
+                        <div className="mt-3 pt-3 border-t">
+                          <a
+                            href={meeting.meetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                          >
+                            <LinkIcon className="h-4 w-4" />
+                            Join Meeting
+                          </a>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>Tomorrow, 10:00 AM</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Target className="h-4 w-4 text-muted-foreground" />
-                      <span>Growth Strategy Discussion</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            {meetings.filter((m: Meeting) => m.status === 'approved').length === 0 && (
+              <div className="flex-none w-full text-center py-8 text-muted-foreground">
+                No approved meetings scheduled
+              </div>
+            )}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -192,23 +261,6 @@ export default function MentorDashboard() {
             </Card>
           ))}
         </div>
-      </motion.div>
-
-      {/* Mobile FAB */}
-      <motion.div 
-        className="fixed bottom-24 right-6 z-50 md:hidden"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <Button
-          onClick={() => router.push('/mentor/meetings/schedule')}
-          size="lg"
-          className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-blue-600 to-cyan-500 
-            hover:from-blue-700 hover:to-cyan-600 p-0"
-        >
-          <Calendar className="h-6 w-6 text-white" />
-        </Button>
       </motion.div>
     </div>
   );
