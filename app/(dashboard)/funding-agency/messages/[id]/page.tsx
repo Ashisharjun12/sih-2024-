@@ -41,7 +41,7 @@ interface User {
   role: string;
 }
 
-export default function FundingAgencyChatPage({ params }: { params: { id: string } }) {
+export default function ChatPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { data: session } = useSession();
   const { toast } = useToast();
@@ -50,6 +50,7 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string>("");
 
   useEffect(() => {
@@ -79,7 +80,12 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
       }
     }, 1000); // Poll every second
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
   }, [params.id, lastMessageTimestamp]);
 
   const fetchUserAndMessages = async () => {
@@ -114,6 +120,32 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
     }
   };
 
+  const setupMessageStream = () => {
+    if (!session?.user) return;
+
+    const chatId = generateChatId(session.user.id, params.id);
+    const sse = new EventSource(`/api/messages/stream?chatId=${chatId}`);
+
+    sse.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.success && data.message) {
+        setMessages(prev => {
+          const messageExists = prev.some(m => m._id === data.message._id);
+          if (messageExists) return prev;
+          return [...prev, data.message];
+        });
+        scrollToBottom();
+      }
+    };
+
+    sse.onerror = (error) => {
+      console.error('SSE error:', error);
+      sse.close();
+    };
+
+    setEventSource(sse);
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !session?.user) return;
@@ -142,6 +174,10 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
         variant: "destructive",
       });
     }
+  };
+
+  const generateChatId = (userId1: string, userId2: string) => {
+    return [userId1, userId2].sort().join('_');
   };
 
   const scrollToBottom = () => {
@@ -176,6 +212,7 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
           </div>
 
           <ScrollArea className="flex-1 p-4 bg-muted/10">
+            {/* Messages */}
             <div className="space-y-4 max-w-3xl mx-auto">
               {messages.map((message) => (
                 <motion.div
@@ -192,7 +229,7 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
                       "max-w-[75%] px-4 py-2 rounded-2xl",
                       message.sender._id === params.id
                         ? "bg-muted rounded-tl-none" 
-                        : "bg-orange-600 text-white rounded-tr-none" // Changed to orange for funding agency theme
+                        : "bg-blue-600 text-white rounded-tr-none"
                     )}
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -221,7 +258,7 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
               <Button 
                 type="submit" 
                 size="icon"
-                className="bg-orange-600 hover:bg-orange-700 rounded-full shrink-0" // Changed to orange for funding agency theme
+                className="bg-blue-600 hover:bg-blue-700 rounded-full shrink-0"
               >
                 <Send className="h-4 w-4 text-white" />
               </Button>
@@ -241,4 +278,4 @@ export default function FundingAgencyChatPage({ params }: { params: { id: string
       )}
     </>
   );
-} 
+}
