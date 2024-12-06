@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 interface ResearchPaper {
   _id: string;
@@ -26,6 +28,7 @@ interface ResearchPaper {
   images: Array<{ public_id: string; secure_url: string }>;
   isFree: boolean;
   price?: number;
+  isPublished: boolean;
 }
 
 const ResearchPaperPage = () => {
@@ -45,6 +48,7 @@ const ResearchPaperPage = () => {
     images: [],
     isFree: false,
     price: undefined,
+    isPublished: false,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -97,6 +101,7 @@ const ResearchPaperPage = () => {
       ...prev,
       isFree: e.target.checked,
       price: e.target.checked ? undefined : prev.price,
+      isPublished: e.target.checked,
     }));
   };
 
@@ -179,6 +184,7 @@ const ResearchPaperPage = () => {
         images: [],
         isFree: false,
         price: undefined,
+        isPublished: false,
       });
 
       // Fetch updated research papers
@@ -222,77 +228,103 @@ const ResearchPaperPage = () => {
         </TabsList>
 
         <TabsContent value="completed">
-          <div className="space-y-4">
-            {researchPapers.map((paper) => (
-              <Card key={paper._id}>
-                <CardHeader>
-                  <CardTitle>{paper.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>{paper.description}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Published on:{" "}
-                    {new Date(paper.publicationDate).toLocaleDateString()} |
-                    Stage: {paper.stage}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {paper.isFree
-                      ? "This research paper is free."
-                      : `Price: $${paper.price}`}
-                  </p>
+          {researchPapers.map((paper) => (
+            <Card key={paper._id} className="mb-4">
+              <CardHeader>
+                <CardTitle>{paper.title}</CardTitle>
+                <Badge variant={paper.isPublished ? "success" : "destructive"}>
+                  {paper.isPublished ? "Published" : "Not Published"}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <p>{paper.description}</p>
+                <p>Stage: {paper.stage}</p>
+                <p>Publication Date: {new Date(paper.publicationDate).toLocaleDateString()}</p>
+                {paper.doi && <p>DOI: {paper.doi}</p>}
+                {paper.isPublished && paper.price !== undefined && (
+                  <p>Price: ${paper.price}</p>
+                )}
+                {paper.images.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {paper.images.map((image) => (
                       <Image
-                        width={100}
-                        height={100}
                         key={image.public_id}
                         src={image.secure_url}
                         alt={paper.title}
+                        width={100}
+                        height={100}
                         className="h-20 w-20 object-cover"
                       />
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                )}
+                {paper.images.length > 0 && (
+                  <div className="mt-2">
+                    <h4 className="font-semibold">Documents:</h4>
+                    <ul>
+                      {paper.images.map((doc) => (
+                        <li key={doc.public_id}>
+                          <Link href={doc.secure_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            {doc.public_id}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
 
         <TabsContent value="ongoing">
-          <div className="space-y-4">
-            {onGoingResearchPapers.map((paper) => (
-              <Card key={paper._id}>
-                <CardHeader>
-                  <CardTitle>{paper.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>{paper.description}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Published on:{" "}
-                    {new Date(paper.publicationDate).toLocaleDateString()} |
-                    Stage: {paper.stage}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {paper.isFree
-                      ? "This research paper is free."
-                      : `Price: $${paper.price}`}
-                  </p>
+          {onGoingResearchPapers.map((paper) => (
+            <Card key={paper._id} className="mb-4">
+              <CardHeader>
+                <CardTitle>{paper.title}</CardTitle>
+                <Badge variant={paper.isPublished ? "success" : "destructive"}>
+                  {paper.isPublished ? "Published" : "Not Published"}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <p>{paper.description}</p>
+                <p>Stage: {paper.stage}</p>
+                <p>Publication Date: {new Date(paper.publicationDate).toLocaleDateString()}</p>
+                {paper.doi && <p>DOI: {paper.doi}</p>}
+                {paper.isPublished && paper.price !== undefined && (
+                  <p>Price: ${paper.price}</p>
+                )}
+                {paper.images.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {paper.images.map((image) => (
                       <Image
-                      width={100}
-                      height={100}
                         key={image.public_id}
                         src={image.secure_url}
                         alt={paper.title}
+                        width={100}
+                        height={100}
                         className="h-20 w-20 object-cover"
                       />
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                )}
+                {paper.images.length > 0 && (
+                  <div className="mt-2">
+                    <h4 className="font-semibold">Documents:</h4>
+                    <ul>
+                      {paper.images.map((doc) => (
+                        <li key={doc.public_id}>
+                          <Link href={doc.secure_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            {doc.public_id}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
       </Tabs>
 
@@ -380,6 +412,14 @@ const ResearchPaperPage = () => {
                 </option>
                 <option value="Completed">Completed</option>
               </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Is Published</label>
+              <input
+                type="checkbox"
+                checked={newPaper.isPublished}
+                onChange={(e) => setNewPaper((prev) => ({ ...prev, isPublished: e.target.checked }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium">Is Free</label>
