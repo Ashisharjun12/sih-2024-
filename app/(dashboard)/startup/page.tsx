@@ -126,11 +126,11 @@ export default function StartupPage() {
         <ScrollArea className="w-full">
           <div className="flex space-x-6 pb-4">
             {startups.slice(0, 3).map((startup, index) => (
-              <div key={startup._id} className="w-[400px] flex-none">
-                <StartupCard startup={startup} index={index} />
+              <div onClick={() => router.push(`/startup/projects/${startup._id}`)} key={startup._id} className="w-[400px] flex-none">
+                <StartupCard  startup={startup} index={index} />
               </div>
             ))}
-          </div>
+          </div>  
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
