@@ -33,24 +33,12 @@ export default function MessagesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <MessagesProvider>
-      <MessagesLayoutContent>{children}</MessagesLayoutContent>
-    </MessagesProvider>
-  );
-}
-
-function MessagesLayoutContent({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -184,9 +172,6 @@ function MessagesLayoutContent({
                               {getRoleIcon(user.role).label}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {user.email}
-                          </p>
                         </div>
                       </div>
                     </button>

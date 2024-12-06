@@ -52,17 +52,6 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string>("");
-  const { setShowChat } = useMessages();
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      console.log("Messages present, setting showChat to true");
-      setShowChat(true);
-    } else {
-      console.log("No messages, setting showChat to false");
-      setShowChat(false);
-    }
-  }, [messages.length, setShowChat]);
 
   useEffect(() => {
     fetchUserAndMessages();
@@ -79,14 +68,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
             const newMessages = data.messages.filter((newMsg: Message) => 
               !prevMessages.some(existingMsg => existingMsg._id === newMsg._id)
             );
-            const updatedMessages = [...prevMessages, ...newMessages];
-            
-            // Update showChat based on messages presence
-            if (updatedMessages.length > 0) {
-              setShowChat(true);
-            }
-            
-            return updatedMessages;
+            return [...prevMessages, ...newMessages];
           });
           
           const latestMessage = data.messages[data.messages.length - 1];
@@ -103,9 +85,8 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       if (eventSource) {
         eventSource.close();
       }
-      setShowChat(false);
     };
-  }, [params.id, lastMessageTimestamp, setShowChat]);
+  }, [params.id, lastMessageTimestamp]);
 
   const fetchUserAndMessages = async () => {
     try {
