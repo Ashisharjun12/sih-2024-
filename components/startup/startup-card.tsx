@@ -41,7 +41,7 @@ export function StartupCard({ startup, index }: StartupCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-    //   onClick={() => router.push(`/startup/projects/${startup._id}`)}
+
     >
       <Card className="cursor-pointer group hover:shadow-lg transition-all duration-300 overflow-hidden">
         <CardContent className="p-0">

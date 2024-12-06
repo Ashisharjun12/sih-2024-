@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { StartupCard } from "@/components/startup/startup-card";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Card } from "@/components/ui/card";
 
 interface Startup {
   _id: string;
@@ -81,16 +83,29 @@ export default function StartupProjects() {
         </div>
       </div>
 
-      {/* Startups Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {startups.map((startup, index) => (
-          <StartupCard 
-            key={startup._id} 
-            startup={startup} 
-            index={index} 
-          />
-        ))}
-      </div>
+      {/* Startups ScrollArea */}
+      {loading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="h-[300px] animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <ScrollArea className="w-full">
+          <div className="flex space-x-6 pb-4">
+            {startups.map((startup, index) => (
+              <div
+                key={startup._id}
+                onClick={() => router.push(`/startup/projects/${startup._id}`)}
+                className="w-[400px] flex-none"
+              >
+                <StartupCard startup={startup} index={index} />
+              </div>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      )}
 
       {/* Mobile FAB */}
       <motion.div 
