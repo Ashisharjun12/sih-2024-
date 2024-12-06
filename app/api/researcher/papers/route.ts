@@ -18,6 +18,8 @@ export async function GET() {
             .populate("researchPapers")
             .populate("onGoingResearches");
 
+        console.log("researchercard....",researcher);
+
         if (!researcher) {
             return NextResponse.json({ error: "Researcher not found" }, { status: 404 });
         }
