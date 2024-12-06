@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useMessages } from "@/contexts/messages-context";
 
 interface Message {
   _id: string;
@@ -52,6 +53,17 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string>("");
+  const { setShowChat } = useMessages();
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      console.log("Messages present, setting showChat to true");
+      setShowChat(true);
+    } else {
+      console.log("No messages, setting showChat to false");
+      setShowChat(false);
+    }
+  }, [messages.length, setShowChat]);
 
   useEffect(() => {
     fetchUserAndMessages();
@@ -68,7 +80,14 @@ export default function ChatPage({ params }: { params: { id: string } }) {
             const newMessages = data.messages.filter((newMsg: Message) => 
               !prevMessages.some(existingMsg => existingMsg._id === newMsg._id)
             );
-            return [...prevMessages, ...newMessages];
+            const updatedMessages = [...prevMessages, ...newMessages];
+            
+            // Update showChat based on messages presence
+            if (updatedMessages.length > 0) {
+              setShowChat(true);
+            }
+            
+            return updatedMessages;
           });
           
           const latestMessage = data.messages[data.messages.length - 1];
@@ -78,15 +97,16 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       } catch (error) {
         console.error('Error polling messages:', error);
       }
-    }, 1000); // Poll every second
+    }, 1000);
 
     return () => {
       clearInterval(interval);
       if (eventSource) {
         eventSource.close();
       }
+      setShowChat(false);
     };
-  }, [params.id, lastMessageTimestamp]);
+  }, [params.id, lastMessageTimestamp, setShowChat]);
 
   const fetchUserAndMessages = async () => {
     try {

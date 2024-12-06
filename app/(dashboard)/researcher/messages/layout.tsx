@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -43,14 +42,28 @@ export default function MessagesLayout({
 
   useEffect(() => {
     fetchUsers();
+
+    const interval = setInterval(async () => {
+      console.log("Polling users...");
+      fetchUsers();
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchUsers = async () => {
     try {
+      console.log("Fetching users...");
       const res = await fetch('/api/users/available');
       const data = await res.json();
       if (data.success) {
-        setAvailableUsers(data.users);
+        const hasChanges = JSON.stringify(data.users) !== JSON.stringify(availableUsers);
+        if (hasChanges) {
+          console.log("Users updated, new count:", data.users.length);
+          setAvailableUsers(data.users);
+        }
       }
     } catch (error) {
       console.error('Error fetching users:', error);
