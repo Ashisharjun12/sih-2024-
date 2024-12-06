@@ -17,7 +17,8 @@ import {
   Target,
   MessageCircle,
   ChevronLeft,
-  Menu
+  Menu,
+  TrendingUp
 
 } from "lucide-react";
 import { useState } from "react";
@@ -41,25 +42,11 @@ const fundingAgencyLinks = [
     icon: FileText,
   },
   {
-    title: "Startups",
-    href: "/funding-agency/startups",
-    icon: Building2,
+    title: "Trends",
+    href: "/funding-agency/trends",
+    icon: TrendingUp,
   },
-  {
-    title: "Investments",
-    href: "/funding-agency/investments",
-    icon: DollarSign,
-  },
-  {
-    title: "Performance",
-    href: "/funding-agency/performance",
-    icon: LineChart,
-  },
-  {
-    title: "Projects",
-    href: "/funding-agency/projects",
-    icon: Briefcase,
-  },
+  
   {
     title: "Messages",
     href: "/funding-agency/messages",
@@ -70,11 +57,7 @@ const fundingAgencyLinks = [
     href: "/funding-agency/network",
     icon: Users,
   },
-  {
-    title: "Settings",
-    href: "/funding-agency/settings",
-    icon: Settings,
-  },
+ 
 ];
 
 export function FundingAgencySidebar() {

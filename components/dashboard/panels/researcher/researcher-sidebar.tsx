@@ -37,44 +37,14 @@ const sidebarItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Research Papers",
-    href: "/researcher/papers",
-    icon: BookOpen,
-  },
-  {
     title: "Publications",
     href: "/researcher/publications",
     icon: FileText,
   },
   {
-    title: "Collaborations",
-    href: "/researcher/collaborations",
-    icon: Network,
-  },
-  {
     title: "Funding",
     href: "/researcher/funding",
     icon: Banknote,
-  },
-  {
-    title: "Achievements",
-    href: "/researcher/achievements",
-    icon: Award,
-  },
-  {
-    title: "Team Members",
-    href: "/researcher/team",
-    icon: Users,
-  },
-  {
-    title: "Analytics",
-    href: "/researcher/analytics",
-    icon: LineChart,
-  },
-  {
-    title: "Reports",
-    href: "/researcher/reports",
-    icon: FileSpreadsheet,
   },
   {
     title: "Meetings",
@@ -85,11 +55,6 @@ const sidebarItems = [
     title: "Messages",
     href: "/researcher/messages",
     icon: MessageSquare,
-  },
-  {
-    title: "Settings",
-    href: "/researcher/settings",
-    icon: Settings,
   },
   {
     title: "IPR",
