@@ -27,9 +27,15 @@ const researchSchema = new mongoose.Schema({
         ],
         required: true
     },
+    isPublished: {
+        type: Boolean,
+        required: true,
+    },
     isFree: {
         type: Boolean,
-        required: true
+        required: function (this: { isPublished: boolean }) {
+            return this.isPublished;
+        }
     },
     price: {
         type: Number,

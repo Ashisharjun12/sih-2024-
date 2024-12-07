@@ -78,7 +78,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       } catch (error) {
         console.error('Error polling messages:', error);
       }
-    }, 1000); // Poll every second
+    }, 1000);
 
     return () => {
       clearInterval(interval);

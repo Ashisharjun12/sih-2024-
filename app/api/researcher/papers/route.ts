@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
 
         await connectDB();
 
-        const { title, description, publicationDate, stage, doi, isFree, price, images } = await req.json();
-        console.log(title, description, publicationDate, stage, doi, isFree, price, images);
+        const { title, description, publicationDate, stage, doi, isFree, price, images, isPublished } = await req.json();
+        console.log(title, description, publicationDate, stage, doi, isFree, price, images, isPublished);
         const newPaper = new ResearchPaper({
             title,
             description,
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
             stage,
             doi,
             isFree,
+            isPublished,
             price,
             images
         });

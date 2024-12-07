@@ -328,6 +328,10 @@ const fundingAgencySchema = new mongoose.Schema({
       ],
       required: true
     },
+    logo: {
+      public_id: String,
+      secure_url: String
+    },
     establishmentDate: { type: Date, required: true },
     description: { type: String, required: true },
   },

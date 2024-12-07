@@ -10,6 +10,10 @@ const mentorSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    profilePicture: {
+        public_id: String,
+        secure_url: String
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

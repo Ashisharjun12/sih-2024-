@@ -25,6 +25,7 @@ interface ResearchPaper {
   images: Array<{ public_id: string; secure_url: string }>;
   isFree: boolean;
   price?: number;
+  isPublished: boolean;
 }
 
 interface NewPaper {

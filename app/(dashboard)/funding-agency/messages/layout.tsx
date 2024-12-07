@@ -43,6 +43,15 @@ export default function MessagesLayout({
 
   useEffect(() => {
     fetchUsers();
+
+    const interval = setInterval(async () => {
+      console.log("Polling users...");
+      fetchUsers();
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchUsers = async () => {
