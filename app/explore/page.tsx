@@ -20,11 +20,33 @@ interface Startup {
       secure_url: string;
     };
     industries: string[];
+    sectors: string[];
     stage: string;
+    businessModel: string;
+    revenueModel: string;
+    founders: Array<{
+      name: string;
+      role: string;
+      contactDetails: string;
+    }>;
+    equitySplits: Array<{
+      ownerName: string;
+      equityPercentage: number;
+    }>;
+    about: string;
   };
   businessActivities: {
     missionAndVision: string;
   };
+  additionalInfo: {
+    website?: string;
+    socialMedia?: {
+      linkedIn?: string;
+      twitter?: string;
+      facebook?: string;
+    };
+  };
+  isActivelyFundraising: boolean;
 }
 
 interface Researcher {
@@ -150,7 +172,6 @@ export default function ExplorePage() {
                 {startups.map((startup, index) => (
                   <div
                     key={startup._id}
-                    onClick={() => router.push(`/explore/startupDetails/${startup._id}`)}
                     className="w-[400px] flex-none"
                   >
                     <StartupCard startup={startup} index={index} />
