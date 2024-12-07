@@ -8,6 +8,16 @@ const nextConfig = {
         pathname: "/a/**",
       },
       {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cloud.appwrite.io',
+        pathname: '/storage/**',
+      },
+      {
         protocol: "https",
         hostname: "res.cloudinary.com",
         pathname: "/**",
@@ -17,6 +27,12 @@ const nextConfig = {
         hostname: "cloud.appwrite.io",
         pathname: "/**",
       },
+
+    ],
+    domains: [
+      'cloud.appwrite.io',
+      'lh3.googleusercontent.com',
+      'avatars.githubusercontent.com',
     ],
   },
 };
