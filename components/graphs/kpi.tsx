@@ -9,9 +9,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
   Select,
@@ -22,42 +22,56 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { MetricsData, TimeframeKey, MetricData } from "@/types/metrics";
+import { MetricData, TimeframeKey, MetricKey } from "@/types/metrics";
 import { ChartConfigItem } from "@/types/chart-props";
-import { ChartProps } from "@/types/chart-props";
 
-const chartConfig = {
-  rate: {
-    label: "Acquisition Rate",
-    color: "hsl(var(--chart-1))",
+const kpiConfig = {
+  burnRate: {
+    label: "Burn Rate (%)",
+    color: "hsl(var(--chart-a))",
+    format: (value: number) => `${value.toFixed(1)}%`
+  },
+  revenue: {
+    label: "Revenue (₹L)",
+    color: "hsl(var(--chart-b))",
+    format: (value: number) => `₹${value}L`
+  },
+  customerAcquisition: {
+    label: "Customer Acquisition Rate",
+    color: "hsl(var(--chart-c))",
     format: (value: number) => value.toString()
   },
-  target: {
-    label: "Target Rate",
-    color: "hsl(var(--chart-2))",
-    format: (value: number) => value.toString()
+  grossMargin: {
+    label: "Gross Margin (%)",
+    color: "hsl(var(--chart-d))",
+    format: (value: number) => `${value}%`
+  },
+  roi: {
+    label: "Return on Investment (%)",
+    color: "hsl(var(--chart-e))",
+    format: (value: number) => `${value.toFixed(1)}%`
   }
-} satisfies Record<string, ChartConfigItem>;
+} as const satisfies Record<MetricKey, ChartConfigItem>;
 
-// Add Legend component
-function ChartLegend({ label, color }: { label: string; color: string }) {
+function ChartLegend({ kpi, color }: { kpi: string; color: string }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-background/50 px-3 py-1.5">
       <div 
         className="h-2.5 w-2.5 rounded-full"
-        style={{ backgroundColor: color }}
+        style={{ backgroundColor: color || 'currentColor' }}
       />
-      <span className="text-xs font-medium">{label}</span>
+      <span className="text-xs font-medium">{kpi}</span>
     </div>
   );
 }
 
-interface CustomerAcquisitionRateProps {
+interface KPIChartProps {
   startupId: string;
 }
 
-export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRateProps) {
+export function KPIChart({ startupId }: KPIChartProps) {
   const [timeFrame, setTimeFrame] = useState<TimeframeKey>("monthly");
+  const [selectedKPI, setSelectedKPI] = useState<MetricKey>("burnRate");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MetricData | null>(null);
   const [labels, setLabels] = useState<string[]>([]);
@@ -67,12 +81,12 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/startup/metrics?timeframe=${timeFrame}&metric=customerAcquisition&startupId=${startupId}`
+        `/api/startup/metrics?timeframe=${timeFrame}&metric=${selectedKPI}&startupId=${startupId}`
       );
       const result = await response.json();
 
       if (result.success) {
-        setData(result.data.metrics.customerAcquisition);
+        setData(result.data.metrics[selectedKPI]);
         setLabels(result.data.labels);
       } else {
         toast({
@@ -95,7 +109,11 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
 
   useEffect(() => {
     fetchData();
-  }, [timeFrame]);
+  }, [timeFrame, selectedKPI]);
+
+  const formatTooltip = (value: number) => {
+    return kpiConfig[selectedKPI].format(value);
+  };
 
   // Format data for the chart
   const chartData = useMemo(() => {
@@ -117,45 +135,68 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
     );
   }
 
+  const getKPIDescription = () => {
+    return timeFrame === "monthly" 
+      ? `Monthly ${kpiConfig[selectedKPI].label} trend`
+      : `Yearly ${kpiConfig[selectedKPI].label} analysis`;
+  };
+
   return (
     <Card className="transition-all hover:shadow-md">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl font-semibold">
-              Customer Acquisition Rate
+              Key Performance Indicators
             </CardTitle>
             <CardDescription className="mt-1.5">
-              {timeFrame === "monthly" 
-                ? "Monthly customer acquisition performance vs targets"
-                : "Year-over-year customer growth analysis"}
+              {getKPIDescription()}
             </CardDescription>
           </div>
-          <Select 
-            value={timeFrame} 
-            onValueChange={(value: TimeframeKey) => setTimeFrame(value)}
-          >
-            <SelectTrigger
-              className="w-[160px] rounded-lg bg-background/50"
-              aria-label="Select time range"
+          <div className="flex gap-2">
+            <Select 
+              value={selectedKPI} 
+              onValueChange={(value: MetricKey) => setSelectedKPI(value)}
             >
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectTrigger className="w-[180px] bg-background/50">
+                <SelectValue placeholder="Select KPI" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(kpiConfig).map((kpi) => (
+                  <SelectItem 
+                    key={kpi} 
+                    value={kpi as MetricKey}
+                    className="hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: kpiConfig[kpi as MetricKey].color }}
+                      />
+                      {kpiConfig[kpi as MetricKey].label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select 
+              value={timeFrame} 
+              onValueChange={(value: TimeframeKey) => setTimeFrame(value)}
+            >
+              <SelectTrigger className="w-[140px] bg-background/50">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        {/* Add Legend */}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="mt-4 flex items-center gap-3">
           <ChartLegend 
-            label="Actual Rate"
-            color={chartConfig.rate.color}
-          />
-          <ChartLegend 
-            label="Target Rate"
-            color={chartConfig.target.color}
+            kpi={String(kpiConfig[selectedKPI].label)}
+            color={kpiConfig[selectedKPI].color || 'currentColor'}
           />
           <div className="text-xs text-muted-foreground">
             {timeFrame === "monthly" ? "Last 12 months" : "Last 5 years"}
@@ -163,7 +204,10 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="w-full h-[300px]">
+        <ChartContainer 
+          config={kpiConfig} 
+          className="w-full h-[300px]"
+        >
           <LineChart
             data={chartData}
             margin={{ left: 40, right: 40, top: 20, bottom: 20 }}
@@ -181,28 +225,20 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
               axisLine={false}
               tickMargin={8}
               fontSize={12}
-              tickFormatter={(value) => `${value}`}
+              tickFormatter={formatTooltip}
             />
             <ChartTooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
                 return (
                   <div className="rounded-lg border bg-background p-2 shadow-sm">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                       <div className="flex flex-col">
                         <span className="text-[0.70rem] uppercase text-muted-foreground">
-                          Actual Rate
+                          {kpiConfig[selectedKPI].label}
                         </span>
                         <span className="font-bold text-muted-foreground">
-                          {payload[0].value}
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[0.70rem] uppercase text-muted-foreground">
-                          Target Rate
-                        </span>
-                        <span className="font-bold text-muted-foreground">
-                          {payload[1].value}
+                          {formatTooltip(payload[0].value as number)}
                         </span>
                       </div>
                     </div>
@@ -213,17 +249,8 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
             <Line
               type="monotone"
               dataKey="value"
-              stroke={chartConfig.rate.color}
+              stroke={kpiConfig[selectedKPI].color}
               strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4, strokeWidth: 0 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="target"
-              stroke={chartConfig.target.color}
-              strokeWidth={2}
-              strokeDasharray="4 4"
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0 }}
             />
@@ -233,3 +260,5 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
     </Card>
   );
 }
+
+export default KPIChart;

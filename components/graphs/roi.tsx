@@ -11,7 +11,6 @@ import {
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
   Select,
@@ -22,24 +21,21 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { MetricsData, TimeframeKey, MetricData } from "@/types/metrics";
-import { ChartConfigItem } from "@/types/chart-props";
-import { ChartProps } from "@/types/chart-props";
+import { MetricData, TimeframeKey } from "@/types/metrics";
 
+// Define chart configuration
 const chartConfig = {
-  rate: {
-    label: "Acquisition Rate",
+  actual: {
+    label: "Actual ROI",
     color: "hsl(var(--chart-1))",
-    format: (value: number) => value.toString()
   },
   target: {
-    label: "Target Rate",
+    label: "Target ROI",
     color: "hsl(var(--chart-2))",
-    format: (value: number) => value.toString()
   }
-} satisfies Record<string, ChartConfigItem>;
+};
 
-// Add Legend component
+// Legend component
 function ChartLegend({ label, color }: { label: string; color: string }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-background/50 px-3 py-1.5">
@@ -52,11 +48,11 @@ function ChartLegend({ label, color }: { label: string; color: string }) {
   );
 }
 
-interface CustomerAcquisitionRateProps {
+interface ROIChartProps {
   startupId: string;
 }
 
-export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRateProps) {
+export function ROIChart({ startupId }: ROIChartProps) {
   const [timeFrame, setTimeFrame] = useState<TimeframeKey>("monthly");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MetricData | null>(null);
@@ -67,25 +63,25 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/startup/metrics?timeframe=${timeFrame}&metric=customerAcquisition&startupId=${startupId}`
+        `/api/startup/metrics?timeframe=${timeFrame}&metric=roi&startupId=${startupId}`
       );
       const result = await response.json();
 
       if (result.success) {
-        setData(result.data.metrics.customerAcquisition);
+        setData(result.data.metrics.roi);
         setLabels(result.data.labels);
       } else {
         toast({
           title: "Error",
-          description: "Failed to fetch metrics data",
+          description: "Failed to fetch ROI data",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error fetching metrics:', error);
+      console.error('Error fetching ROI data:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch metrics data",
+        description: "Failed to fetch ROI data",
         variant: "destructive",
       });
     } finally {
@@ -123,12 +119,12 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl font-semibold">
-              Customer Acquisition Rate
+              Return on Investment (ROI)
             </CardTitle>
             <CardDescription className="mt-1.5">
               {timeFrame === "monthly" 
-                ? "Monthly customer acquisition performance vs targets"
-                : "Year-over-year customer growth analysis"}
+                ? "Monthly ROI performance vs targets"
+                : "Year-over-year ROI analysis"}
             </CardDescription>
           </div>
           <Select 
@@ -147,14 +143,13 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
             </SelectContent>
           </Select>
         </div>
-        {/* Add Legend */}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <ChartLegend 
-            label="Actual Rate"
-            color={chartConfig.rate.color}
+            label="Actual ROI"
+            color={chartConfig.actual.color}
           />
           <ChartLegend 
-            label="Target Rate"
+            label="Target ROI"
             color={chartConfig.target.color}
           />
           <div className="text-xs text-muted-foreground">
@@ -181,7 +176,7 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
               axisLine={false}
               tickMargin={8}
               fontSize={12}
-              tickFormatter={(value) => `${value}`}
+              tickFormatter={(value) => `${value}%`}
             />
             <ChartTooltip
               content={({ active, payload }) => {
@@ -191,18 +186,18 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex flex-col">
                         <span className="text-[0.70rem] uppercase text-muted-foreground">
-                          Actual Rate
+                          Actual ROI
                         </span>
                         <span className="font-bold text-muted-foreground">
-                          {payload[0].value}
+                          {`${payload[0].value}%`}
                         </span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[0.70rem] uppercase text-muted-foreground">
-                          Target Rate
+                          Target ROI
                         </span>
                         <span className="font-bold text-muted-foreground">
-                          {payload[1].value}
+                          {`${payload[1].value}%`}
                         </span>
                       </div>
                     </div>
@@ -213,7 +208,7 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
             <Line
               type="monotone"
               dataKey="value"
-              stroke={chartConfig.rate.color}
+              stroke={chartConfig.actual.color}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0 }}
@@ -233,3 +228,5 @@ export function CustomerAcquisitionRate({ startupId }: CustomerAcquisitionRatePr
     </Card>
   );
 }
+
+export default ROIChart;
