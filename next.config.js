@@ -8,7 +8,6 @@ const nextConfig = {
         pathname: "/a/**",
       },
       {
-<<<<<<< HEAD
         protocol: 'https',
         hostname: 'res.cloudinary.com',
         pathname: '/**',
@@ -17,8 +16,8 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'cloud.appwrite.io',
         pathname: '/storage/**',
-      }
-=======
+      },
+      {
         protocol: "https",
         hostname: "res.cloudinary.com",
         pathname: "/**",
@@ -28,7 +27,7 @@ const nextConfig = {
         hostname: "cloud.appwrite.io",
         pathname: "/**",
       },
->>>>>>> 53610d2b273ac9d1226757bfeb714d5ab6c5ce01
+
     ],
     domains: [
       'cloud.appwrite.io',
