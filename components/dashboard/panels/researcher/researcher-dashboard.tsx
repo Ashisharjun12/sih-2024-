@@ -1,257 +1,297 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import { useSession } from "next-auth/react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useRoleGuard } from "@/hooks/use-role-guard";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ResearcherCard } from "@/components/researcher/researcher-card";
+import { ResearchPaperCard } from "@/components/researcher/research-paper-card";
 import {
+  Beaker,
   BookOpen,
-  Brain,
   Trophy,
   Users,
-  Wallet,
-  ArrowUpRight,
   ChevronRight,
-  Target,
-  Star,
-  TrendingUp,
-  Clock,
+  ScrollText,
 } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useRouter } from "next/navigation";
 
-const researchCards = [
-  {
-    title: "AI in Healthcare",
-    status: "In Progress",
-    progress: 75,
-    collaborators: [
-      { name: "Sarah K", image: "/avatars/1.png" },
-      { name: "Mike R", image: "/avatars/2.png" },
-      { name: "Anna M", image: "/avatars/3.png" },
-    ],
-    category: "Artificial Intelligence",
-    color: "from-blue-500 to-cyan-500",
-    dueDate: "2024-05-15",
-    priority: "High",
-  },
-  {
-    title: "Quantum Computing",
-    status: "Review",
-    progress: 90,
-    collaborators: [
-      { name: "John D", image: "/avatars/4.png" },
-      { name: "Lisa P", image: "/avatars/5.png" },
-    ],
-    category: "Computing",
-    color: "from-purple-500 to-pink-500",
-    dueDate: "2024-06-20",
-    priority: "Medium",
-  },
-  {
-    title: "Green Energy",
-    status: "Planning",
-    progress: 30,
-    collaborators: [
-      { name: "Tom H", image: "/avatars/6.png" },
-      { name: "Emma S", image: "/avatars/7.png" },
-    ],
-    category: "Sustainability",
-    color: "from-green-500 to-emerald-500",
-    dueDate: "2024-07-01",
-    priority: "High",
-  },
-];
+interface ResearchPaper {
+  _id: string;
+  title: string;
+  description: string;
+  images: Array<{ public_id: string; secure_url: string }>;
+  publicationDate: string;
+  doi: string;
+  stage: string;
+  isFree: boolean;
+  __v: number;
+}
+
+interface ResearcherProfile {
+  _id: string;
+  userId: string;
+  personalInfo: {
+    name: string;
+    email: {
+      address: string;
+      verified: boolean;
+    };
+    phone: {
+      number: string;
+      verified: boolean;
+    };
+    uniqueId: {
+      type: string;
+      number: string;
+    };
+    fieldOfResearch: string[];
+  };
+  academicInfo: {
+    institution: string;
+    position: string;
+    department: string;
+    highestQualification: string;
+    yearsOfExperience: number;
+  };
+  researchPapers: ResearchPaper[];
+  onGoingResearches: ResearchPaper[];
+  professionalCredentials: {
+    orcid: string;
+    googleScholar: string;
+    researchGate: string;
+  };
+  documents: {
+    profilePicture?: {
+      public_id: string;
+      secure_url: string;
+    };
+    cv?: {
+      public_id: string;
+      secure_url: string;
+    };
+  };
+}
+
+interface ApiResponse {
+  success: boolean;
+  myProfile: ResearcherProfile;
+  researchers: ResearcherProfile[];
+}
 
 export default function ResearcherDashboard() {
-  const { session, status } = useRoleGuard("researcher");
+  const { data: session } = useSession();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [researchers, setResearchers] = useState<ResearcherProfile[]>([]);
+  const [myProfile, setMyProfile] = useState<ResearcherProfile | null>(null);
+  const [completedPapers, setCompletedPapers] = useState<ResearchPaper[]>([]);
+  const [ongoingPapers, setOngoingPapers] = useState<ResearchPaper[]>([]);
+  const router = useRouter();
 
-  if (status === "loading") {
-    return <div>Loading...</div>;
+  useEffect(() => {
+    fetchData();
+    fetchPapers();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch('/api/researcher/all');
+      const data = await response.json() as ApiResponse;
+      
+      if (data.success) {
+        console.log("Researcher Data:", data);
+        setResearchers(data.researchers);
+        setMyProfile(data.myProfile);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch researcher data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPapers = async () => {
+    try {
+      const response = await fetch("/api/researcher/papers");
+      if (!response.ok) throw new Error("Failed to fetch research papers");
+      const data = await response.json();
+      
+      console.log("Fetched papers:", data);
+
+      setCompletedPapers(
+        data.papers.filter((paper: ResearchPaper) => paper.stage === "Completed")
+      );
+      setOngoingPapers(
+        data.papers.filter((paper: ResearchPaper) => paper.stage !== "Completed")
+      );
+    } catch (error) {
+      console.error('Error fetching papers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch research papers",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="container py-4 space-y-6">
-      {/* Welcome Section with Profile */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 rounded-xl">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">Welcome back, {session?.user?.name}!</h1>
-          <p className="text-sm text-muted-foreground">Your research impact dashboard</p>
+    <div className="container py-6 space-y-8">
+      {/* Welcome Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+        <div className="relative">
+          <h1 className="text-2xl md:text-3xl font-bold">
+            Welcome back, {session?.user?.name}! 🔬
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-2">
+            Track your research progress and connect with fellow researchers.
+          </p>
         </div>
-        <Avatar className="h-12 w-12 border-2 border-primary/20">
-          <AvatarImage src={session?.user?.image || ""} />
-          <AvatarFallback>RS</AvatarFallback>
-        </Avatar>
       </div>
 
-      {/* Wallet Cards with 3D effect */}
-      <div className="grid grid-cols-2 gap-4">
-        <motion.div whileHover={{ translateY: -5 }} transition={{ duration: 0.2 }}>
-          <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-primary/0 hover:shadow-lg hover:shadow-primary/20 transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Research Funds</p>
-                  <p className="text-2xl font-bold">₹24,500</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-                      <ArrowUpRight className="h-3 w-3 mr-1" />
-                      12.5%
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">vs last month</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-primary/10 rounded-xl rotate-3">
-                  <Wallet className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div whileHover={{ translateY: -5 }} transition={{ duration: 0.2 }}>
-          <Card className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-purple-500/0 hover:shadow-lg hover:shadow-purple-500/20 transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Citations</p>
-                  <p className="text-2xl font-bold">1,234</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary" className="bg-purple-500/10 text-purple-600">
-                      <Star className="h-3 w-3 mr-1" />
-                      Top 5%
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">in your field</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-purple-500/10 rounded-xl -rotate-3">
-                  <BookOpen className="h-5 w-5 text-purple-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Quick Stats with Hover Effects */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { icon: Brain, title: "Projects", value: "12", color: "blue" },
-          { icon: Users, title: "Collaborators", value: "45", color: "green" },
-          { icon: Trophy, title: "Publications", value: "8", color: "amber" },
-          { icon: Target, title: "Goals Met", value: "92%", color: "rose" },
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Card className={`bg-gradient-to-br from-${stat.color}-500/10 via-${stat.color}-500/5 to-${stat.color}-500/0 hover:shadow-lg transition-all`}>
-              <CardContent className="p-4 text-center">
-                <div className={`mx-auto w-10 h-10 rounded-xl bg-${stat.color}-500/10 flex items-center justify-center mb-3 rotate-3`}>
-                  <stat.icon className={`h-5 w-5 text-${stat.color}-500`} />
-                </div>
-                <p className="text-2xl font-bold mb-1">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.title}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+        <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <BookOpen className="h-6 w-6 text-purple-500 mb-2" />
+          <p className="text-2xl font-bold">{myProfile?.researchPapers?.length || 0}</p>
+          <p className="text-sm text-purple-600/70">Publications</p>
+        </div>
+        <div className="bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <ScrollText className="h-6 w-6 text-cyan-500 mb-2" />
+          <p className="text-2xl font-bold">{myProfile?.onGoingResearches?.length || 0}</p>
+          <p className="text-sm text-cyan-600/70">Active Projects</p>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Trophy className="h-6 w-6 text-emerald-500 mb-2" />
+          <p className="text-2xl font-bold">{myProfile?.academicInfo?.yearsOfExperience || 0}</p>
+          <p className="text-sm text-emerald-600/70">Years Experience</p>
+        </div>
+        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Users className="h-6 w-6 text-blue-500 mb-2" />
+          <p className="text-2xl font-bold">{researchers.length}</p>
+          <p className="text-sm text-blue-600/70">Fellow Researchers</p>
+        </div>
       </div>
 
-      {/* Research Projects with Enhanced Cards */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">Active Research</h2>
-            <p className="text-sm text-muted-foreground">Your ongoing research projects</p>
+      {/* Research Papers Section */}
+      <div className="space-y-6">
+        {/* Completed Research Papers */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Completed Research Papers</h2>
+            <Button 
+              variant="ghost" 
+              className="text-purple-500 hover:text-purple-600"
+              onClick={() => router.push('/researcher/papers')}
+            >
+              View All
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Analytics
+
+          <ScrollArea className="w-full">
+            <div className="flex space-x-6 pb-4">
+              {completedPapers.length > 0 ? (
+                completedPapers.map((paper, index) => (
+                  <div key={paper._id} className="w-[400px] flex-none">
+                    <ResearchPaperCard paper={paper} index={index} />
+                  </div>
+                ))
+              ) : (
+                <div className="w-full text-center text-muted-foreground py-8">
+                  No completed research papers yet
+                </div>
+              )}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+
+        {/* Ongoing Research Papers */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Ongoing Research</h2>
+            <Button 
+              variant="ghost" 
+              className="text-purple-500 hover:text-purple-600"
+              onClick={() => router.push('/researcher/papers')}
+            >
+              View All
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+
+          <ScrollArea className="w-full">
+            <div className="flex space-x-6 pb-4">
+              {ongoingPapers.length > 0 ? (
+                ongoingPapers.map((paper, index) => (
+                  <div key={paper._id} className="w-[400px] flex-none">
+                    <ResearchPaperCard paper={paper} index={index} />
+                  </div>
+                ))
+              ) : (
+                <div className="w-full text-center text-muted-foreground py-8">
+                  No ongoing research papers
+                </div>
+              )}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+      </div>
+
+      {/* Researchers Section */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Fellow Researchers</h2>
+          <Button variant="ghost" className="text-purple-500 hover:text-purple-600">
+            View All
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
 
-        <div className="grid gap-4">
-          {researchCards.map((research, index) => (
-            <motion.div
-              key={research.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              className="cursor-pointer"
-            >
-              <Card className="overflow-hidden hover:shadow-lg transition-all">
-                <div className={`h-1.5 bg-gradient-to-r ${research.color}`} />
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-medium text-lg">{research.title}</h3>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="text-xs">
-                          {research.category}
-                        </Badge>
-                        <Badge 
-                          variant={research.priority === "High" ? "destructive" : "outline"}
-                          className="text-xs"
-                        >
-                          {research.priority} Priority
-                        </Badge>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          Due {new Date(research.dueDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={
-                        research.status === "In Progress" ? "default" :
-                        research.status === "Review" ? "secondary" : "outline"
-                      }
-                    >
-                      {research.status}
-                    </Badge>
-                  </div>
-                  
-                  <div className="mt-4 space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium">{research.progress}%</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <motion.div 
-                          className={`h-full bg-gradient-to-r ${research.color}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${research.progress}%` }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex -space-x-2">
-                        {research.collaborators.map((collaborator, i) => (
-                          <Avatar key={i} className="border-2 border-background w-8 h-8">
-                            <AvatarImage src={collaborator.image} />
-                            <AvatarFallback>{collaborator.name[0]}</AvatarFallback>
-                          </Avatar>
-                        ))}
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-primary">
-                        Details <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+        <ScrollArea className="w-full">
+          <div className="flex space-x-6 pb-4">
+            {researchers.map((researcher, index) => (
+              <div key={researcher._id} className="w-[400px] flex-none">
+                <ResearcherCard 
+                  researcher={{
+                    _id: researcher._id,
+                    userId: researcher.userId,
+                    personalInfo: {
+                      name: researcher.personalInfo.name,
+                      email: {
+                        address: researcher.personalInfo.email.address
+                      },
+                      fieldOfResearch: researcher.personalInfo.fieldOfResearch
+                    },
+                    academicInfo: researcher.academicInfo,
+                    professionalCredentials: researcher.professionalCredentials,
+                    documents: researcher.documents
+                  }} 
+                  index={index} 
+                />
+              </div>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </div>
     </div>
   );

@@ -96,10 +96,10 @@ export default function StartupProjects() {
             {startups.map((startup, index) => (
               <div
                 key={startup._id}
-                onClick={() => router.push(`/startup/projects/${startup._id}`)}
+            
                 className="w-[400px] flex-none"
               >
-                <StartupCard startup={startup} index={index} />
+                <StartupCard startup={startup} index={index} /> 
               </div>
             ))}
           </div>

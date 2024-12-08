@@ -20,11 +20,33 @@ interface Startup {
       secure_url: string;
     };
     industries: string[];
+    sectors: string[];
     stage: string;
+    businessModel: string;
+    revenueModel: string;
+    founders: Array<{
+      name: string;
+      role: string;
+      contactDetails: string;
+    }>;
+    equitySplits: Array<{
+      ownerName: string;
+      equityPercentage: number;
+    }>;
+    about: string;
   };
   businessActivities: {
     missionAndVision: string;
   };
+  additionalInfo: {
+    website?: string;
+    socialMedia?: {
+      linkedIn?: string;
+      twitter?: string;
+      facebook?: string;
+    };
+  };
+  isActivelyFundraising: boolean;
 }
 
 interface Researcher {

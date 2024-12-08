@@ -1,22 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResearchPaperCard } from "@/components/researcher/research-paper-card";
+import { Plus, Loader2, File, X, PlusCircle, PlusSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 
 interface ResearchPaper {
   _id: string;
@@ -31,63 +28,62 @@ interface ResearchPaper {
   isPublished: boolean;
 }
 
-const ResearchPaperPage = () => {
+interface NewPaper {
+  title: string;
+  description: string;
+  publicationDate: string;
+  stage: string;
+  doi: string;
+  isFree: boolean;
+  price: number | undefined;
+  images: Array<{ public_id: string; secure_url: string }>;
+}
+
+export default function ResearchPapersPage() {
   const { toast } = useToast();
-  const [researchPapers, setResearchPapers] = useState<ResearchPaper[]>([]);
-  const [onGoingResearchPapers, setOnGoingResearchPapers] = useState<
-    ResearchPaper[]
-  >([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [papers, setPapers] = useState<ResearchPaper[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newPaper, setNewPaper] = useState<Partial<ResearchPaper>>({
+  const [newPaper, setNewPaper] = useState<NewPaper>({
     title: "",
     description: "",
     publicationDate: "",
     stage: "Identifying a Research Problem or Question",
     doi: "",
-    images: [],
-    isFree: false,
+    isFree: true,
     price: undefined,
-    isPublished: false,
+    images: []
   });
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    fetchResearchPapers();
+    fetchPapers();
   }, []);
 
-  const fetchResearchPapers = async () => {
+  const fetchPapers = async () => {
     try {
       const response = await fetch("/api/researcher/papers");
-      if (!response.ok) throw new Error("Failed to fetch research papers");
+      if (!response.ok) throw new Error("Failed to fetch papers");
       const data = await response.json();
-      setResearchPapers(
-        data.papers.filter(
-          (paper: ResearchPaper) => paper.stage === "Completed"
-        )
-      );
-      setOnGoingResearchPapers(
-        data.papers.filter(
-          (paper: ResearchPaper) => paper.stage !== "Completed"
-        )
-      );
+      setPapers(data.papers);
     } catch (error) {
+      console.error('Error:', error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch research papers",
+        description: "Failed to fetch research papers",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
+  const completedPapers = papers.filter(paper => paper.stage === "Completed");
+  const ongoingPapers = papers.filter(paper => paper.stage !== "Completed");
+
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setNewPaper((prev) => ({
@@ -109,7 +105,6 @@ const ResearchPaperPage = () => {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
-
     setIsUploading(true);
     const files = Array.from(e.target.files);
 
@@ -123,26 +118,22 @@ const ResearchPaperPage = () => {
           body: formData,
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
+        if (!response.ok) throw new Error(`Failed to upload ${file.name}`);
 
-        const uploadedFile = await response.json();
-        setNewPaper((prev) => ({
+        const data = await response.json();
+        setNewPaper(prev => ({
           ...prev,
-          images: [...(prev.images || []), uploadedFile],
+          images: [...prev.images, { 
+            public_id: data.public_id, 
+            secure_url: data.secure_url 
+          }]
         }));
       }
-
-      toast({
-        title: "Success",
-        description: "All images uploaded successfully",
-      });
     } catch (error) {
+      console.error('Error uploading file:', error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to upload images",
+        description: "Failed to upload file",
         variant: "destructive",
       });
     } finally {
@@ -210,25 +201,63 @@ const ResearchPaperPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="container py-8">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-8">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold">Research Papers</h1>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          Add Research Paper
-        </Button>
+    <div className="container py-8 space-y-8">
+      {/* Header Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+        <div className="absolute inset-0 bg-grid-black/5" />
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Research Papers</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-2">
+              Manage and track all your research papers
+            </p>
+          </div>
+          <Button 
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white hidden md:flex"
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Research
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="completed">
-        <TabsList>
-          <TabsTrigger value="completed">Completed Research Papers</TabsTrigger>
-          <TabsTrigger value="ongoing">Ongoing Research Papers</TabsTrigger>
+      {/* Mobile Floating Action Button */}
+      <Button
+        className="fixed z-50 right-4 bottom-16 h-12 w-12 rounded-full shadow-lg md:hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+        onClick={() => setIsDialogOpen(true)}
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
+      {/* Research Papers Tabs */}
+      <Tabs defaultValue="ongoing" className="space-y-6">
+        <TabsList className="bg-muted/50">
+          <TabsTrigger value="ongoing" className="flex items-center gap-2">
+            Ongoing Research
+            {ongoingPapers.length > 0 && (
+              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
+                {ongoingPapers.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex items-center gap-2">
+            Completed Papers
+            {completedPapers.length > 0 && (
+              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
+                {completedPapers.length}
+              </span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="completed">
@@ -348,11 +377,18 @@ const ResearchPaperPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialog for Adding Research Paper */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Research Paper</DialogTitle>
+        <DialogContent className="max-h-[85vh] overflow-y-auto scrollbar-hide">
+          <DialogHeader className="sticky top-0 z-10 bg-background pb-4">
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 -mt-6 -mx-6">
+              <div className="absolute inset-0 bg-grid-black/5" />
+              <div className="relative">
+                <DialogTitle className="text-2xl font-bold">Create New Research</DialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Share your research work with the community
+                </p>
+              </div>
+            </div>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -459,25 +495,144 @@ const ResearchPaperPage = () => {
                   name="price"
                   value={newPaper.price?.toString() || ""}
                   onChange={handleInputChange}
-                  placeholder="Enter price"
+                  placeholder="Enter DOI if available"
+                  className="bg-muted/50 border-slate-200/60 focus:border-blue-500/30 transition-colors"
                 />
               </div>
-            )}
-            <div>
-              <label className="text-sm font-medium">Upload Images</label>
-              <Input
-                type="file"
-                onChange={handleFileUpload}
-                accept=".jpg,.jpeg,.png"
-                multiple
-              />
-              {isUploading && (
-                <p className="text-sm text-yellow-600">Uploading images...</p>
-              )}
+
+              <div className="space-y-4">
+                <label className="text-sm font-semibold text-foreground/90">Access Type</label>
+                <div className="flex flex-col space-y-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isFree"
+                      checked={newPaper.isFree}
+                      onChange={() => setNewPaper(prev => ({
+                        ...prev,
+                        isFree: true,
+                        price: undefined
+                      }))}
+                      className="text-primary"
+                    />
+                    <div>
+                      <span className="text-sm font-medium">Free Access</span>
+                      <p className="text-xs text-muted-foreground">Make your research freely available to everyone</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isFree"
+                      checked={!newPaper.isFree}
+                      onChange={() => setNewPaper(prev => ({
+                        ...prev,
+                        isFree: false,
+                        price: 0
+                      }))}
+                      className="text-primary"
+                    />
+                    <div>
+                      <span className="text-sm font-medium">Premium</span>
+                      <p className="text-xs text-muted-foreground">Set a price for accessing your research</p>
+                    </div>
+                  </label>
+
+                  {!newPaper.isFree && (
+                    <div className="ml-6 pl-2 border-l-2 border-muted">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-muted-foreground">
+                          Price (₹)
+                        </label>
+                        <Input
+                          type="number"
+                          name="price"
+                          value={newPaper.price || ''}
+                          onChange={(e) => setNewPaper(prev => ({
+                            ...prev,
+                            price: e.target.value ? Number(e.target.value) : 0
+                          }))}
+                          placeholder="Enter price in INR"
+                          min="0"
+                          step="1"
+                          required
+                          className="bg-muted/50 max-w-[200px]"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Set a reasonable price for your research paper
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Document Upload Section */}
+              <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-slate-200/60">
+                <label className="text-sm font-semibold text-foreground/90">Upload Documents</label>
+                <div className="space-y-3">
+                  <Input
+                    type="file"
+                    onChange={handleFileUpload}
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    multiple
+                    className="bg-white/50 border-slate-200/60 focus:border-blue-500/30 transition-colors"
+                  />
+                  {isUploading && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Uploading documents...</span>
+                    </div>
+                  )}
+                  {newPaper.images.length > 0 && (
+                    <div className="grid gap-2">
+                      {newPaper.images.map((image, index) => (
+                        <div 
+                          key={image.public_id}
+                          className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                        >
+                          <div className="flex items-center gap-2">
+                            <File className="h-4 w-4 text-blue-500" />
+                            <span className="text-sm">Document {index + 1}</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setNewPaper(prev => ({
+                                ...prev,
+                                images: prev.images.filter((_, i) => i !== index)
+                              }));
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Add Research Paper"}
-            </Button>
+
+            <div className="sticky bottom-0 pt-6 border-t border-slate-200/60 bg-background/80 backdrop-blur-sm">
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Research...
+                  </>
+                ) : (
+                  'Create Research'
+                )}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
