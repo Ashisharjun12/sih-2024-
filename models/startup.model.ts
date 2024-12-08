@@ -382,6 +382,48 @@ const startupSchema = new mongoose.Schema({
     },
     message: String
   }],
+  activeInvestments: [{
+    fundingAgency: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FundingAgency'
+    },
+    amount: Number,
+    date: Date,
+  }],
+  requests: [{
+    fundingAgency: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FundingAgency'
+    },
+    message: {
+      type: String,
+      required: true
+    }
+  }],
+  requested: [{
+    fundingAgency: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FundingAgency'
+    },
+    amount: {
+      type: Number,
+      required: true
+    },
+    fundingType: {
+      type: String,
+      enum: ['Debt', 'Equity'],
+      required: true
+    },
+    message: {
+      type: String,
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'rejected'],
+      default: 'pending'
+    }
+  }]
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);

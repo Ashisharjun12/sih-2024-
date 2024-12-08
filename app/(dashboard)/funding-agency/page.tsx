@@ -4,9 +4,9 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { 
-  DollarSign, 
-  Building2, 
+import {
+  DollarSign,
+  Building2,
   TrendingUp,
   ChevronRight,
   Target,
@@ -15,7 +15,7 @@ import {
   Bell,
   User,
   Settings,
-  LogOut
+  LogOut,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,8 +37,8 @@ import {
   Tooltip,
   Legend,
   ArcElement,
-} from 'chart.js';
-import { Line, Doughnut } from 'react-chartjs-2';
+} from "chart.js";
+import { Line, Doughnut } from "react-chartjs-2";
 
 interface Investment {
   startupName: string;
@@ -83,9 +83,27 @@ export default function FundingAgencyDashboard() {
 
   // Sample data for investments
   const investments: Investment[] = [
-    { startupName: "TechCo", amount: 500000, date: "2024-01-15", status: "Active", roi: 15.5 },
-    { startupName: "HealthInnovate", amount: 750000, date: "2024-02-01", status: "Active", roi: 12.8 },
-    { startupName: "EduTech", amount: 300000, date: "2024-02-15", status: "Active", roi: 18.2 },
+    {
+      startupName: "TechCo",
+      amount: 500000,
+      date: "2024-01-15",
+      status: "Active",
+      roi: 15.5,
+    },
+    {
+      startupName: "HealthInnovate",
+      amount: 750000,
+      date: "2024-02-01",
+      status: "Active",
+      roi: 12.8,
+    },
+    {
+      startupName: "EduTech",
+      amount: 300000,
+      date: "2024-02-15",
+      status: "Active",
+      roi: 18.2,
+    },
   ];
 
   // Sample recommendations
@@ -114,27 +132,27 @@ export default function FundingAgencyDashboard() {
   ];
 
   const roiChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
       {
-        label: 'ROI %',
+        label: "ROI %",
         data: [12, 15, 14, 16, 18, 17],
-        borderColor: 'rgb(75, 192, 192)',
+        borderColor: "rgb(75, 192, 192)",
         tension: 0.1,
       },
     ],
   };
 
   const investmentDistributionData = {
-    labels: ['Technology', 'Healthcare', 'Education', 'Finance'],
+    labels: ["Technology", "Healthcare", "Education", "Finance"],
     datasets: [
       {
         data: [45, 25, 20, 10],
         backgroundColor: [
-          'rgb(54, 162, 235)',
-          'rgb(75, 192, 192)',
-          'rgb(255, 206, 86)',
-          'rgb(255, 99, 132)',
+          "rgb(54, 162, 235)",
+          "rgb(75, 192, 192)",
+          "rgb(255, 206, 86)",
+          "rgb(255, 99, 132)",
         ],
       },
     ],
@@ -145,7 +163,8 @@ export default function FundingAgencyDashboard() {
       id: "1",
       name: "TechCo Innovation",
       description: "AI-powered business automation solutions for enterprise",
-      coverImage: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+      coverImage:
+        "https://images.unsplash.com/photo-1518770660439-4636190af475",
       userImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
       sector: "Technology",
       stage: "Series A",
@@ -154,7 +173,8 @@ export default function FundingAgencyDashboard() {
       id: "2",
       name: "HealthInnovate",
       description: "Revolutionary healthcare diagnostics platform",
-      coverImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d",
+      coverImage:
+        "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d",
       userImage: "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
       sector: "Healthcare",
       stage: "Seed",
@@ -163,7 +183,8 @@ export default function FundingAgencyDashboard() {
       id: "3",
       name: "EduTech Solutions",
       description: "Next-generation learning management system",
-      coverImage: "https://images.unsplash.com/photo-1509062522246-3755977927d7",
+      coverImage:
+        "https://images.unsplash.com/photo-1509062522246-3755977927d7",
       userImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
       sector: "Education",
       stage: "Pre-seed",
@@ -200,10 +221,18 @@ export default function FundingAgencyDashboard() {
             {/* Profile */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
-                    <AvatarFallback>{session?.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                    <AvatarImage
+                      src={session?.user?.image || ""}
+                      alt={session?.user?.name || ""}
+                    />
+                    <AvatarFallback>
+                      {session?.user?.name?.charAt(0) || "U"}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -255,7 +284,7 @@ export default function FundingAgencyDashboard() {
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {startups.map((startup) => (
                 <div
@@ -287,15 +316,23 @@ export default function FundingAgencyDashboard() {
 
                     {/* Startup Info */}
                     <div className="text-white">
-                      <h3 className="font-semibold text-xl mb-2">{startup.name}</h3>
+                      <h3 className="font-semibold text-xl mb-2">
+                        {startup.name}
+                      </h3>
                       <p className="text-base text-white/80 line-clamp-2 mb-3">
                         {startup.description}
                       </p>
                       <div className="flex gap-3">
-                        <Badge variant="outline" className="text-white border-white/30 text-sm py-1">
+                        <Badge
+                          variant="outline"
+                          className="text-white border-white/30 text-sm py-1"
+                        >
                           {startup.sector}
                         </Badge>
-                        <Badge variant="outline" className="text-white border-white/30 text-sm py-1">
+                        <Badge
+                          variant="outline"
+                          className="text-white border-white/30 text-sm py-1"
+                        >
                           {startup.stage}
                         </Badge>
                       </div>
@@ -305,7 +342,11 @@ export default function FundingAgencyDashboard() {
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors">
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="secondary" size="lg" className="shadow-lg">
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        className="shadow-lg"
+                      >
                         View Details
                       </Button>
                     </div>
@@ -331,15 +372,15 @@ export default function FundingAgencyDashboard() {
                       maintainAspectRatio: false,
                       plugins: {
                         legend: {
-                          position: 'top' as const,
+                          position: "top" as const,
                         },
                       },
                       scales: {
                         y: {
                           beginAtZero: true,
                           ticks: {
-                            callback: function(value) {
-                              return value + '%';
+                            callback: function (value) {
+                              return value + "%";
                             },
                           },
                         },
@@ -364,7 +405,7 @@ export default function FundingAgencyDashboard() {
                       maintainAspectRatio: false,
                       plugins: {
                         legend: {
-                          position: 'right' as const,
+                          position: "right" as const,
                         },
                       },
                     }}
@@ -382,12 +423,14 @@ export default function FundingAgencyDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {investments.map((investment, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="space-y-1">
-                      <h3 className="font-semibold">{investment.startupName}</h3>
+                      <h3 className="font-semibold">
+                        {investment.startupName}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
                         Invested: ₹{investment.amount.toLocaleString()}
                       </p>
@@ -401,7 +444,13 @@ export default function FundingAgencyDashboard() {
                           ) : (
                             <ArrowDownRight className="h-4 w-4 text-red-500" />
                           )}
-                          <span className={investment.roi > 15 ? "text-green-500" : "text-red-500"}>
+                          <span
+                            className={
+                              investment.roi > 15
+                                ? "text-green-500"
+                                : "text-red-500"
+                            }
+                          >
                             {investment.roi}%
                           </span>
                         </div>
@@ -460,4 +509,4 @@ export default function FundingAgencyDashboard() {
       </div>
     </>
   );
-} 
+}

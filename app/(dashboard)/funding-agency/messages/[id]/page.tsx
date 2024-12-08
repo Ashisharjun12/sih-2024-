@@ -92,7 +92,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     try {
       // Fetch user details
       const userRes = await fetch(`/api/users/${params.id}`);
-      const userData = await userRes.json();
+      const userData = await userRes.json();console.log(userRes)
       if (userData.success) {
         setUser(userData.user);
       }
@@ -100,6 +100,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       // Fetch messages
       const messagesRes = await fetch(`/api/messages/${params.id}`);
       const messagesData = await messagesRes.json();
+      console.log(messagesData);
       if (messagesData.success) {
         setMessages(messagesData.messages);
         if (messagesData.messages.length > 0) {

@@ -222,4 +222,4 @@ export function StartupCard({ startup, index }: StartupCardProps) {
       </Card>
     </motion.div>
   );
-} 
+}

@@ -93,6 +93,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       // Fetch user details
       const userRes = await fetch(`/api/users/${params.id}`);
       const userData = await userRes.json();
+      console.log(userData)
       if (userData.success) {
         setUser(userData.user);
       }
