@@ -59,11 +59,8 @@ export function IPRProfessionalSidebar() {
   return (
     <TooltipProvider>
       <div className={cn(
-        "fixed top-0 left-0 h-screen bg-background z-30 shadow-lg transition-all duration-300",
-        isExpanded 
-          ? "w-64 border-r"
-          : "w-16",
-        "flex flex-col"
+        "fixed top-0 left-0 h-screen bg-background z-30 shadow-lg transition-all duration-300 hidden md:flex flex-col",
+        isExpanded ? "w-64 border-r" : "w-16"
       )}>
         {/* Header with Toggle Button and Title */}
         <div className="p-4 flex items-center border-b">
@@ -178,7 +175,7 @@ export function IPRProfessionalSidebar() {
       {/* Overlay when sidebar is expanded */}
       {isExpanded && (
         <div 
-          className="fixed inset-0 bg-black/20 z-20"
+          className="fixed inset-0 bg-black/20 z-20 hidden md:block"
           onClick={() => setIsExpanded(false)}
         />
       )}
