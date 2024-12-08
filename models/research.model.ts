@@ -42,6 +42,12 @@ const researchSchema = new mongoose.Schema({
         required: function (this: { isFree: boolean }) {
             return !this.isFree;
         }
+    },
+    downloads: { type: Number, default: 0 },
+    researcher: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Researcher',
+        required: true
     }
 });
 

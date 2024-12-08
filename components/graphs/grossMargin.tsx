@@ -1,6 +1,6 @@
 "use client";
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -9,12 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
   Select,
@@ -23,141 +19,214 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
-import { ChartProps } from "@/types/chart-props";
+import { useState, useEffect, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { MetricData, TimeframeKey } from "@/types/metrics";
 
-export default function GrossMargin() {
+// Define chart configuration
+const chartConfig = {
+  actual: {
+    label: "Actual Gross Margin",
+    color: "hsl(var(--chart-1))",
+  },
+  target: {
+    label: "Target Gross Margin",
+    color: "hsl(var(--chart-2))",
+  }
+};
+
+// Legend component
+function ChartLegend({ label, color }: { label: string; color: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-background/50 px-3 py-1.5">
+      <div 
+        className="h-2.5 w-2.5 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      <span className="text-xs font-medium">{label}</span>
+    </div>
+  );
+}
+
+interface GrossMarginProps {
+  startupId: string;
+}
+
+export function GrossMargin({ startupId }: GrossMarginProps) {
   const [timeFrame, setTimeFrame] = useState<TimeframeKey>("monthly");
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MetricData | null>(null);
   const [labels, setLabels] = useState<string[]>([]);
-  const chartConfig = {
-    "Startup A": {
-      label: "Startup A",
-      color: "hsl(var(--chart-1))",
-    },
-    "Startup B": {
-      label: "Startup B",
-      color: "hsl(var(--chart-2))",
-    },
-    "Startup C": {
-      label: "Startup C",
-      color: "hsl(var(--chart-3))",
-    },
-  } satisfies ChartConfig;
+  const { toast } = useToast();
 
-  const [timeRange, setTimeRange] = useState("90d");
-  const filteredData = data?.filter((item) => {
-    const date = new Date(item.date);
-    const referenceDate = new Date("2023-04-03");
-    let daysToSubtract = 90;
-    if (timeRange === "30d") {
-      daysToSubtract = 30;
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7;
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `/api/startup/metrics?timeframe=${timeFrame}&metric=grossMargin&startupId=${startupId}`
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        setData(result.data.metrics.grossMargin);
+        setLabels(result.data.labels);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch gross margin data",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching gross margin data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch gross margin data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    const startDate = new Date(referenceDate);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
-    return date >= startDate;
-  });
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [timeFrame, startupId]);
+
+  // Format data for the chart
+  const chartData = useMemo(() => {
+    if (!data || !labels) return [];
+    return labels.map((label, index) => ({
+      label,
+      value: data.value?.[index] || 0,
+      target: data.target?.[index] || 0
+    }));
+  }, [data, labels]);
+
+  if (loading || !data) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="transition-all hover:shadow-md">
       <CardHeader>
-        <CardTitle>Profit per month</CardTitle>
-        <CardDescription>
-          Profit per month for the last 12 months
-        </CardDescription>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger
-            className="w-[160px] rounded-lg sm:ml-auto"
-            aria-label="Select a value"
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-semibold">
+              Gross Margin Analysis
+            </CardTitle>
+            <CardDescription className="mt-1.5">
+              {timeFrame === "monthly" 
+                ? "Monthly gross margin vs targets"
+                : "Year-over-year gross margin analysis"}
+            </CardDescription>
+          </div>
+          <Select 
+            value={timeFrame} 
+            onValueChange={(value: TimeframeKey) => setTimeFrame(value)}
           >
-            <SelectValue placeholder="Last 3 months" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="90d" className="rounded-lg">
-              Last 3 months
-            </SelectItem>
-            <SelectItem value="30d" className="rounded-lg">
-              Last 30 days
-            </SelectItem>
-            <SelectItem value="7d" className="rounded-lg">
-              Last 7 days
-            </SelectItem>
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              className="w-[160px] rounded-lg bg-background/50"
+              aria-label="Select time range"
+            >
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="yearly">Yearly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <ChartLegend 
+            label="Actual Gross Margin"
+            color={chartConfig.actual.color}
+          />
+          <ChartLegend 
+            label="Target Gross Margin"
+            color={chartConfig.target.color}
+          />
+          <div className="text-xs text-muted-foreground">
+            {timeFrame === "monthly" ? "Last 12 months" : "Last 5 years"}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer
-          config={chartConfig}
-          className="w-full h-[200px]"
-        >
-          <AreaChart
-            accessibilityLayer
-            data={filteredData}
-            margin={{ left: 12, right: 12 }}
-            width={600}
-            height={300}
+        <ChartContainer config={chartConfig} className="w-full h-[300px]">
+          <LineChart
+            data={chartData}
+            margin={{ left: 40, right: 40, top: 20, bottom: 20 }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
-              dataKey="date"
+              dataKey="label"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              minTickGap={32}
-              tickFormatter={(value) => {
-                const date = new Date(value);
-                return date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                });
-              }}
+              fontSize={12}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => `${value}`}
+              fontSize={12}
+              tickFormatter={(value) => `${value}%`}
             />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <defs>
-              {Object.entries(chartConfig).map(([startup, config]) => (
-                <linearGradient
-                  key={startup}
-                  id={`fill${startup.replace(/\s+/g, "")}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor={config.color}
-                    stopOpacity={0.8}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor={config.color}
-                    stopOpacity={0.1}
-                  />
-                </linearGradient>
-              ))}
-            </defs>
-            {Object.entries(chartConfig).map(([startup, config]) => (
-              <Area
-                key={startup}
-                dataKey={startup}
-                type="natural"
-                fill={`url(#fill${startup.replace(/\s+/g, "")})`}
-                fillOpacity={0.4}
-                stroke={config.color}
-                stackId="a"
-              />
-            ))}
-            <ChartLegend content={<ChartLegendContent />} />
-          </AreaChart>
+            <ChartTooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <div className="rounded-lg border bg-background p-2 shadow-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col">
+                        <span className="text-[0.70rem] uppercase text-muted-foreground">
+                          Actual Gross Margin
+                        </span>
+                        <span className="font-bold text-muted-foreground">
+                          {`${payload[0].value}%`}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[0.70rem] uppercase text-muted-foreground">
+                          Target Gross Margin
+                        </span>
+                        <span className="font-bold text-muted-foreground">
+                          {`${payload[1].value}%`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={chartConfig.actual.color}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 0 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="target"
+              stroke={chartConfig.target.color}
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 0 }}
+            />
+          </LineChart>
         </ChartContainer>
       </CardContent>
     </Card>
   );
 }
+
+export default GrossMargin;

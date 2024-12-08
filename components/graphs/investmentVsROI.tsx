@@ -21,7 +21,6 @@ import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
   Select,
@@ -30,44 +29,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
-const chartData = [
-  {
-    name: "Startup A",
-    data: [
-      { investment: 10000, ROI: 12 },
-      { investment: 15000, ROI: -5 },
-      { investment: 20000, ROI: 10 },
-      { investment: 25000, ROI: -8 },
-      { investment: 30000, ROI: 18 },
-      { investment: 35000, ROI: -2 },
-      { investment: 40000, ROI: 20 },
-      { investment: 45000, ROI: -12 },
-      { investment: 50000, ROI: 22 },
-      { investment: 55000, ROI: 15 },
-      { investment: 60000, ROI: -10 },
-      { investment: 65000, ROI: 8 },
-    ],
-  },
-  {
-    name: "Startup B",
-    data: [
-      { investment: 15000, ROI: -5 },
-      { investment: 60000, ROI: -10 },
-      { investment: 65000, ROI: 8 },
-      { investment: 70000, ROI: 12 },
-    ],
-  },
-  {
-    name: "Startup C",
-    data: [
-      { investment: 15000, ROI: -5 },
-      { investment: 60000, ROI: -10 },
-      { investment: 65000, ROI: 8 },
-      { investment: 70000, ROI: 12 },
-    ],
-  },
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+
+// Constants
+const STARTUP_IDS = [
+  "67521b4dc2d6dc160b09d878",
+  "6752a4d92dd92150084ea81e",
+  "6752d2688720f7e63426f72f"
 ];
+
+interface InvestmentData {
+  month?: string;
+  year?: string;
+  data: Array<{
+    investment: number;
+    ROI: number;
+  }>;
+}
 
 const chartConfig = {
   ROI: {
@@ -76,35 +55,110 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function InvestmentVsROI() {
-  const [selectedStartup, setSelectedStartup] = useState(chartData[0].name);
-  const filteredData =
-    chartData.find((item) => item.name === selectedStartup)?.data || [];
+  const [selectedStartup, setSelectedStartup] = useState<string>(STARTUP_IDS[0]);
+  const [timeframe, setTimeframe] = useState<'monthly' | 'yearly'>('monthly');
+  const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `/api/funding-agency/metrics?timeframe=${timeframe}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ startupIds: STARTUP_IDS }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Transform API data for the chart
+        const selectedStartupIndex = STARTUP_IDS.indexOf(selectedStartup);
+        const transformedData = result.data.investmentVsROI.map((item: InvestmentData) => ({
+          date: item[timeframe === 'monthly' ? 'month' : 'year'] || '',
+          investment: item.data[selectedStartupIndex]?.investment || 0,
+          ROI: item.data[selectedStartupIndex]?.ROI || 0
+        }));
+
+        setChartData(transformedData);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch metrics data",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching metrics:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch metrics data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [timeframe, selectedStartup]);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading...</CardTitle>
+        </CardHeader>
+        <CardContent className="h-[200px] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader className="flex flex-row justify-between">
         <div>
           <CardTitle>Investment vs ROI</CardTitle>
-          <CardDescription>January - June 2024</CardDescription>
+          <CardDescription>Investment Return Analysis</CardDescription>
         </div>
-        <Select value={selectedStartup} onValueChange={setSelectedStartup} >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a startup" />
-          </SelectTrigger>
-          <SelectContent>
-            {chartData.map((item) => (
-              <SelectItem key={item.name} value={item.name}>
-                {item.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-4">
+          <Select value={selectedStartup} onValueChange={setSelectedStartup}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select a startup" />
+            </SelectTrigger>
+            <SelectContent>
+              {STARTUP_IDS.map((id) => (
+                <SelectItem key={id} value={id}>
+                  {id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={timeframe} onValueChange={(value: 'monthly' | 'yearly') => setTimeframe(value)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Select timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="yearly">Yearly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="w-full h-[200px]">
-          <BarChart accessibilityLayer data={filteredData}>
+          <BarChart accessibilityLayer data={chartData}>
             <XAxis
-              dataKey="investment"
+              dataKey="date"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
@@ -114,17 +168,49 @@ export default function InvestmentVsROI() {
               tickLine={false}
               axisLine={false}
               tickMargin={10}
+              tickFormatter={(value) => `${value}%`}
             />
             <CartesianGrid vertical={false} />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel hideIndicator />}
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col">
+                          <span className="text-[0.70rem] uppercase text-muted-foreground">
+                            Investment
+                          </span>
+                          <span className="font-bold text-muted-foreground">
+                            ₹{payload[0].payload.investment.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[0.70rem] uppercase text-muted-foreground">
+                            ROI
+                          </span>
+                          <span className="font-bold text-muted-foreground">
+                            {payload[0].payload.ROI}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              }}
             />
             <Bar dataKey="ROI">
-              <LabelList position="top" dataKey="ROI" fillOpacity={1} />
-              {filteredData.map((item) => (
+              <LabelList 
+                position="top" 
+                dataKey="ROI" 
+                fillOpacity={1}
+                formatter={(value: number) => `${value}%`}
+              />
+              {chartData.map((item) => (
                 <Cell
-                  key={item.investment}
+                  key={item.date}
                   fill={
                     item.ROI > 0 ? "hsl(var(--chart-1))" : "hsl(var(--chart-2))"
                   }

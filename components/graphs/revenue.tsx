@@ -33,7 +33,11 @@ interface ChartDataPoint {
   expenses?: number;
 }
 
-export default function Revenue() {
+interface RevenueProps {
+  startupId: string;
+}
+
+export default function Revenue({ startupId }: RevenueProps) {
   const [timeFrame, setTimeFrame] = useState<TimeframeKey>("monthly");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MetricData | null>(null);
@@ -55,7 +59,7 @@ export default function Revenue() {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/startup/metrics?timeframe=${timeFrame}&metric=revenue`
+        `/api/startup/metrics?timeframe=${timeFrame}&metric=revenue&startupId=${startupId}`
       );
       const result = await response.json();
 
@@ -83,7 +87,7 @@ export default function Revenue() {
 
   useEffect(() => {
     fetchData();
-  }, [timeFrame]);
+  }, [timeFrame, startupId]);
 
   // Format data for the chart
   const chartData = useMemo(() => {
