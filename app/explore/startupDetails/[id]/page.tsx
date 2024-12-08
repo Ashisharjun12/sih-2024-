@@ -20,10 +20,21 @@ import {
   Twitter,
   Linkedin,
   MessageSquareText,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface StartupDetails {
   _id: string;
@@ -93,7 +104,7 @@ interface StartupDetails {
 export default function StartupDetails({
   params,
 }: {
-  params: { projectid: string };
+  params: { id: string };
 }) {
   const router = useRouter();
 
@@ -101,7 +112,9 @@ export default function StartupDetails({
   const [startup, setStartup] = useState<StartupDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  console.log(session?.user?.role === "startup");
+  const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchStartupDetails = async () => {
@@ -128,6 +141,47 @@ export default function StartupDetails({
     }
   }, [session, params.projectid]);
 
+  const handleSendRequest = async () => {
+    if (!message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const response = await fetch(
+        `/api/funding-agency/requests/${params.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to send request");
+
+      toast({
+        title: "Success",
+        description: "Request sent successfully",
+      });
+      setMessage("");
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to send request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -143,6 +197,8 @@ export default function StartupDetails({
       </div>
     );
   }
+
+  const isFundingAgency = session?.user?.role === "fundingAgency";
 
   return (
     <div className="container py-4 space-y-6">
@@ -616,6 +672,42 @@ export default function StartupDetails({
           </div>
         </div>
       </div>
+
+      {/* Funding Request Button for Funding Agencies */}
+      {isFundingAgency && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="fixed bottom-8 right-8 shadow-lg">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Send Funding Request
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Funding Request</DialogTitle>
+              <DialogDescription>
+                Send a message to {startup?.startupDetails?.startupName}{" "}
+                expressing your interest in funding.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Textarea
+                placeholder="Write your message here..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="min-h-[100px]"
+              />
+              <Button
+                className="w-full"
+                onClick={handleSendRequest}
+                disabled={isSending || !message.trim()}
+              >
+                {isSending ? "Sending..." : "Send Request"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

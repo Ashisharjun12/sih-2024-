@@ -55,7 +55,6 @@ interface SimilarityInfo {
 const PatentsPage = () => {
   const [patents, setPatents] = useState<Patent[]>([]);
   const [selectedPatent, setSelectedPatent] = useState<Patent | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,7 +62,9 @@ const PatentsPage = () => {
   const [walletAddress, setWalletAddress] = useState("");
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [transactionInProgress, setTransactionInProgress] = useState(false);
-  const [similarityData, setSimilarityData] = useState<Record<string, SimilarityInfo>>({});
+  const [similarityData, setSimilarityData] = useState<
+    Record<string, SimilarityInfo>
+  >({});
   const [isLoadingGemini, setIsLoadingGemini] = useState(false);
   const [isLoadingPatents, setIsLoadingPatents] = useState(true);
 
@@ -71,72 +72,7 @@ const PatentsPage = () => {
 
   useEffect(() => {
     fetchPatents();
-    checkWalletConnection();
-    if (window.ethereum) {
-      (async () => {
-        const currentContract = await initializeEthers(window.ethereum);
-        setContract(currentContract);
-      })();
-    }
   }, []);
-
-  const checkWalletConnection = async () => {
-    const { ethereum } = window;
-    if (ethereum) {
-      try {
-        const provider = new ethers.BrowserProvider(ethereum);
-        const accounts = await provider.listAccounts();
-        if (accounts.length > 0) {
-          setIsWalletConnected(true);
-          setWalletAddress(accounts[0].address);
-        }
-        if(!contract){
-          const currentContract = await initializeEthers(window.ethereum);
-          setContract(currentContract);
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error);
-      }
-    }
-  };
-
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      toast({
-        title: "MetaMask Not Found",
-        description: "Please install MetaMask browser extension",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts", []);
-
-      // Initialize contract
-      const currentContract = await initializeEthers(window.ethereum);
-      setContract(currentContract);
-
-      if (accounts.length > 0) {
-        setIsWalletConnected(true);
-        setWalletAddress(accounts[0]);
-        toast({
-          title: "Success",
-          description: "Wallet connected successfully",
-        });
-      }
-    } catch (error: any) {
-      console.error("Wallet connection error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to connect wallet",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const fetchPatents = async () => {
     try {
@@ -146,15 +82,19 @@ const PatentsPage = () => {
         throw new Error("Failed to fetch patents");
       }
       const data = await response.json();
-      
+
       // Set patents immediately to show static data
       setPatents(data);
       setIsLoadingPatents(false);
 
       // Then start similarity checks
       setIsLoadingGemini(true);
-      const pendingPatents = data.filter((tm: Patent) => tm.status === "Pending");
-      const acceptedPatents = data.filter((tm: Patent) => tm.status === "Accepted");
+      const pendingPatents = data.filter(
+        (tm: Patent) => tm.status === "Pending"
+      );
+      const acceptedPatents = data.filter(
+        (tm: Patent) => tm.status === "Accepted"
+      );
 
       // Process similarities with delay between requests
       for (const pending of pendingPatents) {
@@ -173,8 +113,10 @@ const PatentsPage = () => {
             );
 
             if (similarity) {
-              if (similarity.titleSimilarity > highestTitleSimilarity || 
-                  similarity.descriptionSimilarity > highestDescSimilarity) {
+              if (
+                similarity.titleSimilarity > highestTitleSimilarity ||
+                similarity.descriptionSimilarity > highestDescSimilarity
+              ) {
                 highestTitleSimilarity = similarity.titleSimilarity;
                 highestDescSimilarity = similarity.descriptionSimilarity;
                 mostSimilarTitle = accepted.title;
@@ -182,10 +124,19 @@ const PatentsPage = () => {
             }
           } catch (error) {
             // If rate limit hit, use basic similarity check
-            const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
-            const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
-            
-            if (titleSimilarity > highestTitleSimilarity || descSimilarity > highestDescSimilarity) {
+            const titleSimilarity = calculateBasicSimilarity(
+              pending.title,
+              accepted.title
+            );
+            const descSimilarity = calculateBasicSimilarity(
+              pending.description,
+              accepted.description
+            );
+
+            if (
+              titleSimilarity > highestTitleSimilarity ||
+              descSimilarity > highestDescSimilarity
+            ) {
               highestTitleSimilarity = titleSimilarity * 100;
               highestDescSimilarity = descSimilarity * 100;
               mostSimilarTitle = accepted.title;
@@ -194,13 +145,13 @@ const PatentsPage = () => {
         }
 
         if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
-          setSimilarityData(prev => ({
+          setSimilarityData((prev) => ({
             ...prev,
             [pending._id]: {
               similarTo: mostSimilarTitle,
               titleSimilarity: Math.round(highestTitleSimilarity),
-              descriptionSimilarity: Math.round(highestDescSimilarity)
-            }
+              descriptionSimilarity: Math.round(highestDescSimilarity),
+            },
           }));
         }
       }
@@ -212,41 +163,37 @@ const PatentsPage = () => {
     }
   };
 
-  const checkSimilarityWithGemini = async (
-    pending: { title: string; description: string },
-    accepted: { title: string; description: string }
-  ) => {
-    try {
-      const response = await fetch("/api/gemini/compare-trademarks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pending, accepted }),
+  const checkWalletConnection = async () => {
+    if (!window.ethereum) {
+      toast({
+        title: "MetaMask Not Found",
+        description: "Please install MetaMask browser extension",
+        variant: "destructive",
       });
+      return;
+    }
 
-      if (!response.ok) throw new Error("Failed to check similarity");
-      return await response.json();
-    } catch (error) {
-      console.error("Error checking similarity:", error);
-      return null;
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      if (accounts.length > 0) {
+        setIsWalletConnected(true);
+        setWalletAddress(accounts[0]);
+        const currentContract = await initializeEthers(window.ethereum);
+        setContract(currentContract);
+      }
+    } catch (error: any) {
+      console.error("Wallet connection error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to connect wallet",
+        variant: "destructive",
+      });
     }
   };
 
-  const calculateBasicSimilarity = (str1: string, str2: string): number => {
-    const s1 = str1.toLowerCase();
-    const s2 = str2.toLowerCase();
-    
-    const words1 = s1.split(/\s+/);
-    const words2 = s2.split(/\s+/);
-    
-    const set1 = new Set(words1);
-    const set2 = new Set(words2);
-    
-    const commonWords = words1.filter(word => set2.has(word));
-    return (commonWords.length * 2) / (set1.size + set2.size);
-  };
-
   const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
-    if (!selectedPatent || !contract) return;
+    if (!selectedPatent || !isWalletConnected) return;
     setIsSubmitting(true);
     setTransactionInProgress(true);
 
@@ -314,7 +261,7 @@ const PatentsPage = () => {
 
         toast({
           title: "Success",
-          description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`
+          description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`,
         });
       } catch (error: any) {
         if (error.code === "ACTION_REJECTED") {
@@ -356,6 +303,42 @@ const PatentsPage = () => {
       default:
         return "bg-gray-500";
     }
+  };
+
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  const checkSimilarityWithGemini = async (
+    pending: { title: string; description: string },
+    accepted: { title: string; description: string }
+  ) => {
+    try {
+      const response = await fetch("/api/gemini/compare-trademarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pending, accepted }),
+      });
+
+      if (!response.ok) throw new Error("Failed to check similarity");
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking similarity:", error);
+      return null;
+    }
+  };
+
+  const calculateBasicSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+
+    const commonWords = words1.filter((word) => set2.has(word));
+    return (commonWords.length * 2) / (set1.size + set2.size);
   };
 
   return (
@@ -400,27 +383,49 @@ const PatentsPage = () => {
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <span>Title Similarity:</span>
-                              <Badge variant={similarityData[patent._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                              <Badge
+                                variant={
+                                  similarityData[patent._id].titleSimilarity >
+                                  70
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
                                 {similarityData[patent._id].titleSimilarity}%
                               </Badge>
-                              {similarityData[patent._id].titleSimilarity > 70 && (
+                              {similarityData[patent._id].titleSimilarity >
+                                70 && (
                                 <span className="text-xs text-red-500">
-                                  Similar to: {similarityData[patent._id].similarTo}
+                                  Similar to:{" "}
+                                  {similarityData[patent._id].similarTo}
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
                               <span>Description Similarity:</span>
-                              <Badge variant={similarityData[patent._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
-                                {similarityData[patent._id].descriptionSimilarity}%
+                              <Badge
+                                variant={
+                                  similarityData[patent._id]
+                                    .descriptionSimilarity > 70
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
+                                {
+                                  similarityData[patent._id]
+                                    .descriptionSimilarity
+                                }
+                                %
                               </Badge>
                             </div>
                           </div>
-                        ) : isLoadingGemini && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            Analyzing similarity...
-                          </div>
+                        ) : (
+                          isLoadingGemini && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                              Analyzing similarity...
+                            </div>
+                          )
                         )}
                       </div>
                     )}
@@ -431,7 +436,9 @@ const PatentsPage = () => {
                     ? patent.owner.startupName
                     : patent.owner.name}
                 </TableCell>
-                <TableCell>{format(new Date(patent.filingDate), "PP")}</TableCell>
+                <TableCell>
+                  {format(new Date(patent.filingDate), "PP")}
+                </TableCell>
                 <TableCell>
                   <Badge
                     variant="secondary"
@@ -444,7 +451,12 @@ const PatentsPage = () => {
                   {patent.status === "Pending" ? (
                     <Button
                       variant="outline"
-                      onClick={() => {setSelectedPatent(patent);
+                      onClick={() => {
+                        if (!isWalletConnected) {
+                          checkWalletConnection();
+                        } else {
+                          setSelectedPatent(patent);
+                        }
                       }}
                     >
                       Review
@@ -582,7 +594,7 @@ const PatentsPage = () => {
                   Please connect your MetaMask wallet to review patent
                   applications
                 </p>
-                <Button onClick={connectWallet}>Connect MetaMask</Button>
+                <Button onClick={checkWalletConnection}>Connect MetaMask</Button>
               </div>
             </>
           )}

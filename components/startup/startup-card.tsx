@@ -3,9 +3,19 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Globe, Users, TrendingUp, Briefcase, Linkedin } from "lucide-react";
+import {
+  Building2,
+  Globe,
+  Users,
+  TrendingUp,
+  Briefcase,
+  Linkedin,
+  Twitter,
+  Facebook,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 interface StartupCardProps {
   startup: {
@@ -54,8 +64,6 @@ const BANNER_GRADIENTS = [
 ];
 
 export function StartupCard({ startup, index }: StartupCardProps) {
-  const router = useRouter();
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -69,7 +77,11 @@ export function StartupCard({ startup, index }: StartupCardProps) {
             {/* Banner Image with Gradient Overlay */}
             <div className="h-24 relative overflow-hidden">
               <div className="absolute inset-0 bg-[url('/startup-banner.jpg')] bg-cover bg-center" />
-              <div className={`absolute inset-0 bg-gradient-to-r ${BANNER_GRADIENTS[index % BANNER_GRADIENTS.length]} mix-blend-multiply`} />
+              <div
+                className={`absolute inset-0 bg-gradient-to-r ${
+                  BANNER_GRADIENTS[index % BANNER_GRADIENTS.length]
+                } mix-blend-multiply`}
+              />
               <div className="absolute inset-0 bg-black/20" />
             </div>
 
@@ -77,7 +89,9 @@ export function StartupCard({ startup, index }: StartupCardProps) {
             <div className="relative px-4 -mt-8">
               <div className="flex items-center gap-3">
                 {startup.startupDetails.startupLogo ? (
-                  <img
+                  <Image
+                    width={56}
+                    height={56}
                     src={startup.startupDetails.startupLogo.secure_url}
                     alt={startup.startupDetails.startupName}
                     className="h-14 w-14 rounded-full object-cover bg-white p-1 ring-2 ring-white shadow-lg"
@@ -93,11 +107,17 @@ export function StartupCard({ startup, index }: StartupCardProps) {
                   </h3>
                   <div className="flex gap-1.5 flex-wrap mt-1">
                     {startup.isActivelyFundraising && (
-                      <Badge variant="secondary" className="bg-green-500 mt-1.5 text-white border-none text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-500 mt-1.5 text-white border-none text-xs"
+                      >
                         Actively Fundraising
                       </Badge>
                     )}
-                    <Badge variant="secondary" className="bg-white/20 text-white border-none text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="bg-white/20 text-white border-none text-xs"
+                    >
                       {startup.startupDetails.stage}
                     </Badge>
                   </div>
@@ -127,8 +147,8 @@ export function StartupCard({ startup, index }: StartupCardProps) {
               <div className="space-y-1.5">
                 <div className="flex flex-wrap gap-1.5">
                   {startup.startupDetails.industries.map((industry, i) => (
-                    <Badge 
-                      key={i} 
+                    <Badge
+                      key={i}
                       variant="outline"
                       className="bg-transparent text-xs"
                     >
@@ -138,8 +158,8 @@ export function StartupCard({ startup, index }: StartupCardProps) {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {startup.startupDetails.sectors.map((sector, i) => (
-                    <Badge 
-                      key={i} 
+                    <Badge
+                      key={i}
                       variant="outline"
                       className="bg-blue-500/10 text-blue-600 text-xs border-none"
                     >
@@ -151,31 +171,70 @@ export function StartupCard({ startup, index }: StartupCardProps) {
 
               {/* About */}
               <p className="text-xs text-muted-foreground line-clamp-2">
-                {startup.startupDetails.about || startup.businessActivities.missionAndVision}
+                {startup.startupDetails.about ||
+                  startup.businessActivities.missionAndVision}
               </p>
 
               {/* Social Links */}
               {startup.additionalInfo && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
                   {startup.additionalInfo.website && (
-                    <Link 
-                      href={startup.additionalInfo.website} 
-                      target="_blank" 
+                    <Link
+                      href={startup.additionalInfo.website}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
                     >
-                      <Globe className="h-3.5 w-3.5 text-blue-600" />
+                      <Globe className="h-3.5 w-3.5 text-green-600" />
                     </Link>
                   )}
                   {startup.additionalInfo.socialMedia?.linkedIn && (
-                    <Link 
-                      href={startup.additionalInfo.socialMedia.linkedIn} 
-                      target="_blank" 
+                    <a
+                      href={
+                        startup.additionalInfo.socialMedia.linkedIn.startsWith(
+                          "http"
+                        )
+                          ? startup.additionalInfo.socialMedia.linkedIn
+                          : `https://${startup.additionalInfo.socialMedia.linkedIn}`
+                      }
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
                     >
                       <Linkedin className="h-3.5 w-3.5 text-blue-600" />
-                    </Link>
+                    </a>
+                  )}
+                  {startup.additionalInfo.socialMedia?.twitter && (
+                    <a
+                      href={
+                        startup.additionalInfo.socialMedia.twitter.startsWith(
+                          "http"
+                        )
+                          ? startup.additionalInfo.socialMedia.twitter
+                          : `https://${startup.additionalInfo.socialMedia.twitter}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
+                    >
+                      <Twitter className="h-3.5 w-3.5 text-sky-600" />
+                    </a>
+                  )}
+                  {startup.additionalInfo.socialMedia?.facebook && (
+                    <a
+                      href={
+                        startup.additionalInfo.socialMedia.facebook.startsWith(
+                          "http"
+                        )
+                          ? startup.additionalInfo.socialMedia.facebook
+                          : `https://${startup.additionalInfo.socialMedia.facebook}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
+                    >
+                      <Facebook className="h-3.5 w-3.5 text-purple-600" />
+                    </a>
                   )}
                 </div>
               )}
@@ -185,4 +244,4 @@ export function StartupCard({ startup, index }: StartupCardProps) {
       </Card>
     </motion.div>
   );
-} 
+}

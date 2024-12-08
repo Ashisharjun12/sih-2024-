@@ -27,7 +27,7 @@ export async function GET(req:NextRequest,{params}:{params:{id:string}}) {
         else if(user.role === "fundingAgency"){
             const fundingAgency = await FundingAgency.findOne({userId:id});
             user.name = fundingAgency.agencyDetails.name;
-            user.image = fundingAgency.logo.secure_url;
+            user.image = fundingAgency.agencyDetails.logo.secure_url;
         }
         else if(user.role === "researcher"){
             const researcher = await Researcher.findOne({userId:id});

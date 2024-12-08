@@ -94,16 +94,18 @@ const ResearchPaperPage = () => {
       ...prev,
       [name]: value,
     }));
+    console.log(newPaper);
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewPaper((prev) => ({
-      ...prev,
-      isFree: e.target.checked,
-      price: e.target.checked ? undefined : prev.price,
-      isPublished: e.target.checked,
-    }));
-  };
+  const handleCheckboxChange =
+    (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setNewPaper((prev) => ({
+        ...prev,
+        [name]: e.target.checked,
+        price: e.target.checked ? undefined : prev.price,
+      }));
+      console.log(newPaper);
+    };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -154,8 +156,10 @@ const ResearchPaperPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    console.log(newPaper);
 
     try {
+      newPaper.price = Number(newPaper.price);
       const response = await fetch("/api/researcher/papers", {
         method: "POST",
         headers: {
@@ -239,7 +243,10 @@ const ResearchPaperPage = () => {
               <CardContent>
                 <p>{paper.description}</p>
                 <p>Stage: {paper.stage}</p>
-                <p>Publication Date: {new Date(paper.publicationDate).toLocaleDateString()}</p>
+                <p>
+                  Publication Date:{" "}
+                  {new Date(paper.publicationDate).toLocaleDateString()}
+                </p>
                 {paper.doi && <p>DOI: {paper.doi}</p>}
                 {paper.isPublished && paper.price !== undefined && (
                   <p>Price: ${paper.price}</p>
@@ -264,7 +271,12 @@ const ResearchPaperPage = () => {
                     <ul>
                       {paper.images.map((doc) => (
                         <li key={doc.public_id}>
-                          <Link href={doc.secure_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          <Link
+                            href={doc.secure_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
                             {doc.public_id}
                           </Link>
                         </li>
@@ -289,7 +301,10 @@ const ResearchPaperPage = () => {
               <CardContent>
                 <p>{paper.description}</p>
                 <p>Stage: {paper.stage}</p>
-                <p>Publication Date: {new Date(paper.publicationDate).toLocaleDateString()}</p>
+                <p>
+                  Publication Date:{" "}
+                  {new Date(paper.publicationDate).toLocaleDateString()}
+                </p>
                 {paper.doi && <p>DOI: {paper.doi}</p>}
                 {paper.isPublished && paper.price !== undefined && (
                   <p>Price: ${paper.price}</p>
@@ -314,7 +329,12 @@ const ResearchPaperPage = () => {
                     <ul>
                       {paper.images.map((doc) => (
                         <li key={doc.public_id}>
-                          <Link href={doc.secure_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          <Link
+                            href={doc.secure_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
                             {doc.public_id}
                           </Link>
                         </li>
@@ -418,24 +438,26 @@ const ResearchPaperPage = () => {
               <input
                 type="checkbox"
                 checked={newPaper.isPublished}
-                onChange={(e) => setNewPaper((prev) => ({ ...prev, isPublished: e.target.checked }))}
+                onChange={handleCheckboxChange("isPublished")}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">Is Free</label>
-              <input
-                type="checkbox"
-                checked={newPaper.isFree}
-                onChange={handleCheckboxChange}
-              />
-            </div>
-            {!newPaper.isFree && (
+            {newPaper.isPublished && (
+              <div>
+                <label className="text-sm font-medium">Is Free</label>
+                <input
+                  type="checkbox"
+                  checked={newPaper.isFree}
+                  onChange={handleCheckboxChange("isFree")}
+                />
+              </div>
+            )}
+            {newPaper.isPublished && !newPaper.isFree && (
               <div>
                 <label className="text-sm font-medium">Price</label>
                 <Input
-                  type="number"
+                  type="text"
                   name="price"
-                  value={newPaper.price}
+                  value={newPaper.price?.toString() || ""}
                   onChange={handleInputChange}
                   placeholder="Enter price"
                 />

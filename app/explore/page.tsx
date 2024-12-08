@@ -52,31 +52,31 @@ export default function ExplorePage() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/explore');
-      if (!response.ok) throw new Error('Failed to fetch data');
-      
+      const response = await fetch("/api/explore");
+      if (!response.ok) throw new Error("Failed to fetch data");
+
       const data = await response.json();
-      
-      console.log('Explore Page - Fetched Data:', {
+
+      console.log("Explore Page - Fetched Data:", {
         startups: {
           count: data.startups.length,
-          sample: data.startups[0]
+          sample: data.startups[0],
         },
         researchers: {
           count: data.researchers.length,
-          sample: data.researchers[0]
+          sample: data.researchers[0],
         },
         mentors: {
           count: data.mentors.length,
-          sample: data.mentors[0]
-        }
+          sample: data.mentors[0],
+        },
       });
 
       setStartups(data.startups);
       setResearchers(data.researchers);
       setMentors(data.mentors);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
       toast({
         title: "Error",
         description: "Failed to fetch data",
@@ -91,25 +91,26 @@ export default function ExplorePage() {
     <div className="container py-6 space-y-8">
       {/* Title Section */}
       <div className="space-y-4">
-        <motion.h1 
+        <motion.h1
           className="text-4xl font-bold tracking-tight"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           Explore Innovation Hub
         </motion.h1>
-        <motion.p 
+        <motion.p
           className="text-lg text-muted-foreground max-w-3xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          Discover innovative startups, groundbreaking research projects, and connect with experienced mentors all in one place.
+          Discover innovative startups, groundbreaking research projects, and
+          connect with experienced mentors all in one place.
         </motion.p>
       </div>
 
       {/* Search Section */}
-      <motion.div 
+      <motion.div
         className="flex items-center gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -150,7 +151,9 @@ export default function ExplorePage() {
                 {startups.map((startup, index) => (
                   <div
                     key={startup._id}
-                    onClick={() => router.push(`/explore/startupDetails/${startup._id}`)}
+                    onClick={() =>
+                      router.push(`/explore/startupDetails/${startup._id}`)
+                    }
                     className="w-[400px] flex-none"
                   >
                     <StartupCard startup={startup} index={index} />
@@ -166,9 +169,7 @@ export default function ExplorePage() {
           {/* Add Researcher cards here */}
         </TabsContent>
 
-        <TabsContent value="mentors">
-          {/* Add Mentor cards here */}
-        </TabsContent>
+        <TabsContent value="mentors">{/* Add Mentor cards here */}</TabsContent>
       </Tabs>
     </div>
   );
