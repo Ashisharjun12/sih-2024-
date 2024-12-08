@@ -382,6 +382,23 @@ const startupSchema = new mongoose.Schema({
     },
     message: String
   }],
+  activeInvestments: [{
+    fundingAgency: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FundingAgency'
+    },
+    amount: Number,
+    date: Date,
+  }],
+  requests: [{
+    fundingAgency:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FundingAgency'
+  },
+  message:{
+    type:String,
+    required:true
+  }}]
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);

@@ -86,50 +86,22 @@ export default function ResearchPapersPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setNewPaper(prev => ({ ...prev, [name]: value }));
+    setNewPaper((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    console.log(newPaper);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/researcher/papers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPaper),
-      });
-
-      if (!response.ok) throw new Error("Failed to create research paper");
-
-      toast({
-        title: "Success",
-        description: "Research paper created successfully",
-      });
-
-      setIsDialogOpen(false);
-      fetchPapers();
-      setNewPaper({
-        title: "",
-        description: "",
-        publicationDate: "",
-        stage: "Identifying a Research Problem or Question",
-        doi: "",
-        isFree: true,
-        price: undefined,
-        images: []
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create research paper",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const handleCheckboxChange =
+    (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setNewPaper((prev) => ({
+        ...prev,
+        [name]: e.target.checked,
+        price: e.target.checked ? undefined : prev.price,
+      }));
+      console.log(newPaper);
+    };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -166,10 +138,68 @@ export default function ResearchPapersPage() {
       });
     } finally {
       setIsUploading(false);
+      if (e.target) {
+        e.target.value = "";
+      }
     }
   };
 
-  if (loading) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    console.log(newPaper);
+
+    try {
+      newPaper.price = Number(newPaper.price);
+      const response = await fetch("/api/researcher/papers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newPaper),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to add research paper");
+      }
+
+      toast({
+        title: "Success",
+        description: "Research paper added successfully",
+      });
+
+      // Reset the form
+      setNewPaper({
+        title: "",
+        description: "",
+        publicationDate: "",
+        stage: "Identifying a Research Problem or Question",
+        doi: "",
+        images: [],
+        isFree: false,
+        price: undefined,
+        isPublished: false,
+      });
+
+      // Fetch updated research papers
+      fetchResearchPapers();
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to add research paper",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -230,50 +260,120 @@ export default function ResearchPapersPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="ongoing" className="space-y-6">
-          {ongoingPapers.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {ongoingPapers.map((paper, index) => (
-                <ResearchPaperCard 
-                  key={paper._id} 
-                  paper={paper} 
-                  index={index} 
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-muted-foreground">
-                No ongoing research papers
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Start a new research project by clicking the Add Research button.
-              </p>
-            </div>
-          )}
+        <TabsContent value="completed">
+          {researchPapers.map((paper) => (
+            <Card key={paper._id} className="mb-4">
+              <CardHeader>
+                <CardTitle>{paper.title}</CardTitle>
+                <Badge variant={paper.isPublished ? "success" : "destructive"}>
+                  {paper.isPublished ? "Published" : "Not Published"}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <p>{paper.description}</p>
+                <p>Stage: {paper.stage}</p>
+                <p>
+                  Publication Date:{" "}
+                  {new Date(paper.publicationDate).toLocaleDateString()}
+                </p>
+                {paper.doi && <p>DOI: {paper.doi}</p>}
+                {paper.isPublished && paper.price !== undefined && (
+                  <p>Price: ${paper.price}</p>
+                )}
+                {paper.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {paper.images.map((image) => (
+                      <Image
+                        key={image.public_id}
+                        src={image.secure_url}
+                        alt={paper.title}
+                        width={100}
+                        height={100}
+                        className="h-20 w-20 object-cover"
+                      />
+                    ))}
+                  </div>
+                )}
+                {paper.images.length > 0 && (
+                  <div className="mt-2">
+                    <h4 className="font-semibold">Documents:</h4>
+                    <ul>
+                      {paper.images.map((doc) => (
+                        <li key={doc.public_id}>
+                          <Link
+                            href={doc.secure_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
+                            {doc.public_id}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
 
-        <TabsContent value="completed" className="space-y-6">
-          {completedPapers.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {completedPapers.map((paper, index) => (
-                <ResearchPaperCard 
-                  key={paper._id} 
-                  paper={paper} 
-                  index={index} 
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-muted-foreground">
-                No completed research papers
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your completed research papers will appear here.
-              </p>
-            </div>
-          )}
+        <TabsContent value="ongoing">
+          {onGoingResearchPapers.map((paper) => (
+            <Card key={paper._id} className="mb-4">
+              <CardHeader>
+                <CardTitle>{paper.title}</CardTitle>
+                <Badge variant={paper.isPublished ? "success" : "destructive"}>
+                  {paper.isPublished ? "Published" : "Not Published"}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <p>{paper.description}</p>
+                <p>Stage: {paper.stage}</p>
+                <p>
+                  Publication Date:{" "}
+                  {new Date(paper.publicationDate).toLocaleDateString()}
+                </p>
+                {paper.doi && <p>DOI: {paper.doi}</p>}
+                {paper.isPublished && paper.price !== undefined && (
+                  <p>Price: ${paper.price}</p>
+                )}
+                {paper.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {paper.images.map((image) => (
+                      <Image
+                        key={image.public_id}
+                        src={image.secure_url}
+                        alt={paper.title}
+                        width={100}
+                        height={100}
+                        className="h-20 w-20 object-cover"
+                      />
+                    ))}
+                  </div>
+                )}
+                {paper.images.length > 0 && (
+                  <div className="mt-2">
+                    <h4 className="font-semibold">Documents:</h4>
+                    <ul>
+                      {paper.images.map((doc) => (
+                        <li key={doc.public_id}>
+                          <Link
+                            href={doc.secure_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
+                            {doc.public_id}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
       </Tabs>
 
@@ -290,70 +390,110 @@ export default function ResearchPapersPage() {
               </div>
             </div>
           </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="mt-4 space-y-8 px-2">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground/90">Research Title</label>
-                <Input
-                  name="title"
-                  value={newPaper.title}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Enter your research title"
-                  className="bg-muted/50 border-slate-200/60 focus:border-blue-500/30 transition-colors"
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Title</label>
+              <Input
+                name="title"
+                value={newPaper.title}
+                onChange={handleInputChange}
+                required
+                placeholder="Enter research paper title"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                name="description"
+                value={newPaper.description}
+                onChange={handleInputChange}
+                required
+                placeholder="Enter research paper description"
+                rows={4}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Publication Date</label>
+              <Input
+                type="date"
+                name="publicationDate"
+                value={newPaper.publicationDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">DOI (optional)</label>
+              <Input
+                name="doi"
+                value={newPaper.doi}
+                onChange={handleInputChange}
+                placeholder="Enter DOI"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Stage</label>
+              <select
+                name="stage"
+                value={newPaper.stage}
+                onChange={handleInputChange}
+                className="w-full border rounded-md p-2"
+              >
+                <option value="Identifying a Research Problem or Question">
+                  Identifying a Research Problem or Question
+                </option>
+                <option value="Conducting a Literature Review">
+                  Conducting a Literature Review
+                </option>
+                <option value="Formulating a Hypothesis or Research Objective">
+                  Formulating a Hypothesis or Research Objective
+                </option>
+                <option value="Designing the Research Methodology">
+                  Designing the Research Methodology
+                </option>
+                <option value="Data Collection">Data Collection</option>
+                <option value="Data Analysis">Data Analysis</option>
+                <option value="Interpreting Results">
+                  Interpreting Results
+                </option>
+                <option value="Drawing Conclusions">Drawing Conclusions</option>
+                <option value="Reporting and Presenting Findings">
+                  Reporting and Presenting Findings
+                </option>
+                <option value="Publishing or Disseminating Results">
+                  Publishing or Disseminating Results
+                </option>
+                <option value="Reflection and Future Research">
+                  Reflection and Future Research
+                </option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Is Published</label>
+              <input
+                type="checkbox"
+                checked={newPaper.isPublished}
+                onChange={handleCheckboxChange("isPublished")}
+              />
+            </div>
+            {newPaper.isPublished && (
+              <div>
+                <label className="text-sm font-medium">Is Free</label>
+                <input
+                  type="checkbox"
+                  checked={newPaper.isFree}
+                  onChange={handleCheckboxChange("isFree")}
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground/90">Abstract</label>
-                <Textarea
-                  name="description"
-                  value={newPaper.description}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Describe your research"
-                  className="bg-muted/50 border-slate-200/60 focus:border-blue-500/30 transition-colors resize-none min-h-[120px]"
-                />
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground/90">Publication Date</label>
-                  <Input
-                    type="date"
-                    name="publicationDate"
-                    value={newPaper.publicationDate}
-                    onChange={handleInputChange}
-                    required
-                    className="bg-muted/50 border-slate-200/60 focus:border-blue-500/30 transition-colors"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground/90">Research Stage</label>
-                  <select
-                    name="stage"
-                    value={newPaper.stage}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border border-slate-200/60 bg-muted/50 px-3 py-2 text-sm ring-offset-background focus:border-blue-500/30 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors"
-                    required
-                  >
-                    <option value="Identifying a Research Problem or Question">Identifying Research Problem</option>
-                    <option value="Conducting a Literature Review">Literature Review</option>
-                    <option value="Data Collection">Data Collection</option>
-                    <option value="Data Analysis">Data Analysis</option>
-                    <option value="Reporting and Presenting Findings">Reporting Findings</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground/90">DOI (Optional)</label>
+            )}
+            {newPaper.isPublished && !newPaper.isFree && (
+              <div>
+                <label className="text-sm font-medium">Price</label>
                 <Input
-                  name="doi"
-                  value={newPaper.doi}
+                  type="text"
+                  name="price"
+                  value={newPaper.price?.toString() || ""}
                   onChange={handleInputChange}
                   placeholder="Enter DOI if available"
                   className="bg-muted/50 border-slate-200/60 focus:border-blue-500/30 transition-colors"
@@ -498,4 +638,6 @@ export default function ResearchPapersPage() {
       </Dialog>
     </div>
   );
-}
+};
+
+export default ResearchPaperPage;

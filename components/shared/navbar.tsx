@@ -119,7 +119,7 @@ export default function Navbar() {
     const fetchNotifications = async () => {
       if (session) {
         try {
-          const response = await fetch(`/api/notifications`);
+          const response = await fetch("/api/notifications");
           if (!response.ok) throw new Error("Failed to fetch notifications");
           const data = await response.json();
           setNotifications(data.notifications);

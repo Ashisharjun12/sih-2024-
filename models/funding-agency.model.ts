@@ -351,16 +351,17 @@ const fundingAgencySchema = new mongoose.Schema({
     },
     amount: Number,
     date: Date,
-    status: {
-      type: String,
-      enum: ['Proposed', 'In_Progress', 'Completed', 'Cancelled']
-    },
-    documents: [{
-      title: String,
-      public_id: String,
-      secure_url: String
-    }]
-  }]
+  }],
+  requests: [{
+    startup:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Startup'
+  },
+  message:{
+    type:String,
+    required:true
+  }}]
+
 }, { timestamps: true });
 
 const FundingAgency = mongoose.models.FundingAgency || mongoose.model("FundingAgency", fundingAgencySchema);

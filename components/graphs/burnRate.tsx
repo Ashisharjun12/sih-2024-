@@ -14,6 +14,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { ChartProps, ChartConfigItem } from "@/types/chart-props";
+import { useState } from "react";
+import { TimeframeKey, MetricData } from "@/types/metrics";
+
 const chartData = [
   { month: "January", burnRate: 5 },
   { month: "February", burnRate: 3 },
@@ -33,10 +37,15 @@ const chartConfig = {
   burnRate: {
     label: "Burn Rate",
     color: "hsl(var(--chart-1))",
-  },
-} satisfies ChartConfig;
+    format: (value: number) => `${value.toFixed(1)}%`
+  }
+} satisfies Record<string, ChartConfigItem>;
 
 export function BurnRate() {
+  const [timeFrame, setTimeFrame] = useState<TimeframeKey>("monthly");
+  const [data, setData] = useState<MetricData | null>(null);
+  const [labels, setLabels] = useState<string[]>([]);
+
   return (
     <Card>
       <CardHeader>
