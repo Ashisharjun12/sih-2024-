@@ -35,6 +35,22 @@ export default function StartupMetrics() {
   const [startupId, setStartupId] = useState<string>('default');
   const { toast } = useToast();
 
+  useEffect(() => {
+    const fetchStartupId = async () => {
+      try {
+        const res = await fetch('/api/startup/profile');
+        const data = await res.json();
+        if (data.profile?._id) {
+          setStartupId(data.profile._id);
+        }
+      } catch (error) {
+        console.error('Error fetching startup ID:', error);
+      }
+    };
+
+    fetchStartupId();
+  }, []);
+
   const fetchMetricsData = useCallback(async () => {
     try {
       setLoading(true);
@@ -235,7 +251,7 @@ export default function StartupMetrics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <ROIChart />
+            <ROIChart startupId={startupId} />
           </motion.div>
 
           <motion.div
@@ -256,7 +272,7 @@ export default function StartupMetrics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <CustomerAcquisitionRate />
+            <CustomerAcquisitionRate startupId={startupId} />
           </motion.div>
 
           <motion.div
@@ -303,7 +319,7 @@ export default function StartupMetrics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <KPIChart />
+            <KPIChart startupId={startupId} />
           </motion.div>
         </div>
       </div>

@@ -13,11 +13,28 @@ import {
   Building2,
   Plus,
   ChevronRight,
+  Wallet2,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import {
   ScrollArea,
   ScrollBar
 } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+
+interface WalletData {
+  balance: number;
+  transactions: Array<{
+    type: 'credit' | 'debit';
+    amount: number;
+    description: string;
+    createdAt: string;
+  }>;
+}
 
 interface StartupData {
   _id: string;
@@ -28,25 +45,51 @@ interface StartupData {
     };
     about: string;
     industries: string[];
+    sectors: string[];
     stage: string;
     businessModel: string;
+    revenueModel: string;
+    founders: Array<{
+      name: string;
+      role: string;
+      contactDetails: string;
+    }>;
+    equitySplits: Array<{
+      ownerName: string;
+      equityPercentage: number;
+    }>;
   };
   businessActivities: {
     missionAndVision: string;
   };
-  additionalInfo?: {
+  additionalInfo: {
     website?: string;
+    socialMedia?: {
+      linkedIn?: string;
+      twitter?: string;
+      facebook?: string;
+    };
   };
+  isActivelyFundraising: boolean;
 }
 
 export default function StartupPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [startups, setStartups] = useState<StartupData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [walletData, setWalletData] = useState<WalletData>({
+    balance: 0,
+    transactions: []
+  });
 
   useEffect(() => {
     fetchStartups();
+    fetchWalletData();
   }, []);
 
   const fetchStartups = async () => {
@@ -60,6 +103,62 @@ export default function StartupPage() {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWalletData = async () => {
+    try {
+      const res = await fetch('/api/wallet/balance');
+      const data = await res.json();
+      if (data.success) {
+        setWalletData({
+          balance: data.balance,
+          transactions: data.transactions
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching wallet:', error);
+    }
+  };
+
+  const handleDeposit = async () => {
+    if (!depositAmount || isNaN(Number(depositAmount)) || Number(depositAmount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDepositing(true);
+    try {
+      const res = await fetch('/api/wallet/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(depositAmount) })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: `Added ₹${depositAmount} to your wallet`,
+        });
+        setDepositAmount("");
+        setShowDepositModal(false);
+        fetchWalletData();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add money",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDepositing(false);
     }
   };
 
@@ -82,6 +181,48 @@ export default function StartupPage() {
           <p className="text-sm md:text-base text-muted-foreground mt-2">
             Manage your startup ventures and track your progress.
           </p>
+        </div>
+      </div>
+
+      {/* Wallet Card */}
+      <div className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent rounded-xl p-4 md:p-6">
+        <div className="flex items-center justify-between mb-2">
+          <Wallet2 className="h-6 w-6 text-green-500" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDepositModal(true)}
+          >
+            Add Money
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          <p className="text-2xl font-bold">₹{walletData.balance.toLocaleString('en-IN')}</p>
+          
+          {/* Recent Transactions */}
+          {walletData.transactions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Recent Activity</p>
+              <div className="space-y-1">
+                {walletData.transactions.slice(0, 3).map((transaction, index) => (
+                  <div key={index} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      {transaction.type === 'credit' ? (
+                        <ArrowUpRight className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className="text-muted-foreground">{transaction.description}</span>
+                    </div>
+                    <span className={transaction.type === 'credit' ? 'text-green-500' : 'text-red-500'}>
+                      {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -127,7 +268,17 @@ export default function StartupPage() {
           <div className="flex space-x-6 pb-4">
             {startups.slice(0, 3).map((startup, index) => (
               <div key={startup._id} className="w-[400px] flex-none">
-                <StartupCard startup={startup} index={index} />
+                <StartupCard 
+                  startup={{
+                    ...startup,
+                    additionalInfo: {
+                      website: startup.additionalInfo?.website,
+                      socialMedia: startup.additionalInfo?.socialMedia || {}
+                    },
+                    isActivelyFundraising: startup.isActivelyFundraising || false
+                  }} 
+                  index={index} 
+                />
               </div>
             ))}
           </div>  
@@ -146,6 +297,40 @@ export default function StartupPage() {
           <Plus className="h-6 w-6 text-white" />
         </Button>
       </div>
+
+      {/* Add Money Modal */}
+      <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Money to Wallet</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Amount</label>
+              <Input
+                type="number"
+                placeholder="Enter amount"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+              />
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={handleDeposit}
+              disabled={isDepositing}
+            >
+              {isDepositing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Adding...
+                </>
+              ) : (
+                'Add Money'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

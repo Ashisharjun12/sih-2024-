@@ -31,6 +31,7 @@ import { AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface IPROwner {
   _id: string;
@@ -50,6 +51,9 @@ interface Patent {
   relatedDocuments: Array<{
     public_id: string;
     secure_url: string;
+
+
+
   }>;
   transactionHash: string;
   message?: string;
