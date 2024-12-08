@@ -149,7 +149,13 @@ const researcherSchema = new mongoose.Schema({
         secure_url: { type: String, default: '' },
       },
     _id: false
-  }
+  },
+
+  // Add published papers array
+  publishedPapers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ResearchPaper'
+  }]
 }, { timestamps: true });
 
 const Researcher = mongoose.models.Researcher || mongoose.model("Researcher", researcherSchema);

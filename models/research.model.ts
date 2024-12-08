@@ -35,7 +35,11 @@ const researchSchema = new mongoose.Schema({
     },
     price: {
         type: Number,
-    }
+    },
+    purchasedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 });
 
 const ResearchPaper = mongoose.models.ResearchPaper || mongoose.model("ResearchPaper", researchSchema);
