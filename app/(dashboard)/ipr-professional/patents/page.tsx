@@ -11,17 +11,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { initializeEthers } from "@/app/web3/function";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Shield } from "lucide-react";
+import { FileText } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface IPROwner {
   _id: string;
@@ -41,6 +51,9 @@ interface Patent {
   relatedDocuments: Array<{
     public_id: string;
     secure_url: string;
+
+
+
   }>;
   transactionHash: string;
   message?: string;
@@ -67,6 +80,22 @@ const PatentsPage = () => {
   >({});
   const [isLoadingGemini, setIsLoadingGemini] = useState(false);
   const [isLoadingPatents, setIsLoadingPatents] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showSimilarityResults, setShowSimilarityResults] = useState(false);
+  const [analyzingPair, setAnalyzingPair] = useState<{
+    pending: Patent | null;
+    accepted: Patent | null;
+  }>({ pending: null, accepted: null });
+  const [selectedPendingPatent, setSelectedPendingPatent] = useState<Patent | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<{
+    pending: Patent | null;
+    results: {
+      titleSimilarity: number;
+      descriptionSimilarity: number;
+      similarTo: string;
+    } | null;
+  }>({ pending: null, results: null });
+  const [isAnalysisReady, setIsAnalysisReady] = useState(false);
 
   const { toast } = useToast();
 
@@ -87,7 +116,7 @@ const PatentsPage = () => {
       setPatents(data);
       setIsLoadingPatents(false);
 
-      // Then start similarity checks
+      // Process similarities
       setIsLoadingGemini(true);
       const pendingPatents = data.filter(
         (tm: Patent) => tm.status === "Pending"
@@ -96,7 +125,11 @@ const PatentsPage = () => {
         (tm: Patent) => tm.status === "Accepted"
       );
 
-      // Process similarities with delay between requests
+      console.log('Processing similarities for patents:', {
+        pending: pendingPatents.length,
+        accepted: acceptedPatents.length
+      });
+
       for (const pending of pendingPatents) {
         let highestTitleSimilarity = 0;
         let highestDescSimilarity = 0;
@@ -104,9 +137,7 @@ const PatentsPage = () => {
 
         for (const accepted of acceptedPatents) {
           try {
-            // Add delay between requests
-            await delay(1000); // 1 second delay
-
+            await delay(1000);
             const similarity = await checkSimilarityWithGemini(
               { title: pending.title, description: pending.description },
               { title: accepted.title, description: accepted.description }
@@ -156,6 +187,7 @@ const PatentsPage = () => {
         }
       }
     } catch (err) {
+      console.error('Error in fetchPatents:', err);
       setError(err instanceof Error ? err.message : "Failed to fetch patents");
     } finally {
       setIsLoadingPatents(false);
@@ -292,72 +324,487 @@ const PatentsPage = () => {
     }
   };
 
-  const getStatusColor = (status: Patent["status"]) => {
-    switch (status) {
-      case "Pending":
-        return "bg-yellow-500";
-      case "Accepted":
-        return "bg-green-500";
-      case "Rejected":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
+  const analyzeSimilarities = async () => {
+    setIsAnalyzing(true);
+    setShowSimilarityResults(false);
+    try {
+      const pendingPatents = patents.filter(p => p.status === "Pending");
+      const acceptedPatents = patents.filter(p => p.status === "Accepted");
+
+      for (const pending of pendingPatents) {
+        let highestTitleSimilarity = 0;
+        let highestDescSimilarity = 0;
+        let mostSimilarTitle = "";
+        let mostSimilarPatent = null;
+
+        for (const accepted of acceptedPatents) {
+          // Show which patents are being compared
+          setAnalyzingPair({
+            pending,
+            accepted
+          });
+          
+          await delay(1000);
+          const similarity = await checkSimilarityWithGemini(
+            { title: pending.title, description: pending.description },
+            { title: accepted.title, description: accepted.description }
+          );
+
+          if (similarity) {
+            if (similarity.titleSimilarity > highestTitleSimilarity || 
+                similarity.descriptionSimilarity > highestDescSimilarity) {
+              highestTitleSimilarity = similarity.titleSimilarity;
+              highestDescSimilarity = similarity.descriptionSimilarity;
+              mostSimilarTitle = accepted.title;
+              mostSimilarPatent = accepted;
+            }
+          }
+        }
+
+        if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
+          setSimilarityData(prev => ({
+            ...prev,
+            [pending._id]: {
+              similarTo: mostSimilarTitle,
+              titleSimilarity: Math.round(highestTitleSimilarity),
+              descriptionSimilarity: Math.round(highestDescSimilarity)
+            }
+          }));
+        }
+      }
+      setShowSimilarityResults(true);
+    } catch (error) {
+      console.error('Error analyzing similarities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to analyze similarities",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+      setAnalyzingPair({ pending: null, accepted: null });
     }
   };
 
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
-  const checkSimilarityWithGemini = async (
-    pending: { title: string; description: string },
-    accepted: { title: string; description: string }
-  ) => {
+  const analyzeSelectedPatent = async () => {
+    if (!selectedPendingPatent) return;
+    
+    setIsAnalyzing(true);
+    setShowSimilarityResults(false);
+    setIsAnalysisReady(false);
+    
     try {
-      const response = await fetch("/api/gemini/compare-trademarks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pending, accepted }),
+      // Clear previous results
+      setSimilarityData({});
+
+      const acceptedPatents = patents.filter(p => p.status === "Accepted");
+      
+      // Log the comparison details for debugging
+      console.log('Analyzing patent:', {
+        pending: selectedPendingPatent,
+        acceptedCount: acceptedPatents.length
       });
 
-      if (!response.ok) throw new Error("Failed to check similarity");
-      return await response.json();
+      let results = [];
+
+      // First collect all results
+      for (const accepted of acceptedPatents) {
+        setAnalyzingPair({
+          pending: selectedPendingPatent,
+          accepted
+        });
+
+        try {
+          // Add delay between requests
+          await delay(1000);
+
+          const response = await fetch("/api/gemini/compare-trademarks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pending: {
+                title: selectedPendingPatent.title.trim(),
+                description: selectedPendingPatent.description.trim()
+              },
+              accepted: {
+                title: accepted.title.trim(),
+                description: accepted.description.trim()
+              }
+            }),
+          });
+
+          if (!response.ok) throw new Error("Failed to check similarity");
+          const data = await response.json();
+
+          // Log raw response
+          console.log('Similarity response:', data);
+
+          // Parse and validate similarity values
+          const titleSim = Math.min(Math.max(0, Number(data.titleSimilarity) || 0), 100);
+          const descSim = Math.min(Math.max(0, Number(data.descriptionSimilarity) || 0), 100);
+
+          // Check if patents are identical
+          const isIdentical = 
+            selectedPendingPatent.title.toLowerCase().trim() === accepted.title.toLowerCase().trim() &&
+            selectedPendingPatent.description.toLowerCase().trim() === accepted.description.toLowerCase().trim();
+
+          results.push({
+            accepted,
+            titleSimilarity: isIdentical ? 100 : titleSim,
+            descriptionSimilarity: isIdentical ? 100 : descSim
+          });
+
+          // Log processed result
+          console.log('Processed similarity:', {
+            titleSim,
+            descSim,
+            isIdentical
+          });
+        } catch (error) {
+          console.error("Error analyzing patent:", error);
+        }
+      }
+
+      // Find highest similarities
+      let highestTitleSimilarity = 0;
+      let highestDescSimilarity = 0;
+      let mostSimilarTitle = "";
+
+      results.forEach(result => {
+        if (result.titleSimilarity > highestTitleSimilarity) {
+          highestTitleSimilarity = result.titleSimilarity;
+          mostSimilarTitle = result.accepted.title;
+        }
+        if (result.descriptionSimilarity > highestDescSimilarity) {
+          highestDescSimilarity = result.descriptionSimilarity;
+        }
+      });
+
+      // Ensure we have valid results
+      const finalResults = {
+        titleSimilarity: Math.round(highestTitleSimilarity),
+        descriptionSimilarity: Math.round(highestDescSimilarity),
+        similarTo: mostSimilarTitle || "No similar patents found"
+      };
+
+      // Log final results
+      console.log('Final similarity results:', finalResults);
+
+      // Update similarity data
+      setSimilarityData(prev => ({
+        [selectedPendingPatent._id]: {
+          similarTo: finalResults.similarTo,
+          titleSimilarity: finalResults.titleSimilarity,
+          descriptionSimilarity: finalResults.descriptionSimilarity
+        }
+      }));
+
+      // Set analysis as ready and show results
+      setIsAnalysisReady(true);
+      await delay(100); // Small delay to ensure state updates
+      setShowSimilarityResults(true);
+
+      // Show result notification
+      toast({
+        title: "Analysis Complete",
+        description: finalResults.titleSimilarity > 0 || finalResults.descriptionSimilarity > 0
+          ? `Found ${Math.max(finalResults.titleSimilarity, finalResults.descriptionSimilarity)}% maximum similarity`
+          : "No significant similarities found",
+      });
+
     } catch (error) {
-      console.error("Error checking similarity:", error);
-      return null;
+      console.error('Error analyzing similarities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to analyze similarities. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+      setAnalyzingPair({ pending: null, accepted: null });
     }
   };
 
-  const calculateBasicSimilarity = (str1: string, str2: string): number => {
-    const s1 = str1.toLowerCase();
-    const s2 = str2.toLowerCase();
+  const handlePatentSelection = (patent: Patent) => {
+    // Clear previous analysis results when selecting a new patent
+    if (patent !== selectedPendingPatent) {
+      setAnalysisResults({ pending: null, results: null });
+      setSimilarityData({});
+      setShowSimilarityResults(false);
+    }
+    setSelectedPendingPatent(patent === selectedPendingPatent ? null : patent);
+  };
 
-    const words1 = s1.split(/\s+/);
-    const words2 = s2.split(/\s+/);
-
-    const set1 = new Set(words1);
-    const set2 = new Set(words2);
-
-    const commonWords = words1.filter((word) => set2.has(word));
-    return (commonWords.length * 2) / (set1.size + set2.size);
+  useEffect(() => {
+    if (isAnalysisReady && Object.keys(similarityData).length > 0) {
+      setShowSimilarityResults(true);
+    }
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Patent Applications</h1>
-        {isLoadingGemini && (
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            Analyzing similarities...
+    <div className="container py-6 space-y-6">
+      {/* Header Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Patent Applications</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-2">
+              Review and manage patent applications
+            </p>
           </div>
-        )}
+       
+        </div>
       </div>
 
+      {selectedPendingPatent && (
+        <div className="mt-4 p-6 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-100">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold">Selected Patent for Analysis</h3>
+              <p className="text-sm text-muted-foreground">{selectedPendingPatent.title}</p>
+              <p className="text-xs text-muted-foreground">Filed on: {format(new Date(selectedPendingPatent.filingDate), "PP")}</p>
+            </div>
+            <Button
+              onClick={analyzeSelectedPatent}
+              disabled={isAnalyzing}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Analyzing...
+                </>
+              ) : (
+                "Analyze Selected Patent"
+              )}
+            </Button>
+          </div>
+
+          {/* Analysis Results for Selected Patent */}
+          {analysisResults.results && (
+            <div className="mt-4 space-y-4">
+              <div className="bg-white/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Similarity Analysis Results</span>
+                  <Badge variant={
+                    Math.max(
+                      analysisResults.results.titleSimilarity,
+                      analysisResults.results.descriptionSimilarity
+                    ) > 70 ? "destructive" : "secondary"
+                  }>
+                    {Math.max(
+                      analysisResults.results.titleSimilarity,
+                      analysisResults.results.descriptionSimilarity
+                    )}% Max Similarity
+                  </Badge>
+                </div>
+
+                {analysisResults.results.titleSimilarity > 0 ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Title Similarity</span>
+                        <span className="font-medium">{analysisResults.results.titleSimilarity}%</span>
+                      </div>
+                      <div className="relative h-2 bg-blue-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${analysisResults.results.titleSimilarity}%` }}
+                          transition={{ duration: 0.5, ease: "easeOut" }}
+                          className={cn(
+                            "absolute top-0 left-0 h-full rounded-full",
+                            analysisResults.results.titleSimilarity > 70
+                              ? "bg-red-500"
+                              : "bg-blue-500"
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Description Similarity</span>
+                        <span className="font-medium">{analysisResults.results.descriptionSimilarity}%</span>
+                      </div>
+                      <div className="relative h-2 bg-blue-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${analysisResults.results.descriptionSimilarity}%` }}
+                          transition={{ duration: 0.5, ease: "easeOut" }}
+                          className={cn(
+                            "absolute top-0 left-0 h-full rounded-full",
+                            analysisResults.results.descriptionSimilarity > 70
+                              ? "bg-red-500"
+                              : "bg-blue-500"
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    {analysisResults.results.similarTo && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Most similar to: <span className="font-medium">{analysisResults.results.similarTo}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No significant similarities found with existing patents
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isAnalyzing && (
+        <div className="relative overflow-hidden rounded-xl border bg-background p-6 shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-orange-500/10" />
+          <div className="relative space-y-4">
+            <h3 className="text-lg font-semibold">Analyzing Patents</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Pending Patent */}
+              <div className={cn(
+                "p-4 rounded-lg transition-all duration-300",
+                analyzingPair.pending ? "bg-blue-500/10" : "bg-muted"
+              )}>
+                <h4 className="font-medium mb-2">Pending Patent</h4>
+                {analyzingPair.pending ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-2"
+                  >
+                    <p className="font-medium">{analyzingPair.pending.title}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {analyzingPair.pending.description}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <div className="h-20 flex items-center justify-center text-muted-foreground">
+                    Waiting for patent...
+                  </div>
+                )}
+              </div>
+
+              {/* Accepted Patent */}
+              <div className={cn(
+                "p-4 rounded-lg transition-all duration-300",
+                analyzingPair.accepted ? "bg-orange-500/10" : "bg-muted"
+              )}>
+                <h4 className="font-medium mb-2">Comparing with Accepted Patent</h4>
+                {analyzingPair.accepted ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-2"
+                  >
+                    <p className="font-medium">{analyzingPair.accepted.title}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {analyzingPair.accepted.description}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <div className="h-20 flex items-center justify-center text-muted-foreground">
+                    Waiting for patent...
+                  </div>
+                )}
+              </div>
+
+              {/* Connecting Line */}
+              {analyzingPair.pending && analyzingPair.accepted && (
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/20 to-orange-500/20 
+                      flex items-center justify-center"
+                  >
+                    <div className="w-8 h-8 rounded-full border-4 border-t-transparent border-blue-500/50 
+                      animate-spin"
+                    />
+                  </motion.div>
+                </div>
+              )}
+            </div>
+
+            {/* Progress Indicator */}
+            <div className="mt-4">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="h-full bg-gradient-to-r from-blue-500 to-orange-500"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-2 text-center">
+                Analyzing patent similarities...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Similarity Results Alert */}
+      {showSimilarityResults && Object.keys(similarityData).length > 0 && (
+        <Alert className="bg-orange-500/15 text-orange-600 border-orange-500/20">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Similarity Analysis Results</AlertTitle>
+          <AlertDescription className="mt-2">
+            <div className="space-y-2">
+              {Object.entries(similarityData).map(([patentId, data]) => {
+                const patent = patents.find(p => p._id === patentId);
+                if (!patent || data.titleSimilarity < 50) return null;
+                
+                return (
+                  <div key={patentId} className="bg-orange-500/10 p-3 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">{patent.title}</span>
+                      <Badge variant="outline" className="border-orange-500/50 text-orange-600">
+                        {Math.max(data.titleSimilarity, data.descriptionSimilarity)}% Match
+                      </Badge>
+                    </div>
+                    <div className="text-sm">Similar to: {data.similarTo}</div>
+                    <div className="mt-2 space-y-1">
+                      <div className="relative h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                        <div 
+                          className="absolute top-0 left-0 h-full bg-orange-500 rounded-full transition-all duration-500"
+                          style={{ width: `${data.titleSimilarity}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span>Title Similarity</span>
+                        <span>{data.titleSimilarity}%</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      <div className="relative h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                        <div 
+                          className="absolute top-0 left-0 h-full bg-orange-500 rounded-full transition-all duration-500"
+                          style={{ width: `${data.descriptionSimilarity}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span>Description Similarity</span>
+                        <span>{data.descriptionSimilarity}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Loading State */}
       {isLoadingPatents ? (
-        <div className="flex items-center justify-center p-8">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading patents...</p>
+        <div className="flex items-center justify-center p-12">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading patent applications...</p>
           </div>
         </div>
       ) : (

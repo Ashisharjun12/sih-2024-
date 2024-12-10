@@ -20,6 +20,22 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Notification'
   }],
+  accessibleResearchPapers: [{
+    researchPaper: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ResearchPaper',
+      required: true
+    },
+    accessType: {
+      type: String,
+      enum: ['free', 'purchased'],
+      required: true
+    },
+    purchaseDate: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);

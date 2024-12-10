@@ -391,14 +391,55 @@ const startupSchema = new mongoose.Schema({
     date: Date,
   }],
   requests: [{
-    fundingAgency:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'FundingAgency'
-  },
-  message:{
-    type:String,
-    required:true
-  }}]
+    fundingAgency: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Startup'
+    },
+    message: {
+      type: String,
+      required: true
+    },
+    fundingType: {
+      type: String,
+      enum: [
+        'Private_Equity',
+        'Equity_Funding',
+        'Debt_Funding',
+        'Grants',
+        'Convertible_Notes',
+        'Revenue_Based_Financing',
+        'Scholarship'
+      ],
+    },
+    amount:{
+      type:Number,
+    }
+  }],
+  requested: [{
+    fundingAgency: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Startup'
+    },
+    message: {
+      type: String,
+      required: true
+    },
+    fundingType: {
+      type: String,
+      enum: [
+        'Private_Equity',
+        'Equity_Funding',
+        'Debt_Funding',
+        'Grants',
+        'Convertible_Notes',
+        'Revenue_Based_Financing',
+        'Scholarship'
+      ],
+    },
+    amount:{
+      type:Number,
+    }
+  }]
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);

@@ -11,17 +11,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { initializeEthers } from "@/app/web3/function";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { FileText, FileCheck, X } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface IPROwner {
   _id: string;
@@ -66,6 +71,13 @@ export default function TrademarksPage() {
   const [similarityData, setSimilarityData] = useState<Record<string, SimilarityInfo>>({});
   const [isLoadingGemini, setIsLoadingGemini] = useState(false);
   const [isLoadingTrademarks, setIsLoadingTrademarks] = useState(true);
+  const [selectedPendingTrademark, setSelectedPendingTrademark] = useState<Trademark | null>(null);
+  const [analyzingPair, setAnalyzingPair] = useState<{
+    pending: Trademark | null;
+    accepted: Trademark | null;
+  }>({ pending: null, accepted: null });
+  const [showSimilarityResults, setShowSimilarityResults] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const { toast } = useToast();
 
@@ -356,236 +368,572 @@ export default function TrademarksPage() {
     }
   };
 
+  const analyzeSelectedTrademark = async () => {
+    if (!selectedPendingTrademark) return;
+    
+    setIsAnalyzing(true);
+    setShowSimilarityResults(false);
+    try {
+      const acceptedTrademarks = trademarks.filter(p => p.status === "Accepted");
+      let highestTitleSimilarity = 0;
+      let highestDescSimilarity = 0;
+      let mostSimilarTitle = "";
+
+      // Clear previous similarity data for this trademark
+      setSimilarityData(prev => {
+        const newData = { ...prev };
+        delete newData[selectedPendingTrademark._id];
+        return newData;
+      });
+
+      for (const accepted of acceptedTrademarks) {
+        setAnalyzingPair({
+          pending: selectedPendingTrademark,
+          accepted
+        });
+        
+        await delay(1000);
+        const similarity = await checkSimilarityWithGemini(
+          { title: selectedPendingTrademark.title, description: selectedPendingTrademark.description },
+          { title: accepted.title, description: accepted.description }
+        );
+
+        console.log('Similarity result:', similarity); // Debug log
+
+        if (similarity) {
+          const titleSim = Number(similarity.titleSimilarity);
+          const descSim = Number(similarity.descriptionSimilarity);
+
+          if (titleSim > highestTitleSimilarity || descSim > highestDescSimilarity) {
+            highestTitleSimilarity = titleSim;
+            highestDescSimilarity = descSim;
+            mostSimilarTitle = accepted.title;
+
+            // Update similarity data immediately for each higher match
+            setSimilarityData(prev => ({
+              ...prev,
+              [selectedPendingTrademark._id]: {
+                similarTo: mostSimilarTitle,
+                titleSimilarity: Math.round(highestTitleSimilarity),
+                descriptionSimilarity: Math.round(highestDescSimilarity)
+              }
+            }));
+          }
+        }
+      }
+
+      // Ensure final similarity data is set even if no matches found
+      setSimilarityData(prev => ({
+        ...prev,
+        [selectedPendingTrademark._id]: {
+          similarTo: mostSimilarTitle || "No similar trademarks found",
+          titleSimilarity: Math.round(highestTitleSimilarity),
+          descriptionSimilarity: Math.round(highestDescSimilarity)
+        }
+      }));
+
+      setShowSimilarityResults(true);
+    } catch (error) {
+      console.error('Error analyzing similarities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to analyze similarities",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+      setAnalyzingPair({ pending: null, accepted: null });
+    }
+  };
+
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Trademark Applications</h1>
-        {isLoadingGemini && (
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            Analyzing similarities...
+    <div className="container py-6 space-y-6">
+      {/* Header Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Trademark Applications</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-2">
+              Review and manage trademark applications
+            </p>
           </div>
-        )}
+          {isLoadingGemini && (
+            <div className="text-sm text-muted-foreground flex items-center gap-2 bg-background/50 backdrop-blur-sm px-4 py-2 rounded-lg">
+              <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              Analyzing similarities...
+            </div>
+          )}
+        </div>
       </div>
 
+      {selectedPendingTrademark && (
+        <div className="mt-4 p-6 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl border border-emerald-100">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold">Selected Trademark for Analysis</h3>
+              <p className="text-sm text-muted-foreground">{selectedPendingTrademark.title}</p>
+              <p className="text-xs text-muted-foreground">Filed on: {format(new Date(selectedPendingTrademark.filingDate), "PP")}</p>
+            </div>
+            <Button
+              onClick={analyzeSelectedTrademark}
+              disabled={isAnalyzing}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Analyzing...
+                </>
+              ) : (
+                "Analyze Selected Trademark"
+              )}
+            </Button>
+          </div>
+
+          {/* Analysis Results for Selected Trademark */}
+          {similarityData[selectedPendingTrademark._id] && (
+            <div className="mt-4 space-y-4">
+              <div className="bg-white/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Similarity Analysis Results</span>
+                  <Badge variant={
+                    Math.max(
+                      similarityData[selectedPendingTrademark._id].titleSimilarity,
+                      similarityData[selectedPendingTrademark._id].descriptionSimilarity
+                    ) > 70 ? "destructive" : "secondary"
+                  }>
+                    {Math.max(
+                      similarityData[selectedPendingTrademark._id].titleSimilarity,
+                      similarityData[selectedPendingTrademark._id].descriptionSimilarity
+                    )}% Max Similarity
+                  </Badge>
+                </div>
+
+                {similarityData[selectedPendingTrademark._id].titleSimilarity > 0 ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Title Similarity</span>
+                        <span className="font-medium">{similarityData[selectedPendingTrademark._id].titleSimilarity}%</span>
+                      </div>
+                      <div className="relative h-2 bg-emerald-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${similarityData[selectedPendingTrademark._id].titleSimilarity}%` }}
+                          transition={{ duration: 0.5, ease: "easeOut" }}
+                          className={cn(
+                            "absolute top-0 left-0 h-full rounded-full",
+                            similarityData[selectedPendingTrademark._id].titleSimilarity > 70
+                              ? "bg-red-500"
+                              : "bg-emerald-500"
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Description Similarity</span>
+                        <span className="font-medium">{similarityData[selectedPendingTrademark._id].descriptionSimilarity}%</span>
+                      </div>
+                      <div className="relative h-2 bg-emerald-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${similarityData[selectedPendingTrademark._id].descriptionSimilarity}%` }}
+                          transition={{ duration: 0.5, ease: "easeOut" }}
+                          className={cn(
+                            "absolute top-0 left-0 h-full rounded-full",
+                            similarityData[selectedPendingTrademark._id].descriptionSimilarity > 70
+                              ? "bg-red-500"
+                              : "bg-emerald-500"
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    {similarityData[selectedPendingTrademark._id].similarTo && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Most similar to: <span className="font-medium">{similarityData[selectedPendingTrademark._id].similarTo}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No significant similarities found with existing trademarks
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Loading State */}
       {isLoadingTrademarks ? (
-        <div className="flex items-center justify-center p-8">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading trademarks...</p>
+        <div className="flex items-center justify-center p-12">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading trademark applications...</p>
           </div>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Filing Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {trademarks.map((trademark) => (
-              <TableRow key={trademark._id}>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div>{trademark.title}</div>
-                    {trademark.status === "Pending" && (
-                      <div className="text-xs text-muted-foreground">
-                        {similarityData[trademark._id] ? (
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span>Title Similarity:</span>
-                              <Badge variant={similarityData[trademark._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
-                                {similarityData[trademark._id].titleSimilarity}%
-                              </Badge>
-                              {similarityData[trademark._id].titleSimilarity > 70 && (
-                                <span className="text-xs text-red-500">
-                                  Similar to: {similarityData[trademark._id].similarTo}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span>Description Similarity:</span>
-                              <Badge variant={similarityData[trademark._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
-                                {similarityData[trademark._id].descriptionSimilarity}%
-                              </Badge>
-                            </div>
-                          </div>
-                        ) : isLoadingGemini && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            Analyzing similarity...
-                          </div>
+        <div className="w-full overflow-hidden">
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[40%]">Title</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Filing Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {trademarks.map((trademark) => (
+                      <TableRow 
+                        key={trademark._id} 
+                        className={cn(
+                          "group cursor-pointer transition-colors",
+                          selectedPendingTrademark?._id === trademark._id && "bg-emerald-50/50 hover:bg-emerald-50/70",
+                          trademark.status === "Pending" && "hover:bg-gray-50/50"
                         )}
-                      </div>
-                    )}
+                        onClick={() => {
+                          if (trademark.status === "Pending") {
+                            setSelectedPendingTrademark(trademark === selectedPendingTrademark ? null : trademark);
+                          }
+                        }}
+                      >
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">{trademark.title}</div>
+                            {trademark.status === "Pending" && similarityData[trademark._id] && (
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Title Match:</span>
+                                  <Badge variant={similarityData[trademark._id].titleSimilarity > 70 ? "destructive" : "secondary"}
+                                    className="px-2 py-0 text-xs">
+                                    {similarityData[trademark._id].titleSimilarity}%
+                                  </Badge>
+                                  {similarityData[trademark._id].titleSimilarity > 70 && (
+                                    <span className="text-xs text-red-500/80">
+                                      Similar to: {similarityData[trademark._id].similarTo}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Description Match:</span>
+                                  <Badge variant={similarityData[trademark._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}
+                                    className="px-2 py-0 text-xs">
+                                    {similarityData[trademark._id].descriptionSimilarity}%
+                                  </Badge>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span>{trademark.ownerType === "Startup" ? trademark.owner.startupName : trademark.owner.name}</span>
+                            <span className="text-xs text-muted-foreground">{trademark.ownerType}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground">
+                            {format(new Date(trademark.filingDate), "PP")}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={cn(
+                            "px-2 py-0.5",
+                            trademark.status === "Pending" && "bg-yellow-500/15 text-yellow-600",
+                            trademark.status === "Accepted" && "bg-emerald-500/15 text-emerald-600",
+                            trademark.status === "Rejected" && "bg-red-500/15 text-red-600"
+                          )}>
+                            {trademark.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant={trademark.status === "Pending" ? "default" : "secondary"}
+                            size="sm"
+                            onClick={() => setSelectedTrademark(trademark)}
+                            className={cn(
+                              "transition-all",
+                              trademark.status === "Pending" ? "bg-emerald-600 hover:bg-emerald-700" : ""
+                            )}
+                          >
+                            {trademark.status === "Pending" ? "Review" : "View"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="space-y-4 md:hidden">
+            {trademarks.map((trademark) => (
+              <div
+                key={trademark._id}
+                className="rounded-lg border bg-card text-card-foreground shadow-sm"
+              >
+                <div className="p-4 space-y-3">
+                  {/* Title and Status */}
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="font-medium">{trademark.title}</h3>
+                    <Badge variant="secondary" className={cn(
+                      "px-2 py-0.5 whitespace-nowrap",
+                      trademark.status === "Pending" && "bg-yellow-500/15 text-yellow-600",
+                      trademark.status === "Accepted" && "bg-emerald-500/15 text-emerald-600",
+                      trademark.status === "Rejected" && "bg-red-500/15 text-red-600"
+                    )}>
+                      {trademark.status}
+                    </Badge>
                   </div>
-                </TableCell>
-                <TableCell>
-                  {trademark.ownerType === "Startup"
-                    ? trademark.owner.startupName
-                    : trademark.owner.name}
-                </TableCell>
-                <TableCell>{format(new Date(trademark.filingDate), "PP")}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={getStatusColor(trademark.status)}
-                  >
-                    {trademark.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {trademark.status === "Pending" ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => {setSelectedTrademark(trademark);
-                      }}
-                    >
-                      Review
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      onClick={() => setSelectedTrademark(trademark)}
-                    >
-                      View
-                    </Button>
+
+                  {/* Owner Info */}
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Owner: </span>
+                      <span className="font-medium">
+                        {trademark.ownerType === "Startup" ? trademark.owner.startupName : trademark.owner.name}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Filed on: </span>
+                      <span>{format(new Date(trademark.filingDate), "PP")}</span>
+                    </div>
+                  </div>
+
+                  {/* Similarity Data */}
+                  {trademark.status === "Pending" && similarityData[trademark._id] && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Title Match:</span>
+                          <Badge variant={similarityData[trademark._id].titleSimilarity > 70 ? "destructive" : "secondary"}
+                            className="px-2 py-0 text-xs">
+                            {similarityData[trademark._id].titleSimilarity}%
+                          </Badge>
+                        </div>
+                        {similarityData[trademark._id].titleSimilarity > 70 && (
+                          <p className="text-xs text-red-500/80">
+                            Similar to: {similarityData[trademark._id].similarTo}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Description Match:</span>
+                          <Badge variant={similarityData[trademark._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}
+                            className="px-2 py-0 text-xs">
+                            {similarityData[trademark._id].descriptionSimilarity}%
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </TableCell>
-              </TableRow>
+
+                  {/* Action Button */}
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      variant={trademark.status === "Pending" ? "default" : "secondary"}
+                      size="sm"
+                      onClick={() => setSelectedTrademark(trademark)}
+                      className={cn(
+                        "transition-all",
+                        trademark.status === "Pending" ? "bg-emerald-600 hover:bg-emerald-700" : ""
+                      )}
+                    >
+                      {trademark.status === "Pending" ? "Review" : "View"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </div>
       )}
 
-      {/* Trademark Review Dialog */}
-      <Dialog
-        open={!!selectedTrademark}
-        onOpenChange={() => setSelectedTrademark(null)}
-      >
-        <DialogContent className="max-w-2xl">
-          {isWalletConnected ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedTrademark?.title}</DialogTitle>
-              </DialogHeader>
-              <div className="mt-4 space-y-4">
-                <div>
-                  <h3 className="font-semibold">Description</h3>
-                  <p className="text-gray-600">{selectedTrademark?.description}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-semibold">Owner</h3>
-                    <p className="text-gray-600">
-                      {selectedTrademark?.ownerType === "Startup"
-                        ? selectedTrademark.owner.startupName
-                        : selectedTrademark?.owner.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {selectedTrademark?.owner.email}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Filing Date</h3>
-                    <p className="text-gray-600">
-                      {selectedTrademark &&
-                        format(new Date(selectedTrademark.filingDate), "PP")}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Related Documents</h3>
-                  <div className="mt-2">
-                    {selectedTrademark?.relatedDocuments.map((doc, index) => (
-                      <a
-                        key={doc.public_id}
-                        href={doc.secure_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline block"
-                      >
-                        Document {index + 1}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">Wallet Address</h3>
-                  <p className="text-gray-600">{walletAddress}</p>
-                </div>
+      {/* Review Sheet */}
+      <Sheet open={!!selectedTrademark} onOpenChange={() => setSelectedTrademark(null)}>
+        <SheetContent side="bottom" className="h-[90vh] p-0">
+          <ScrollArea className="h-full">
+            <div className="p-6">
+              {/* Add Close Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-4 rounded-full hover:bg-emerald-500/10"
+                onClick={() => setSelectedTrademark(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
 
-                {selectedTrademark?.status === "Pending" ? (
-                  <>
+              {isWalletConnected ? (
+                <>
+                  <SheetHeader className="space-y-1 pr-8">
+                    <SheetTitle className="text-xl font-semibold">
+                      {selectedTrademark?.title}
+                    </SheetTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Review trademark application details
+                    </p>
+                  </SheetHeader>
+                  <div className="mt-6 space-y-6">
                     <div className="space-y-2">
-                      <h3 className="font-semibold">Review Message</h3>
-                      <Textarea
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Enter your review message..."
-                        rows={4}
-                      />
+                      <h3 className="font-medium text-sm text-muted-foreground">Description</h3>
+                      <p className="text-sm">{selectedTrademark?.description}</p>
                     </div>
-                    <div className="flex gap-4 pt-4">
-                      <Button
-                        onClick={() => handleStatusUpdate("Accepted")}
-                        className="flex-1 bg-green-500 hover:bg-green-600"
-                        disabled={
-                          isSubmitting || !message || transactionInProgress
-                        }
-                      >
-                        {transactionInProgress ? "Processing..." : "Accept"}
-                      </Button>
-                      <Button
-                        onClick={() => handleStatusUpdate("Rejected")}
-                        className="flex-1 bg-red-500 hover:bg-red-600"
-                        disabled={
-                          isSubmitting || !message || transactionInProgress
-                        }
-                      >
-                        {transactionInProgress ? "Processing..." : "Reject"}
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {selectedTrademark?.transactionHash && (
+                    
+                    <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <h3 className="font-semibold">Transaction Hash</h3>
-                        <a
-                          href={`https://sepolia.etherscan.io/tx/${selectedTrademark.transactionHash}#eventlog`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline break-all"
-                        >
-                          {selectedTrademark.transactionHash}
-                        </a>
+                        <h3 className="font-medium text-sm text-muted-foreground">Owner Details</h3>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="font-medium">
+                            {selectedTrademark?.ownerType === "Startup"
+                              ? selectedTrademark.owner.startupName
+                              : selectedTrademark?.owner.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedTrademark?.owner.email}
+                          </p>
+                        </div>
                       </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-sm text-muted-foreground">Filing Information</h3>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="font-medium">
+                            {selectedTrademark && format(new Date(selectedTrademark.filingDate), "PPP")}
+                          </p>
+                          <p className="text-sm text-muted-foreground">Submission Date</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Documents Section */}
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-sm text-muted-foreground">Related Documents</h3>
+                      <div className="bg-muted/50 p-4 rounded-lg">
+                        {selectedTrademark?.relatedDocuments.length ? (
+                          <div className="grid gap-2">
+                            {selectedTrademark.relatedDocuments.map((doc, index) => (
+                              <a
+                                key={doc.public_id}
+                                href={doc.secure_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-sm text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/5 p-2 rounded-md transition-colors"
+                              >
+                                <FileText className="h-4 w-4" />
+                                <span>Document {index + 1}</span>
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No documents attached</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Wallet Address Section */}
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-sm text-muted-foreground">Wallet Address</h3>
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-sm font-mono">{walletAddress}</p>
+                      </div>
+                    </div>
+
+                    {selectedTrademark?.status === "Pending" ? (
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-sm text-muted-foreground">Review Message</h3>
+                          <Textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder="Enter your review message..."
+                            className="resize-none"
+                            rows={4}
+                          />
+                        </div>
+                        <div className="flex gap-4">
+                          <Button
+                            onClick={() => handleStatusUpdate("Accepted")}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                            disabled={isSubmitting || !message || transactionInProgress}
+                          >
+                            {transactionInProgress ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                Processing...
+                              </>
+                            ) : "Accept"}
+                          </Button>
+                          <Button
+                            onClick={() => handleStatusUpdate("Rejected")}
+                            className="flex-1 bg-red-600 hover:bg-red-700"
+                            disabled={isSubmitting || !message || transactionInProgress}
+                          >
+                            {transactionInProgress ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                Processing...
+                              </>
+                            ) : "Reject"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      selectedTrademark?.transactionHash && (
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-sm text-muted-foreground">Transaction Details</h3>
+                          <div className="bg-muted/50 p-3 rounded-lg">
+                            <a
+                              href={`https://sepolia.etherscan.io/tx/${selectedTrademark.transactionHash}#eventlog`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-emerald-500 hover:text-emerald-600 break-all"
+                            >
+                              {selectedTrademark.transactionHash}
+                            </a>
+                          </div>
+                        </div>
+                      )
                     )}
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle>Connect Wallet</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col items-center justify-center p-6 space-y-4">
-                <p className="text-center text-gray-600">
-                  Please connect your MetaMask wallet to review trademark
-                  applications
-                </p>
-                <Button onClick={connectWallet}>Connect MetaMask</Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <SheetHeader>
+                    <SheetTitle>Connect Your Wallet</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    <div className="bg-emerald-500/10 p-4 rounded-full">
+                      <FileCheck className="h-8 w-8 text-emerald-500" />
+                    </div>
+                    <p className="text-center text-muted-foreground">
+                      Please connect your MetaMask wallet to review trademark applications
+                    </p>
+                    <Button 
+                      onClick={connectWallet}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      Connect MetaMask
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
+

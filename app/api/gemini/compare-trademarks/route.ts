@@ -1,94 +1,80 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export async function POST(req: Request) {
-  try {
-    const { pending, accepted } = await req.json();
+// Helper function to add delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const prompt = `
-      I have two Intellectual Property Rights (IPRs), each with a title and description. Compare the meaning of the two IPRs based on their content and provide a similarity percentage indicating how closely related their concepts and meanings are. The goal is to determine if the new IPR is similar enough to an existing one to potentially affect its acceptance. Please consider semantic similarity, synonyms, and contextual relevance in your analysis. Provide a clear similarity percentage along with a brief justification for the score.
-      {
-        "titleSimilarity": <number between 0-100>,
-        "descriptionSimilarity": <number between 0-100>
-      }
-
-      Pending Trademark:
-      Title: "${pending.title}"
-      Description: "${pending.description}"
-
-      Accepted Trademark:
-      Title: "${accepted.title}"
-      Description: "${accepted.description}"
-
-      Consider semantic meaning, key terms, and overall intent.
-    `;
-
+// Helper function to retry with exponential backoff
+async function retryWithBackoff(fn: () => Promise<any>, maxRetries = 3) {
+  
+  for (let i = 0; i < maxRetries; i++) {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
-      
-      // Clean the response text to ensure valid JSON
-      const cleanedText = text.replace(/```(json)?|```/g, '').trim();
-      
-      try {
-        const similarity = JSON.parse(cleanedText);
-        return NextResponse.json(similarity);
-      } catch (parseError) {
-        console.error("JSON Parse Error:", parseError);
-        console.log("Raw text:", text);
-        console.log("Cleaned text:", cleanedText);
-        
-        // Fallback to basic similarity check
-        const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
-        const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
-        
-        return NextResponse.json({
-          titleSimilarity: Math.round(titleSimilarity * 100),
-          descriptionSimilarity: Math.round(descSimilarity * 100)
-        });
+      return await fn();
+    } catch (error: any) {
+      if (error?.status === 429 && i < maxRetries - 1) {
+        // Wait for (2^i * 1000)ms before retrying
+        const waitTime = Math.pow(2, i) * 1000;
+        await delay(waitTime);
+        continue;
       }
-
-    } catch (aiError: any) {
-      console.error("AI Error:", aiError);
-      
-      // If rate limit exceeded, use basic similarity
-      if (aiError.status === 429) {
-        const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
-        const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
-        
-        return NextResponse.json({
-          titleSimilarity: Math.round(titleSimilarity * 100),
-          descriptionSimilarity: Math.round(descSimilarity * 100)
-        });
-      }
-      
-      throw aiError;
+      throw error;
     }
-
-  } catch (error) {
-    console.error("Error in trademark comparison:", error);
-    return NextResponse.json(
-      { error: "Failed to compare trademarks" },
-      { status: 500 }
-    );
   }
 }
 
-// Basic similarity function as fallback
-function calculateBasicSimilarity(str1: string, str2: string): number {
-  const s1 = str1.toLowerCase();
-  const s2 = str2.toLowerCase();
-  
-  const words1 = s1.split(/\s+/);
-  const words2 = s2.split(/\s+/);
-  
-  const set1 = new Set(words1);
-  const set2 = new Set(words2);
-  
-  const commonWords = words1.filter(word => set2.has(word));
-  return (commonWords.length * 2) / (set1.size + set2.size);
+export async function POST(request: Request) {
+  try {
+    const { pending, accepted } = await request.json();
+
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    const prompt = `I have two Intellectual Property Rights (IPRs), each with a title and description. Compare the meaning of the two IPRs based on their content and provide a similarity percentage indicating how closely related their concepts and meanings are. The goal is to determine if the new IPR is similar enough to an existing one to potentially affect its acceptance. Please consider semantic similarity, synonyms, and contextual relevance in your analysis. Provide a clear similarity percentage along with a brief justification for the score.
+
+    Pending Application:
+    Title: "${pending.title}"
+    Description: "${pending.description}"
+
+    Accepted Application:
+    Title: "${accepted.title}"
+    Description: "${accepted.description}"
+
+    Provide the response in the following JSON format only:
+    {
+      "titleSimilarity": <number between 0-100>,
+      "descriptionSimilarity": <number between 0-100>
+    }`;
+
+    const generateResponse = async () => {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    };
+
+    // Use the retry mechanism
+    const text = await retryWithBackoff(generateResponse);
+
+    // Extract only the JSON part from the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return NextResponse.json({
+        titleSimilarity: 0,
+        descriptionSimilarity: 0
+      });
+    }
+
+    const similarityData = JSON.parse(jsonMatch[0]);
+
+    // Add a small delay after successful response to prevent rapid successive calls
+    await delay(500);
+
+    return NextResponse.json(similarityData);
+  } catch (error) {
+    console.error("Error in compare-trademarks:", error);
+    return NextResponse.json({
+      titleSimilarity: 0,
+      descriptionSimilarity: 0
+    });
+  }
 } 

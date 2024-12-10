@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Beaker, Building2, GraduationCap, BookOpen, Link, ScrollText } from "lucide-react";
+import { Beaker, Building2, GraduationCap, BookOpen, Link, ScrollText, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { useRouter } from "next/navigation";
@@ -46,6 +46,7 @@ interface ResearcherCardProps {
         secure_url: string;
       };
     };
+    researchPapers: string[];
   };
   index: number;
 }
@@ -155,6 +156,16 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
                 </span>
               </div>
 
+              {/* Research Papers Count */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <FileText className="h-4 w-4" />
+                <span>
+                  {researcher.researchPapers.length > 0 
+                    ? `${researcher.researchPapers.length} Research Papers`
+                    : "No Research Papers yet"}
+                </span>
+              </div>
+
               {/* Research Fields */}
               <div className="flex flex-wrap gap-2 mb-4">
                 {researcher.personalInfo.fieldOfResearch.map((field, i) => (
@@ -192,7 +203,7 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
               <div className="pt-4 border-t mt-4">
                 <div className="flex flex-wrap gap-3">
                   {researcher.professionalCredentials.googleScholar && (
-                    <a 
+                    <a
                       href={researcher.professionalCredentials.googleScholar}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -203,7 +214,7 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
                     </a>
                   )}
                   {researcher.professionalCredentials.researchGate && (
-                    <a 
+                    <a
                       href={researcher.professionalCredentials.researchGate}
                       target="_blank"
                       rel="noopener noreferrer"
