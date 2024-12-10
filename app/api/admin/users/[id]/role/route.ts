@@ -6,7 +6,6 @@ import User from "@/models/user.model";
 import PolicyMaker from "@/models/policy-maker.model";
 import { Types } from "mongoose";
 import { addNotification } from "@/lib/notificationService";
-import mongoose from "mongoose";
 
 export async function PUT(
     req: NextRequest,
@@ -33,15 +32,14 @@ export async function PUT(
         const { role } = await req.json();
 
         // Start a session for transaction
-        const dbSession = await mongoose.startSession();
 
         try {
-            await dbSession.withTransaction(async () => {
                 // Find the user
                 const user = await User.findById(params.id);
                 if (!user) {
                     throw new Error("User not found");
                 }
+                console.log(user)
 
                 if (role === "policyMaker") {
                     // Check if user is already a policy maker
@@ -52,14 +50,14 @@ export async function PUT(
 
                     // Update user role
                     user.role = "policyMaker";
-                    await user.save({ session: dbSession });
+                    await user.save();
 
                     // Create policy maker profile
                     await PolicyMaker.create([{
                         userId: user._id,
                         name: user.name,
                         email: user.email
-                    }], { session: dbSession });
+                    }]);
 
                     await addNotification({
                         name: "Admin",
@@ -76,12 +74,11 @@ export async function PUT(
 
                     // Remove policy maker role
                     user.role = "user";
-                    await user.save({ session: dbSession });
+                    await user.save();
 
                     // Remove policy maker profile
                     await PolicyMaker.findOneAndDelete(
-                        { userId: user._id },
-                        { session: dbSession }
+                        { userId: user._id }
                     );
 
                     await addNotification({
@@ -93,7 +90,7 @@ export async function PUT(
                 } else {
                     throw new Error("Invalid role");
                 }
-            });
+            
 
             return NextResponse.json({
                 success: true,
@@ -102,9 +99,7 @@ export async function PUT(
 
         } catch (error) {
             throw error;
-        } finally {
-            await dbSession.endSession();
-        }
+        } 
 
     } catch (error) {
         console.error("Error updating user role:", error);
