@@ -36,7 +36,7 @@ export async function POST(
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    request.status = "rejected";
+    request.status = "transferred";
 
     // Get funding agency
     const fundingAgency = await FundingAgency.findById(request.fundingAgency)
@@ -48,17 +48,17 @@ export async function POST(
       return NextResponse.json({ error: "Funding agency not found" }, { status: 404 });
     }
     const requested = fundingAgency.requested.map((req)=>req.status === startup._id);
-    requested.status = "rejected";
+    requested.status = "transferred";
 
     // // Remove request from both startup and funding agency
-    // startup.requests = startup.requests.filter(
-    //   (req) => req._id.toString() !== params.requestId
-    // );
+    startup.requests = startup.requests.filter(
+      (req) => req._id.toString() !== params.requestId
+    );
 
     // Send notification to funding agency
     await addNotification({
       name: startup.startupDetails.startupName,
-      message: `${startup.startupDetails.startupName} has rejected your funding request. You can now proceed with the investment discussion.`,
+      message: `${startup.startupDetails.startupName} has transferred your funding request. You can now proceed with the investment discussion.`,
       role: "startup",
     }, fundingAgency.userId);
 
@@ -66,11 +66,11 @@ export async function POST(
     await fundingAgency.save();
 
     return NextResponse.json({ 
-      message: "Request rejected successfully",
+      message: "Request transferred successfully",
       fundingAgencyUserId: fundingAgency.userId
     });
   } catch (error) {
-    console.error("Error rejecting funding request:", error);
+    console.error("Error transfering funding request:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 } 

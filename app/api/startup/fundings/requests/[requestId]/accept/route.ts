@@ -36,23 +36,24 @@ export async function POST(
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
+    request.status = "accepted";
+
     // Get funding agency
-    const fundingAgency = await FundingAgency.findById(request.fundingAgency);
+    const fundingAgency = await FundingAgency.findById(request.fundingAgency)
+    .populate({
+      path:"requested.startup",
+      model:"Startup"
+    });
     if (!fundingAgency) {
       return NextResponse.json({ error: "Funding agency not found" }, { status: 404 });
     }
+    const requested = fundingAgency.requested.map((req)=>req.status === startup._id);
+    requested.status = "accepted";
 
-    // Add to active investments
-    // startup.activeInvestments.push({
-    //   fundingAgency: request.fundingAgency,
-    //   amount: 0, // Initial amount, will be updated during actual funding
-    //   date: new Date()
-    // });
-
-    // Remove request from both startup and funding agency
-    startup.requests = startup.requests.filter(
-      (req) => req._id.toString() !== params.requestId
-    );
+    // // Remove request from both startup and funding agency
+    // startup.requests = startup.requests.filter(
+    //   (req) => req._id.toString() !== params.requestId
+    // );
 
     // Send notification to funding agency
     await addNotification({

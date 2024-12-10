@@ -50,11 +50,13 @@ export async function POST(
 
     // Send notification to funding agency
     await addNotification({
-      name: startup.startupDetails.startupName,
-      message: `${startup.startupDetails.startupName} has declined your funding request. They may not be looking for funding at this time.`,
-      role: "startup",
-    }, fundingAgency.userId);
+      name: fundingAgency.agencyDetails.name,
+      message: `${fundingAgency.agencyDetails.name} has accepted your funding request. You can now proceed with the investment discussion.`,
+      role: "fundingAgency",
+    }, startup.userId);
 
+    const requested = startup.requested.map((req)=>req.fundingAgency === fundingAgency._id);
+    requested.status = "rejected";
     await startup.save();
     await fundingAgency.save();
 
