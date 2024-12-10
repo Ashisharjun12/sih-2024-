@@ -1,30 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import {
-  ScrollArea,
-  ScrollBar
-} from "@/components/ui/scroll-area";
-import {
-  FileText,
-  ScrollText,
-  Search,
-  Filter,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  ChevronRight,
-  Plus,
-  FileCheck,
-  CalendarClock,
-} from "lucide-react";
+import { PolicyCard } from "@/components/policy-maker/policy-card";
+import { Plus, Search } from "lucide-react";
 import Link from "next/link";
 
 interface Policy {
@@ -39,6 +21,7 @@ interface Policy {
 
 export default function PolicyPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,36 +44,6 @@ export default function PolicyPage() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Draft":
-        return "bg-yellow-500/10 text-yellow-700";
-      case "Active":
-        return "bg-green-500/10 text-green-700";
-      case "Under Review":
-        return "bg-blue-500/10 text-blue-700";
-      case "Archived":
-        return "bg-gray-500/10 text-gray-700";
-      default:
-        return "bg-gray-500/10 text-gray-700";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Draft":
-        return <Clock className="h-4 w-4" />;
-      case "Active":
-        return <CheckCircle className="h-4 w-4" />;
-      case "Under Review":
-        return <AlertCircle className="h-4 w-4" />;
-      case "Archived":
-        return <XCircle className="h-4 w-4" />;
-      default:
-        return null;
     }
   };
 
@@ -134,7 +87,7 @@ export default function PolicyPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
           {["all", "draft", "active", "under review", "archived"].map((status) => (
             <Button
               key={status}
@@ -144,7 +97,7 @@ export default function PolicyPage() {
                 statusFilter === status 
                 ? "bg-blue-500/10 text-blue-700 border-blue-200" 
                 : ""
-              }`}
+              } whitespace-nowrap`}
               onClick={() => setStatusFilter(status)}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -155,59 +108,33 @@ export default function PolicyPage() {
 
       {/* Policies Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredPolicies.map((policy) => (
-          <Link href={`/policy-maker/policy/${policy._id}`} key={policy._id}>
-            <Card className="bg-gradient-to-br from-background to-background/80 border-muted/20 hover:shadow-md transition-all duration-300 cursor-pointer group">
-              <CardContent className="p-6">
-                <div className="flex flex-col h-full space-y-4">
-                  <div className="flex justify-between items-start">
-                    <Badge variant="secondary" className={getStatusColor(policy.status)}>
-                      <div className="flex items-center gap-1">
-                        {getStatusIcon(policy.status)}
-                        {policy.status}
-                      </div>
-                    </Badge>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold mb-2 line-clamp-2">{policy.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {policy.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-auto">
-                    <div className="flex items-center gap-1">
-                      <FileCheck className="h-3.5 w-3.5" />
-                      {policy.sector}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <CalendarClock className="h-3.5 w-3.5" />
-                      {new Date(policy.lastUpdated).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {!loading && filteredPolicies.length === 0 && (
-        <Card className="py-12">
-          <CardContent className="flex flex-col items-center text-center">
-            <ScrollText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Policies Found</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
+        {loading ? (
+          // Loading skeletons
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-muted rounded-lg h-[200px]" />
+            </div>
+          ))
+        ) : filteredPolicies.length > 0 ? (
+          // Policy cards
+          filteredPolicies.map((policy) => (
+            <PolicyCard
+              key={policy._id}
+              policy={policy}
+              onClick={() => router.push(`/policy-maker/policy/${policy._id}`)}
+            />
+          ))
+        ) : (
+          // Empty state
+          <div className="col-span-full text-center py-12">
+            <div className="text-muted-foreground">
               {searchTerm
                 ? "No policies match your search criteria"
-                : "Start by creating your first policy"}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+                : "No policies found. Create your first policy!"}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

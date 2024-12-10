@@ -11,7 +11,7 @@ import {
   File,
   ArrowLeft,
   Download,
-  Building2,
+  Building2,``
   User,
   Lock,
   Unlock,
@@ -87,8 +87,10 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
   useEffect(() => {
     const fetchPaper = async () => {
       try {
+
+        console.log("Fetching paperSHFJKDSHJKFHJKSDHFJSHDJKFHJKDSHFKJHSDJKFHFSJKDHFJKHDSJFKHDSJKHFJKSDHKFJK");
         setLoading(true);
-        const response = await fetch(`/api/researcher/papers/${params.id}`);
+        const response = await fetch(`/api/explore/research-papers/${params.id}`);
         const data = await response.json();
 
         if (data.success) {

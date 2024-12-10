@@ -123,12 +123,28 @@ export default function NewPolicyPage() {
   };
 
   return (
-    <div className="container max-w-4xl py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Policy</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="container px-4 md:px-8 py-4 md:py-8 space-y-6 md:space-y-8 mb-16 md:mb-0">
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-4 md:p-8">
+        <div className="flex flex-col md:flex-row justify-between gap-4">
+          <div>
+            <Button
+              variant="outline"
+              className="mb-4"
+              onClick={() => router.back()}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <h1 className="text-xl md:text-3xl font-bold">Create New Policy</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">
+              Define and implement new policy framework
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="bg-gradient-to-br from-background to-background/80 border-muted/20">
+        <CardContent className="p-6 space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Policy Title</Label>
@@ -138,6 +154,7 @@ export default function NewPolicyPage() {
                 value={formData.title}
                 onChange={handleInputChange}
                 required
+                className="bg-background/50"
                 placeholder="Enter policy title"
               />
             </div>
@@ -150,8 +167,8 @@ export default function NewPolicyPage() {
                 value={formData.description}
                 onChange={handleInputChange}
                 required
+                className="bg-background/50 min-h-[100px]"
                 placeholder="Describe the policy"
-                rows={4}
               />
             </div>
 
@@ -163,8 +180,8 @@ export default function NewPolicyPage() {
                 value={formData.vision}
                 onChange={handleInputChange}
                 required
+                className="bg-background/50 min-h-[80px]"
                 placeholder="Enter policy vision"
-                rows={3}
               />
             </div>
 
@@ -174,12 +191,14 @@ export default function NewPolicyPage() {
                 <Input
                   value={newObjective}
                   onChange={(e) => setNewObjective(e.target.value)}
+                  className="bg-background/50"
                   placeholder="Add an objective"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleAddObjective}
+                  className="shrink-0"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -189,11 +208,11 @@ export default function NewPolicyPage() {
                   <Badge
                     key={index}
                     variant="secondary"
-                    className="flex items-center gap-1"
+                    className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 transition-colors"
                   >
                     {objective}
                     <X
-                      className="h-3 w-3 cursor-pointer"
+                      className="h-3 w-3 ml-1 cursor-pointer"
                       onClick={() => handleRemoveObjective(index)}
                     />
                   </Badge>
@@ -201,72 +220,74 @@ export default function NewPolicyPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Sectors</Label>
-              <Select onValueChange={handleSectorChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select sectors" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sectors.map((sector) => (
-                    <SelectItem key={sector} value={sector}>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Sectors</Label>
+                <Select onValueChange={handleSectorChange}>
+                  <SelectTrigger className="bg-background/50">
+                    <SelectValue placeholder="Select sectors" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectors.map((sector) => (
+                      <SelectItem key={sector} value={sector}>
+                        {sector}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.sectors.map((sector) => (
+                    <Badge
+                      key={sector}
+                      variant="secondary"
+                      className="bg-green-500/10 text-green-700 hover:bg-green-500/20 transition-colors"
+                    >
                       {sector}
-                    </SelectItem>
+                      <X
+                        className="h-3 w-3 ml-1 cursor-pointer"
+                        onClick={() => handleSectorChange(sector)}
+                      />
+                    </Badge>
                   ))}
-                </SelectContent>
-              </Select>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.sectors.map((sector) => (
-                  <Badge
-                    key={sector}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {sector}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => handleSectorChange(sector)}
-                    />
-                  </Badge>
-                ))}
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Industries</Label>
-              <Select onValueChange={handleIndustryChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select industries" />
-                </SelectTrigger>
-                <SelectContent>
-                  {industries.map((industry) => (
-                    <SelectItem key={industry} value={industry}>
+              <div className="space-y-2">
+                <Label>Industries</Label>
+                <Select onValueChange={handleIndustryChange}>
+                  <SelectTrigger className="bg-background/50">
+                    <SelectValue placeholder="Select industries" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {industries.map((industry) => (
+                      <SelectItem key={industry} value={industry}>
+                        {industry}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.industries.map((industry) => (
+                    <Badge
+                      key={industry}
+                      variant="secondary"
+                      className="bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 transition-colors"
+                    >
                       {industry}
-                    </SelectItem>
+                      <X
+                        className="h-3 w-3 ml-1 cursor-pointer"
+                        onClick={() => handleIndustryChange(industry)}
+                      />
+                    </Badge>
                   ))}
-                </SelectContent>
-              </Select>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.industries.map((industry) => (
-                  <Badge
-                    key={industry}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {industry}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => handleIndustryChange(industry)}
-                    />
-                  </Badge>
-                ))}
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 pt-4">
               <Button
                 type="submit"
-                className="flex-1"
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

@@ -160,7 +160,7 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                 <FileText className="h-4 w-4" />
                 <span>
-                  {researcher.researchPapers.length > 0 
+                  {researcher.researchPapers?.length > 0 
                     ? `${researcher.researchPapers.length} Research Papers`
                     : "No Research Papers yet"}
                 </span>

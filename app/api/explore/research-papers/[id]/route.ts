@@ -13,6 +13,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("API called");
     await connectDB();
 
     // Get user session

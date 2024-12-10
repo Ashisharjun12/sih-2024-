@@ -87,9 +87,12 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
   useEffect(() => {
     const fetchPaper = async () => {
       try {
+
+        console.log("Fetching paper SKFHSDKFJDSHKJFHDSJKFHJKDSHFJKHDSJKHFKHDSKFJHJDSKHFJKHDSJKFHJKDSHFKHDSJKFHJDSKHFKJDSHKFJ");
         setLoading(true);
         const response = await fetch(`/api/explore/research-papers/${params.id}`);
         
+        console.log("response", response);
         if (!response.ok) {
           throw new Error("Failed to fetch paper details");
         }
@@ -183,6 +186,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
     }
 
     try {
+      console.log("Buying paper");
       setBuyLoading(true);
       const response = await fetch(`/api/explore/research-papers/${params.id}`, {
         method: 'POST',
