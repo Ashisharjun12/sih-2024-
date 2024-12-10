@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectDB } from "@/lib/db";
 import Startup from "@/models/startup.model";
 import FundingAgency from "@/models/funding-agency.model";
 import { Types } from "mongoose";
+import { addNotification } from "@/lib/notificationService";
 
 interface Investment {
   _id: Types.ObjectId;
@@ -138,3 +139,80 @@ export async function GET() {
   }
 } 
 
+// Startup requesting to funding agency
+export async function POST(req: NextRequest) {
+  try {
+    console.log("Step 1: Starting investment process...");
+
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "fundingAgency") {
+      console.log("Unauthorized access attempt:", {
+        hasSession: !!session,
+        role: session?.user?.role
+      });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    console.log("Step 2: Authenticated user:", {
+      userId: session.user.id,
+      role: session.user.role
+    });
+
+    const { fundingAgencyId, amount, fundingType, message } = await req.json();
+    if (!fundingAgencyId || !amount || !fundingType || !message) {
+      console.log("Missing required fields:", { fundingAgencyId, amount, fundingType, message });
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+
+    console.log("Step 3: Investment details:", { fundingAgencyId, amount, fundingType, message });
+
+    await connectDB();
+    console.log("Step 4: Database connected");
+
+    const startup = await Startup.findOne({ userId: session.user.id });
+    if (!startup) {
+      console.log("Funding agency not found for userId:", session.user.id);
+      return NextResponse.json({ error: "Funding agency not found" }, { status: 404 });
+    }
+    
+    const fundingAgency = await FundingAgency.findById(fundingAgencyId);
+    if (!fundingAgency) {
+      console.log("Funding agency not found with ID:", fundingAgencyId);
+      return NextResponse.json({ error: "Funding Agency not found" }, { status: 404 });
+    }
+
+    // Add request to funding agency
+    startup.requested.push({
+      fundingAgency: fundingAgency._id,
+      amount,
+      fundingType,
+      message,
+      status: 'pending',
+    });
+    await fundingAgency.save();
+
+    // Add request to startup
+    fundingAgency.requests.push({
+      startup : startup._id,
+      amount,
+      fundingType,
+      message,
+      status: 'pending',
+    });
+    await startup.save();
+
+    // Send notification to startup
+    await addNotification({
+      name: startup.startupDetails.startupName,
+      message: `${startup.startupDetails.startupName} has sent you a funding request.`,
+      role :session.user.role
+    }, fundingAgency.userId);
+
+    console.log("Step 7: Request created successfully");
+
+    return NextResponse.json({ message: "Funding request sent successfully" });
+  } catch (error) {
+    console.error("Error in investment process:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
