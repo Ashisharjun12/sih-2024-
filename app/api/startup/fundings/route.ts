@@ -24,6 +24,7 @@ export async function GET() {
         select: "userId agencyName logo",
         model: "FundingAgency"
       });
+      console.log(startup)
 
     if (!startup) {
       return NextResponse.json({ error: "Startup not found" }, { status: 404 });
