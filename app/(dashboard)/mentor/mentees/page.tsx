@@ -165,7 +165,7 @@ export default function MenteesPage() {
   };
 
   const handleStartChat = (userId: string) => {
-    router.push(`/mentor/messages?userId=${userId}`);
+    router.push(`/mentor/messages/${userId}`);
   };
 
   const filteredMentees = mentees.filter(mentee => {
