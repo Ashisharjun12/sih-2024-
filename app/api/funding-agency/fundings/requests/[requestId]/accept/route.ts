@@ -62,6 +62,7 @@ export async function POST(
     startup.activeInvestments.push({
       fundingAgency:fundingAgency._id,
       amount : request.amount,
+      fundingType : request.fundingType,
       date : new Date()
     })
 

@@ -50,11 +50,24 @@ export async function POST(
     const requested = fundingAgency.requested.map((req)=>req.status === startup._id);
     requested.status = "transferred";
 
-    // // Remove request from both startup and funding agency
+    // // Remove request from startup
     startup.requests = startup.requests.filter(
       (req) => req._id.toString() !== params.requestId
     );
 
+    fundingAgency.activeInvestments.push({
+        startup: request.startup,
+        amount: request.amount, 
+        fundingType : request.fundingType,
+        date: new Date()
+      });
+
+      startup.activeInvestments.push({
+        fundingAgency:fundingAgency._id,
+        amount : request.amount,
+        fundingType : request.fundingType,
+        date : new Date()
+      })
     // Send notification to funding agency
     await addNotification({
       name: startup.startupDetails.startupName,
