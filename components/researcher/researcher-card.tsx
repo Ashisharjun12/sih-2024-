@@ -109,7 +109,7 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
             {/* Banner Section */}
             <div className="h-32 relative overflow-hidden">
               <div className="absolute inset-0 bg-cover bg-center bg-[url('/researcher-banner.jpg')]" />
-              <div className={`absolute inset-0 bg-gradient-to-r ${BANNER_GRADIENTS[index % BANNER_GRADIENTS.length]} mix-blend-multiply`} />
+              <div className={`absolute inset-0 bg-gradient-to-r ${BANNER_GRADIENTS[index % BANNER_GRADIENTS?.length]} mix-blend-multiply`} />
               <div className="absolute inset-0 bg-black/20" />
               
               {/* Profile and Title */}
@@ -160,7 +160,7 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                 <FileText className="h-4 w-4" />
                 <span>
-                  {researcher?.researchPapers?.length > 0 
+                  {researcher.researchPapers.length > 0 
                     ? `${researcher.researchPapers.length} Research Papers`
                     : "No Research Papers yet"}
                 </span>
@@ -185,14 +185,14 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium">{researcherData.researchPapers.length}</p>
+                      <p className="text-sm font-medium">{researcherData?.researchPapers?.length}</p>
                       <p className="text-xs text-muted-foreground">Publications</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <ScrollText className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium">{researcherData.onGoingResearches.length}</p>
+                      <p className="text-sm font-medium">{researcherData?.onGoingResearches?.length}</p>
                       <p className="text-xs text-muted-foreground">Active Projects</p>
                     </div>
                   </div>

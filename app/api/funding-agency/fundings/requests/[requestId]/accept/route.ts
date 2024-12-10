@@ -19,7 +19,7 @@ export async function POST(
 
     const fundingAgency = await FundingAgency.findOne({ userId: session.user.id })
       .populate({
-        path: "requests.startups",
+        path: "requests.startup",
         select: "userId startupDetails.startupName startupDetails.startupLogo",
         model: "Startup"
       });
@@ -36,22 +36,35 @@ export async function POST(
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    // Get funding agency
-    const startup = await Startup.findById(request.startup);
+    // Get startup
+    const startup = await Startup.findById(request.startup).populate({
+      path:"requested activeInvestments",
+      model: "FundingAgency"
+    });
     if (!startup) {
       return NextResponse.json({ error: "Startup not found" }, { status: 404 });
     }
 
     // // Add to active investments
     fundingAgency.activeInvestments.push({
-      startups: request.startup,
-      amount: 0, // Initial amount, will be updated during actual funding
+      startup: request.startup,
+      amount: request.amount, 
+      fundingType : request.fundingType,
       date: new Date()
     });
 
     fundingAgency.requests = fundingAgency.requests.filter(
       (req) => req._id.toString() !== params.requestId
     );
+
+    const requested = startup.requested.map((req)=>req.fundingAgency === fundingAgency._id);
+    requested.status = "accepted";
+    startup.activeInvestments.push({
+      fundingAgency:fundingAgency._id,
+      amount : request.amount,
+      fundingType : request.fundingType,
+      date : new Date()
+    })
 
     // Send notification to funding agency
     await addNotification({
