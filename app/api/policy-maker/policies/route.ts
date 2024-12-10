@@ -20,6 +20,7 @@ export async function GET() {
         await connectDB();
 
         const policyMaker = await PolicyMaker.findOne({ userId: session.user.id });
+        console.log(policyMaker);
         if (!policyMaker) {
             return NextResponse.json(
                 { error: "Policy maker not found" },
