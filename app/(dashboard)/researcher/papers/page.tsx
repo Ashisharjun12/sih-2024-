@@ -3,17 +3,30 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResearchPaperCard } from "@/components/researcher/research-paper-card";
-import { Plus, Loader2, File, X, PlusCircle, PlusSquare } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileText, Plus, Loader2 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { Switch } from "@/components/ui/switch";
 
 interface ResearchPaper {
   _id: string;
@@ -22,7 +35,10 @@ interface ResearchPaper {
   publicationDate: string;
   stage: string;
   doi?: string;
-  images: Array<{ public_id: string; secure_url: string }>;
+  images: Array<{
+    public_id: string;
+    secure_url: string;
+  }>;
   isFree: boolean;
   price?: number;
   isPublished: boolean;
@@ -35,27 +51,33 @@ interface NewPaper {
   stage: string;
   doi: string;
   isFree: boolean;
-  price: number | undefined;
-  images: Array<{ public_id: string; secure_url: string }>;
+  price?: number;
+  images: Array<{
+    public_id: string;
+    secure_url: string;
+  }>;
 }
 
 export default function ResearchPapersPage() {
   const { toast } = useToast();
   const [papers, setPapers] = useState<ResearchPaper[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newPaper, setNewPaper] = useState<NewPaper>({
+
+  const [newPaper, setNewPaper] = useState<Omit<ResearchPaper, '_id'>>({
     title: "",
     description: "",
-    publicationDate: "",
+    publicationDate: new Date().toISOString().split('T')[0],
     stage: "Identifying a Research Problem or Question",
     doi: "",
+    images: [],
+    isPublished: false,
     isFree: true,
-    price: undefined,
-    images: []
+    price: undefined
   });
-  const [isUploading, setIsUploading] = useState(false);
+
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   useEffect(() => {
     fetchPapers();
@@ -63,10 +85,11 @@ export default function ResearchPapersPage() {
 
   const fetchPapers = async () => {
     try {
-      const response = await fetch("/api/researcher/papers");
-      if (!response.ok) throw new Error("Failed to fetch papers");
-      const data = await response.json();
-      setPapers(data.papers);
+      const res = await fetch('/api/researcher/papers');
+      const data = await res.json();
+      if (data.papers) {
+        setPapers(data.papers);
+      }
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -79,68 +102,110 @@ export default function ResearchPapersPage() {
     }
   };
 
-  const completedPapers = papers.filter(paper => paper.stage === "Completed");
-  const ongoingPapers = papers.filter(paper => paper.stage !== "Completed");
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setNewPaper((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    console.log(newPaper);
-  };
-
-  const handleCheckboxChange =
-    (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setNewPaper((prev) => ({
-        ...prev,
-        [name]: e.target.checked,
-        price: e.target.checked ? undefined : prev.price,
-      }));
-      console.log(newPaper);
-    };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
-    setIsUploading(true);
-    const files = Array.from(e.target.files);
-
-    try {
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) throw new Error(`Failed to upload ${file.name}`);
-
-        const data = await response.json();
-        setNewPaper(prev => ({
-          ...prev,
-          images: [...prev.images, { 
-            public_id: data.public_id, 
-            secure_url: data.secure_url 
-          }]
-        }));
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
+  const handleSubmit = async () => {
+    if (!newPaper.title || !newPaper.description || !newPaper.stage) {
       toast({
         title: "Error",
-        description: "Failed to upload file",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      let uploadedFiles = [];
+      if (selectedFiles && selectedFiles.length > 0) {
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const formData = new FormData();
+          formData.append('file', selectedFiles[i]);
+
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          const uploadData = await uploadRes.json();
+          if (!uploadData.public_id || !uploadData.secure_url) {
+            throw new Error("Failed to upload document");
+          }
+
+          uploadedFiles.push({
+            public_id: uploadData.public_id,
+            secure_url: uploadData.secure_url
+          });
+        }
+      }
+
+      const res = await fetch('/api/researcher/papers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newPaper,
+          images: uploadedFiles,
+          doi: newPaper.doi || undefined
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Research paper created successfully",
+        });
+        setShowAddDialog(false);
+        fetchPapers();
+        setNewPaper({
+          title: "",
+          description: "",
+          publicationDate: new Date().toISOString().split('T')[0],
+          stage: "Identifying a Research Problem or Question",
+          doi: "",
+          images: [],
+          isPublished: false,
+          isFree: true,
+          price: undefined
+        });
+        setSelectedFiles(null);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create research paper",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
-      if (e.target) {
-        e.target.value = "";
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const validFiles = Array.from(files).every(file => {
+        const validTypes = ['.pdf', '.doc', '.docx'];
+        const isValidType = validTypes.some(type => 
+          file.name.toLowerCase().endsWith(type)
+        );
+        const isValidSize = file.size <= 10 * 1024 * 1024;
+
+        return isValidType && isValidSize;
+      });
+
+      if (!validFiles) {
+        toast({
+          title: "Invalid Files",
+          description: "Please upload only PDF, DOC, or DOCX files under 10MB",
+          variant: "destructive",
+        });
+        e.target.value = '';
+        return;
       }
+
+      setSelectedFiles(files);
     }
   };
 
@@ -203,7 +268,7 @@ export default function ResearchPapersPage() {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -213,431 +278,243 @@ export default function ResearchPapersPage() {
     <div className="container py-8 space-y-8">
       {/* Header Section */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
-        <div className="absolute inset-0 bg-grid-black/5" />
-        <div className="relative flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Research Papers</h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-2">
-              Manage and track all your research papers
-            </p>
+            <p className="text-muted-foreground mt-2">Manage and track your research papers</p>
           </div>
-          <Button 
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white hidden md:flex"
-            onClick={() => setIsDialogOpen(true)}
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             Add Research
           </Button>
         </div>
       </div>
 
-      {/* Mobile Floating Action Button */}
-      <Button
-        className="fixed z-50 right-4 bottom-16 h-12 w-12 rounded-full shadow-lg md:hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-        onClick={() => setIsDialogOpen(true)}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
-
-      {/* Research Papers Tabs */}
-      <Tabs defaultValue="ongoing" className="space-y-6">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="ongoing" className="flex items-center gap-2">
-            Ongoing Research
-            {ongoingPapers.length > 0 && (
-              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
-                {ongoingPapers.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center gap-2">
-            Completed Papers
-            {completedPapers.length > 0 && (
-              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
-                {completedPapers.length}
-              </span>
-            )}
-          </TabsTrigger>
+      {/* Papers List */}
+      <Tabs defaultValue="all" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="all">All Papers</TabsTrigger>
+          <TabsTrigger value="published">Published</TabsTrigger>
+          <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="completed">
-          {researchPapers.map((paper) => (
-            <Card key={paper._id} className="mb-4">
-              <CardHeader>
-                <CardTitle>{paper.title}</CardTitle>
-                <Badge variant={paper.isPublished ? "success" : "destructive"}>
-                  {paper.isPublished ? "Published" : "Not Published"}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <p>{paper.description}</p>
-                <p>Stage: {paper.stage}</p>
-                <p>
-                  Publication Date:{" "}
-                  {new Date(paper.publicationDate).toLocaleDateString()}
-                </p>
-                {paper.doi && <p>DOI: {paper.doi}</p>}
-                {paper.isPublished && paper.price !== undefined && (
-                  <p>Price: ${paper.price}</p>
-                )}
-                {paper.images.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {paper.images.map((image) => (
-                      <Image
-                        key={image.public_id}
-                        src={image.secure_url}
-                        alt={paper.title}
-                        width={100}
-                        height={100}
-                        className="h-20 w-20 object-cover"
-                      />
-                    ))}
-                  </div>
-                )}
-                {paper.images.length > 0 && (
-                  <div className="mt-2">
-                    <h4 className="font-semibold">Documents:</h4>
-                    <ul>
-                      {paper.images.map((doc) => (
-                        <li key={doc.public_id}>
-                          <Link
-                            href={doc.secure_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                          >
-                            {doc.public_id}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+        <TabsContent value="all" className="space-y-4">
+          {papers.length > 0 ? (
+            <div className="grid gap-4">
+              {papers.map((paper, index) => (
+                <Card key={paper._id}>
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <h3 className="font-semibold">{paper.title}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {paper.description}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{paper.stage}</Badge>
+                          {paper.isFree ? (
+                            <Badge variant="outline" className="text-green-600">Free</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-blue-600">
+                              ₹{paper.price}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Research Papers</h3>
+              <p className="text-sm text-muted-foreground">
+                Get started by creating your first research paper
+              </p>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="ongoing">
-          {onGoingResearchPapers.map((paper) => (
-            <Card key={paper._id} className="mb-4">
-              <CardHeader>
-                <CardTitle>{paper.title}</CardTitle>
-                <Badge variant={paper.isPublished ? "success" : "destructive"}>
-                  {paper.isPublished ? "Published" : "Not Published"}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <p>{paper.description}</p>
-                <p>Stage: {paper.stage}</p>
-                <p>
-                  Publication Date:{" "}
-                  {new Date(paper.publicationDate).toLocaleDateString()}
-                </p>
-                {paper.doi && <p>DOI: {paper.doi}</p>}
-                {paper.isPublished && paper.price !== undefined && (
-                  <p>Price: ${paper.price}</p>
-                )}
-                {paper.images.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {paper.images.map((image) => (
-                      <Image
-                        key={image.public_id}
-                        src={image.secure_url}
-                        alt={paper.title}
-                        width={100}
-                        height={100}
-                        className="h-20 w-20 object-cover"
-                      />
-                    ))}
-                  </div>
-                )}
-                {paper.images.length > 0 && (
-                  <div className="mt-2">
-                    <h4 className="font-semibold">Documents:</h4>
-                    <ul>
-                      {paper.images.map((doc) => (
-                        <li key={doc.public_id}>
-                          <Link
-                            href={doc.secure_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                          >
-                            {doc.public_id}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
+        {/* Similar content for other tabs */}
       </Tabs>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto scrollbar-hide">
-          <DialogHeader className="sticky top-0 z-10 bg-background pb-4">
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 -mt-6 -mx-6">
-              <div className="absolute inset-0 bg-grid-black/5" />
-              <div className="relative">
-                <DialogTitle className="text-2xl font-bold">Create New Research</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Share your research work with the community
-                </p>
-              </div>
-            </div>
+      {/* Add Research Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto scrollbar-custom">
+          <DialogHeader className="sticky top-0 bg-background z-10 pb-4 border-b">
+            <DialogTitle>Add New Research Paper</DialogTitle>
+            <DialogDescription>
+              Create a new research paper to track your research progress
+            </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Title</label>
+
+          <div className="space-y-6 py-6">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
               <Input
-                name="title"
-                value={newPaper.title}
-                onChange={handleInputChange}
-                required
+                id="title"
                 placeholder="Enter research paper title"
+                value={newPaper.title}
+                onChange={(e) => setNewPaper(prev => ({ ...prev, title: e.target.value }))}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">Description</label>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
               <Textarea
-                name="description"
+                id="description"
+                placeholder="Enter research description"
                 value={newPaper.description}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter research paper description"
-                rows={4}
+                onChange={(e) => setNewPaper(prev => ({ ...prev, description: e.target.value }))}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">Publication Date</label>
-              <Input
-                type="date"
-                name="publicationDate"
-                value={newPaper.publicationDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">DOI (optional)</label>
-              <Input
-                name="doi"
-                value={newPaper.doi}
-                onChange={handleInputChange}
-                placeholder="Enter DOI"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Stage</label>
-              <select
-                name="stage"
-                value={newPaper.stage}
-                onChange={handleInputChange}
-                className="w-full border rounded-md p-2"
-              >
-                <option value="Identifying a Research Problem or Question">
-                  Identifying a Research Problem or Question
-                </option>
-                <option value="Conducting a Literature Review">
-                  Conducting a Literature Review
-                </option>
-                <option value="Formulating a Hypothesis or Research Objective">
-                  Formulating a Hypothesis or Research Objective
-                </option>
-                <option value="Designing the Research Methodology">
-                  Designing the Research Methodology
-                </option>
-                <option value="Data Collection">Data Collection</option>
-                <option value="Data Analysis">Data Analysis</option>
-                <option value="Interpreting Results">
-                  Interpreting Results
-                </option>
-                <option value="Drawing Conclusions">Drawing Conclusions</option>
-                <option value="Reporting and Presenting Findings">
-                  Reporting and Presenting Findings
-                </option>
-                <option value="Publishing or Disseminating Results">
-                  Publishing or Disseminating Results
-                </option>
-                <option value="Reflection and Future Research">
-                  Reflection and Future Research
-                </option>
-                <option value="Completed">Completed</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Is Published</label>
-              <input
-                type="checkbox"
-                checked={newPaper.isPublished}
-                onChange={handleCheckboxChange("isPublished")}
-              />
-            </div>
-            {newPaper.isPublished && (
-              <div>
-                <label className="text-sm font-medium">Is Free</label>
-                <input
-                  type="checkbox"
-                  checked={newPaper.isFree}
-                  onChange={handleCheckboxChange("isFree")}
-                />
-              </div>
-            )}
-            {newPaper.isPublished && !newPaper.isFree && (
-              <div>
-                <label className="text-sm font-medium">Price</label>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="publicationDate">Publication Date *</Label>
                 <Input
-                  type="text"
-                  name="price"
-                  value={newPaper.price?.toString() || ""}
-                  onChange={handleInputChange}
-                  placeholder="Enter DOI if available"
-                  className="bg-muted/50 border-slate-200/60 focus:border-blue-500/30 transition-colors"
+                  id="publicationDate"
+                  type="date"
+                  value={newPaper.publicationDate}
+                  onChange={(e) => setNewPaper(prev => ({ 
+                    ...prev, 
+                    publicationDate: e.target.value 
+                  }))}
                 />
               </div>
 
-              <div className="space-y-4">
-                <label className="text-sm font-semibold text-foreground/90">Access Type</label>
-                <div className="flex flex-col space-y-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isFree"
-                      checked={newPaper.isFree}
-                      onChange={() => setNewPaper(prev => ({
-                        ...prev,
-                        isFree: true,
-                        price: undefined
-                      }))}
-                      className="text-primary"
-                    />
-                    <div>
-                      <span className="text-sm font-medium">Free Access</span>
-                      <p className="text-xs text-muted-foreground">Make your research freely available to everyone</p>
-                    </div>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isFree"
-                      checked={!newPaper.isFree}
-                      onChange={() => setNewPaper(prev => ({
-                        ...prev,
-                        isFree: false,
-                        price: 0
-                      }))}
-                      className="text-primary"
-                    />
-                    <div>
-                      <span className="text-sm font-medium">Premium</span>
-                      <p className="text-xs text-muted-foreground">Set a price for accessing your research</p>
-                    </div>
-                  </label>
-
-                  {!newPaper.isFree && (
-                    <div className="ml-6 pl-2 border-l-2 border-muted">
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-muted-foreground">
-                          Price (₹)
-                        </label>
-                        <Input
-                          type="number"
-                          name="price"
-                          value={newPaper.price || ''}
-                          onChange={(e) => setNewPaper(prev => ({
-                            ...prev,
-                            price: e.target.value ? Number(e.target.value) : 0
-                          }))}
-                          placeholder="Enter price in INR"
-                          min="0"
-                          step="1"
-                          required
-                          className="bg-muted/50 max-w-[200px]"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Set a reasonable price for your research paper
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Document Upload Section */}
-              <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-slate-200/60">
-                <label className="text-sm font-semibold text-foreground/90">Upload Documents</label>
-                <div className="space-y-3">
-                  <Input
-                    type="file"
-                    onChange={handleFileUpload}
-                    accept=".jpg,.jpeg,.png,.pdf"
-                    multiple
-                    className="bg-white/50 border-slate-200/60 focus:border-blue-500/30 transition-colors"
-                  />
-                  {isUploading && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Uploading documents...</span>
-                    </div>
-                  )}
-                  {newPaper.images.length > 0 && (
-                    <div className="grid gap-2">
-                      {newPaper.images.map((image, index) => (
-                        <div 
-                          key={image.public_id}
-                          className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
-                        >
-                          <div className="flex items-center gap-2">
-                            <File className="h-4 w-4 text-blue-500" />
-                            <span className="text-sm">Document {index + 1}</span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => {
-                              setNewPaper(prev => ({
-                                ...prev,
-                                images: prev.images.filter((_, i) => i !== index)
-                              }));
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="doi">DOI (Optional)</Label>
+                <Input
+                  id="doi"
+                  placeholder="Enter DOI"
+                  value={newPaper.doi}
+                  onChange={(e) => setNewPaper(prev => ({ ...prev, doi: e.target.value }))}
+                />
               </div>
             </div>
 
-            <div className="sticky bottom-0 pt-6 border-t border-slate-200/60 bg-background/80 backdrop-blur-sm">
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+            <div className="space-y-2">
+              <Label htmlFor="stage">Research Stage *</Label>
+              <Select
+                value={newPaper.stage}
+                onValueChange={(value) => setNewPaper(prev => ({ ...prev, stage: value }))}
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating Research...
-                  </>
-                ) : (
-                  'Create Research'
-                )}
-              </Button>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Identifying a Research Problem or Question">
+                    Identifying a Research Problem or Question
+                  </SelectItem>
+                  <SelectItem value="Conducting a Literature Review">
+                    Conducting a Literature Review
+                  </SelectItem>
+                  <SelectItem value="Formulating a Hypothesis or Research Objective">
+                    Formulating a Hypothesis or Research Objective
+                  </SelectItem>
+                  <SelectItem value="Designing the Research Methodology">
+                    Designing the Research Methodology
+                  </SelectItem>
+                  <SelectItem value="Data Collection">
+                    Data Collection
+                  </SelectItem>
+                  <SelectItem value="Data Analysis">
+                    Data Analysis
+                  </SelectItem>
+                  <SelectItem value="Interpreting Results">
+                    Interpreting Results
+                  </SelectItem>
+                  <SelectItem value="Drawing Conclusions">
+                    Drawing Conclusions
+                  </SelectItem>
+                  <SelectItem value="Reporting and Presenting Findings">
+                    Reporting and Presenting Findings
+                  </SelectItem>
+                  <SelectItem value="Publishing or Disseminating Results">
+                    Publishing or Disseminating Results
+                  </SelectItem>
+                  <SelectItem value="Reflection and Future Research">
+                    Reflection and Future Research
+                  </SelectItem>
+                  <SelectItem value="Completed">
+                    Completed
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </form>
+
+            <div className="space-y-2">
+              <Label>Upload Documents</Label>
+              <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                <Input
+                  type="file"
+                  className="hidden"
+                  id="file-upload"
+                  accept=".pdf,.doc,.docx"
+                  multiple
+                  onChange={handleFileChange}
+                />
+                <Label htmlFor="file-upload" className="cursor-pointer">
+                  <div className="space-y-2">
+                    <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Plus className="h-6 w-6 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PDF, DOC, DOCX (Max 10MB each)
+                    </p>
+                    {selectedFiles && selectedFiles.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-green-600">
+                          {selectedFiles.length} file(s) selected
+                        </p>
+                        <ul className="mt-2 text-sm text-left">
+                          {Array.from(selectedFiles).map((file, index) => (
+                            <li key={index} className="text-muted-foreground">
+                              {file.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          <div className="sticky bottom-0 bg-background pt-4 border-t">
+            <Button
+              className="w-full"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !newPaper.title || !newPaper.description}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Research Paper
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default ResearchPaperPage;
+}

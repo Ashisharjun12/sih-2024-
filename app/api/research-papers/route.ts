@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import ResearchPaper from "@/models/research.model";
 import Researcher from "@/models/researcher.model";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET() {
   try {

@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "next/navigation";
 
 interface Startup {
   _id: string;
@@ -115,6 +116,7 @@ export default function ExplorePage() {
   const [researchPapers, setResearchPapers] = useState<ResearchPaper[]>([]);
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -185,6 +187,9 @@ export default function ExplorePage() {
                 {startups.map((startup, index) => (
                   <div
                     key={startup._id}
+                    onClick={() =>
+                      router.push(`/explore/startupDetails/${startup._id}`)
+                    }
                     className="w-[400px] flex-none"
                   >
                     <StartupCard startup={startup} index={index} />
@@ -266,9 +271,7 @@ export default function ExplorePage() {
           )}
         </TabsContent>
 
-        <TabsContent value="mentors">
-          {/* Add Mentor cards here */}
-        </TabsContent>
+        <TabsContent value="mentors">{/* Add Mentor cards here */}</TabsContent>
       </Tabs>
     </div>
   );

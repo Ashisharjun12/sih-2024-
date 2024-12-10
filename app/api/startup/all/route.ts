@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import Wallet from "@/models/wallet.model";
+import Startup from "@/models/startup.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { ensureWallet } from "@/lib/wallet";
 
 export async function GET() {
   try {
@@ -13,18 +12,19 @@ export async function GET() {
     }
 
     await connectDB();
-    const wallet = await ensureWallet(session.user.id);
+    const startups = await Startup.find({ 
+      isActivelyFundraising: true 
+    }).select('userId startupDetails businessActivities isActivelyFundraising');
 
     return NextResponse.json({
       success: true,
-      balance: wallet.balance,
-      transactions: wallet.transactions
+      startups
     });
 
   } catch (error) {
-    console.error("Error fetching wallet:", error);
+    console.error("Error fetching startups:", error);
     return NextResponse.json(
-      { error: "Failed to fetch wallet" },
+      { error: "Failed to fetch startups" },
       { status: 500 }
     );
   }

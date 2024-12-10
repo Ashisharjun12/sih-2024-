@@ -16,11 +16,31 @@ import {
   Phone,
   Fingerprint,
   Beaker,
-  ScrollText
+  ScrollText,
+  FileText,
+  Download,
+  IndianRupee
 } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSession } from "next-auth/react";
+
+interface ResearchPaper {
+  _id: string;
+  title: string;
+  description: string;
+  isPublished: boolean;
+  isFree: boolean;
+  price?: number;
+  documents?: Array<{
+    public_id: string;
+    secure_url: string;
+  }>;
+  purchasedBy?: string[];
+}
 
 interface ResearcherProfile {
   _id: string;
@@ -48,7 +68,7 @@ interface ResearcherProfile {
     highestQualification: string;
     yearsOfExperience: number;
   };
-  researchPapers: Array<any>;
+  researchPapers: ResearchPaper[];
   onGoingResearches: Array<any>;
   professionalCredentials: {
     orcid: string;
@@ -72,6 +92,9 @@ export default function ResearcherProfile({ params }: { params: { id: string } }
   const { toast } = useToast();
   const [researcher, setResearcher] = useState<ResearcherProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [selectedPaper, setSelectedPaper] = useState<any>(null);
 
   useEffect(() => {
     fetchResearcher();
@@ -92,6 +115,61 @@ export default function ResearcherProfile({ params }: { params: { id: string } }
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to check if user can view document
+  const canViewDocument = (paper: any) => {
+    if (!paper) return false;
+    
+    // If it's free, anyone can view
+    if (paper.isFree) return true;
+
+    // If viewer is the researcher who owns the paper
+    if (session?.user?.id === researcher?.userId) return true;
+
+    // Check if user has purchased the paper
+    return paper.purchasedBy?.includes(session?.user?.id);
+  };
+
+  // Function to handle paper purchase
+  const handlePurchasePaper = async () => {
+    if (!selectedPaper) return;
+
+    try {
+      const res = await fetch('/api/wallet/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverId: researcher.userId,
+          amount: selectedPaper.price,
+          description: `Purchase: ${selectedPaper.title}`,
+          category: 'research_purchase',
+          metadata: {
+            paperId: selectedPaper._id,
+            paperTitle: selectedPaper.title
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Research paper purchased successfully",
+        });
+        setShowPurchaseModal(false);
+        // Refresh the page to update document access
+        router.refresh();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to purchase paper. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -313,6 +391,98 @@ export default function ResearcherProfile({ params }: { params: { id: string } }
           </Tabs>
         </div>
       </div>
+
+      {/* Research Papers Section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {researcher?.researchPapers
+          .filter(paper => paper.isPublished)
+          .map((paper: any) => (
+            <Card key={paper._id} className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold">{paper.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {paper.description}
+                      </p>
+                    </div>
+                    <Badge variant={paper.isFree ? "secondary" : "default"}>
+                      {paper.isFree ? "Free" : `₹${paper.price}`}
+                    </Badge>
+                  </div>
+
+                  {/* Check if documents exist before mapping */}
+                  {paper.documents && paper.documents.length > 0 ? (
+                    paper.documents.map((doc: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm">Document {index + 1}</span>
+                        </div>
+                        
+                        {canViewDocument(paper) ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(doc.secure_url, '_blank')}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPaper(paper);
+                              setShowPurchaseModal(true);
+                            }}
+                          >
+                            <IndianRupee className="h-4 w-4 mr-1" />
+                            Purchase
+                          </Button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No documents available</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+      </div>
+
+      {/* Purchase Modal */}
+      <Dialog open={showPurchaseModal} onOpenChange={setShowPurchaseModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Purchase Research Paper</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedPaper && (
+              <>
+                <div className="space-y-2">
+                  <h3 className="font-medium">{selectedPaper.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedPaper.description}
+                  </p>
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <IndianRupee className="h-5 w-5" />
+                    {selectedPaper.price}
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={handlePurchasePaper}
+                >
+                  Confirm Purchase
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

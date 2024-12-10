@@ -6,6 +6,7 @@ import User from "@/models/user.model";
 import PolicyMaker from "@/models/policy-maker.model";
 import { Types } from "mongoose";
 import { addNotification } from "@/lib/notificationService";
+import mongoose from "mongoose";
 
 export async function PUT(
     req: NextRequest,
@@ -20,7 +21,7 @@ export async function PUT(
             );
         }
 
-        await connectDB();
+        const db = await connectDB();
 
         if (!Types.ObjectId.isValid(params.id)) {
             return NextResponse.json(
@@ -32,7 +33,7 @@ export async function PUT(
         const { role } = await req.json();
 
         // Start a session for transaction
-        const dbSession = await connectDB().then(m => m.startSession());
+        const dbSession = await mongoose.startSession();
 
         try {
             await dbSession.withTransaction(async () => {

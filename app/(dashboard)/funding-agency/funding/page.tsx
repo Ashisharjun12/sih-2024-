@@ -49,11 +49,13 @@ export default function FundingPage() {
   const [activeInvestments, setActiveInvestments] = useState<Investment[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [walletBalance, setWalletBalance] = useState("");
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchFundings();
+    fetchWalletBalance();
   }, []);
 
   const fetchFundings = async () => {
@@ -120,6 +122,65 @@ export default function FundingPage() {
       });
     }
   };
+
+  const fetchWalletBalance = async () => {
+    try {
+      const res = await fetch('/api/wallet/balance');
+      const data = await res.json();
+      if (data.success) {
+        setWalletBalance(data.balance);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet:', error);
+    }
+  };
+
+
+  const handleFund = async () => {
+    if (!selectedStartup || !fundingAmount || !paymentMethod) {
+      toast({
+        title: "Error",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const res = await fetch('/api/wallet/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverId: selectedStartup.userId,
+          amount: Number(fundingAmount)
+        })
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: `Successfully funded ${selectedStartup.startupDetails.startupName}`,
+        });
+        setShowFundingModal(false);
+        resetForm();
+      } else {
+        throw new Error(data.error || "Failed to process funding");
+      }
+    } catch (error) {
+      console.error('Funding error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to process funding",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
 
   if (isLoading) {
     return (
@@ -219,7 +280,7 @@ export default function FundingPage() {
                           <Building2 className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-semibold">{request.startupId.startupName}</h3>
+                          <h3 className="font-semibold">{request.startup.startupName}</h3>
                           <p className="text-sm text-muted-foreground">
                             {new Date(request.createdAt).toLocaleDateString()}
                           </p>
@@ -231,7 +292,7 @@ export default function FundingPage() {
                       <div className="flex gap-2">
                         <Button 
                           className="flex-1"
-                          onClick={() => handleAcceptRequest(request.startupId.userId, request._id)}
+                          onClick={() => handleAcceptRequest(request.startup.userId, request._id)}
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
                           Accept & Chat

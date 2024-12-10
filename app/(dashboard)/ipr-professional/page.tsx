@@ -1,21 +1,26 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { 
-  Shield, 
-  FileCheck, 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import {
+  Shield,
+  FileCheck,
   Search,
+  FileText,
   ChevronRight,
-  Scale,
-  GraduationCap,
-  Globe,
-  FileText
+  Users,
+  Target,
+  Building2
 } from "lucide-react";
+import {
+  ScrollArea,
+  ScrollBar
+} from "@/components/ui/scroll-area";
 
-export default function IPRProfessionalDashboard() {
+export default function IPRProfessionalPage() {
   const { data: session } = useSession();
 
   const stats = [
@@ -23,153 +28,150 @@ export default function IPRProfessionalDashboard() {
       title: "Active Patents",
       value: "45",
       icon: Shield,
-      description: "Patents under review"
+      color: "blue",
+      description: "Patent applications"
     },
     {
       title: "Trademarks",
       value: "78",
       icon: FileCheck,
-      description: "Active trademark cases"
+      color: "emerald",
+      description: "Active cases"
     },
     {
-      title: "IP Searches",
+      title: "Copyrights",
       value: "120",
       icon: Search,
-      description: "Completed searches"
+      color: "violet",
+      description: "Registered works"
     },
     {
-      title: "Compliance Rate",
-      value: "95%",
-      icon: Scale,
-      description: "Overall compliance"
+      title: "Trade Secrets",
+      value: "32",
+      icon: FileText,
+      color: "amber",
+      description: "Protected assets"
     }
   ];
 
-  const quickActions = [
+  const recentApplications = [
     {
-      title: "Review Applications",
-      description: "Review pending patent applications",
-      icon: FileText,
-      href: "/ipr-professional/patents"
+      title: "Smart IoT Device",
+      type: "Patent",
+      status: "Under Review",
+      date: "2024-03-15"
     },
     {
-      title: "IP Education",
-      description: "Access educational resources",
-      icon: GraduationCap,
-      href: "/ipr-professional/education"
+      title: "TechBrand Logo",
+      type: "Trademark",
+      status: "Approved",
+      date: "2024-03-14"
     },
     {
-      title: "Global IP Status",
-      description: "Check international IP status",
-      icon: Globe,
-      href: "/ipr-professional/global"
-    },
-    {
-      title: "Legal Documents",
-      description: "Manage legal documentation",
-      icon: FileCheck,
-      href: "/ipr-professional/documents"
+      title: "Software Suite",
+      type: "Copyright",
+      status: "Pending",
+      date: "2024-03-13"
     }
   ];
 
   return (
-    <div className="container py-8">
-      <div className="flex flex-col gap-8">
-        {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <h1 className="text-4xl font-bold">
-            Welcome back, {session?.user?.name}
+    <div className="container py-6 space-y-8">
+      {/* Welcome Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+        <div className="relative">
+          <h1 className="text-2xl md:text-3xl font-bold">
+            Welcome back, {session?.user?.name}! ✨
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Here's an overview of your IPR activities and tasks
+          <p className="text-sm md:text-base text-muted-foreground mt-2">
+            Manage your intellectual property portfolio and track applications.
           </p>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-        >
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </CardTitle>
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <div key={index} className={cn(
+            "bg-gradient-to-br rounded-xl p-4 md:p-6",
+            stat.color === "blue" && "from-blue-500/10 via-blue-500/5 to-transparent",
+            stat.color === "emerald" && "from-emerald-500/10 via-emerald-500/5 to-transparent",
+            stat.color === "violet" && "from-violet-500/10 via-violet-500/5 to-transparent",
+            stat.color === "amber" && "from-amber-500/10 via-amber-500/5 to-transparent"
+          )}>
+            <stat.icon className={cn(
+              "h-6 w-6 mb-2",
+              stat.color === "blue" && "text-blue-500",
+              stat.color === "emerald" && "text-emerald-500",
+              stat.color === "violet" && "text-violet-500",
+              stat.color === "amber" && "text-amber-500"
+            )} />
+            <p className="text-2xl font-bold">{stat.value}</p>
+            <p className={cn(
+              "text-sm",
+              stat.color === "blue" && "text-blue-600/70",
+              stat.color === "emerald" && "text-emerald-600/70",
+              stat.color === "violet" && "text-violet-600/70",
+              stat.color === "amber" && "text-amber-600/70"
+            )}>
+              {stat.description}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent Applications Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Recent Applications</h2>
+          <Button
+            variant="ghost"
+            className="text-blue-500 hover:text-blue-600"
+          >
+            View All
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+
+        <ScrollArea className="w-full">
+          <div className="flex space-x-4 pb-4">
+            {recentApplications.map((app, index) => (
+              <Card key={index} className="w-[300px] flex-none">
+                <CardHeader>
+                  <CardTitle className="text-lg">{app.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {quickActions.map((action, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-start gap-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      {<action.icon className="h-6 w-6 text-primary" />}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Type:</span>
+                      <span className="text-sm font-medium">{app.type}</span>
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">{action.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {action.description}
-                      </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Status:</span>
+                      <span className="text-sm font-medium">{app.status}</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      className="mt-2 w-full justify-between"
-                    >
-                      Get Started
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Date:</span>
+                      <span className="text-sm font-medium">{app.date}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </motion.div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
 
-        {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
+      {/* Fixed Mobile FAB */}
+      <div className="fixed bottom-24 right-6 z-50">
+        <Button
+          className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-500 
+            flex items-center justify-center transition-all duration-200
+            shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(59,130,246,0.3)]"
         >
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Add your recent activity items here */}
-                <p className="text-muted-foreground">No recent activity</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+          <FileText className="h-6 w-6 text-white" />
+        </Button>
       </div>
     </div>
   );

@@ -278,6 +278,7 @@ export default function StartupMetrics() {
             animate={{ opacity: 1, y: 0 }}
           >
             <ROIChart startupId={startupId} />
+            <ROIChart startupId={startupId} />
           </motion.div>
 
           <motion.div

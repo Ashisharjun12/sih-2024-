@@ -43,11 +43,11 @@ export async function POST(
     }
 
     // // Add to active investments
-    // fundingAgency.activeInvestments.push({
-    //   startups: request.startup,
-    //   amount: 0, // Initial amount, will be updated during actual funding
-    //   date: new Date()
-    // });
+    fundingAgency.activeInvestments.push({
+      startups: request.startup,
+      amount: 0, // Initial amount, will be updated during actual funding
+      date: new Date()
+    });
 
     fundingAgency.requests = fundingAgency.requests.filter(
       (req) => req._id.toString() !== params.requestId

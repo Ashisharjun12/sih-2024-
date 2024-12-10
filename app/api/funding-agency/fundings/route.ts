@@ -73,6 +73,11 @@ export async function GET() {
         path: "requests.startup",
         select: "userId startupDetails.startupName startupDetails.startupLogo",
         model: "Startup"
+      })
+      .populate({
+        path: "requested.startup",
+        select: "userId startupDetails.startupName startupDetails.startupLogo",
+        model: "Startup"
       });
 
     if (!fundingAgency) {
@@ -116,7 +121,23 @@ export async function GET() {
         fundingType: request.fundingType,
         message: request.message,
         status: request.status || 'pending',
-        createdAt: request.createdAt ? new Date(request.createdAt).toISOString() : new Date().toISOString()
+      };
+    });
+
+    const transformedRequested = (fundingAgency.requested || []).map((request: Request) => {
+      console.log("Processing request:", request);
+      return {
+        _id: request._id,
+        startup: {
+          _id: request.startup._id,
+          userId: request.startup.userId,
+          startupName: request.startup.startupDetails?.startupName || 'Unknown Startup',
+          startupLogo: request.startup.startupDetails?.startupLogo || null
+        },
+        amount: request.amount,
+        fundingType: request.fundingType,
+        message: request.message,
+        status: request.status || 'pending',
       };
     });
 
@@ -128,6 +149,7 @@ export async function GET() {
     return NextResponse.json({
       activeInvestments: transformedInvestments,
       requests: transformedRequests,
+      requested: transformedRequested
     });
   } catch (error) {
     console.error("Error fetching funding agency data:", error);
@@ -187,13 +209,12 @@ export async function POST(req: NextRequest) {
     });
 
     // Add request to funding agency
-    fundingAgency.requests.push({
+    fundingAgency.requested.push({
       startup: startup._id,
       amount,
       fundingType,
       message,
       status: 'pending',
-      createdAt: new Date()
     });
     await fundingAgency.save();
 
@@ -204,22 +225,15 @@ export async function POST(req: NextRequest) {
       fundingType,
       message,
       status: 'pending',
-      createdAt: new Date()
     });
     await startup.save();
 
     // Send notification to startup
     await addNotification({
-      userId: startup.userId,
-      type: 'funding_request',
-      title: 'New Funding Request',
+      name: fundingAgency.agencyDetails.name,
       message: `${fundingAgency.agencyDetails?.name} has sent you a funding request.`,
-      data: {
-        fundingAgencyId: fundingAgency._id,
-        amount,
-        fundingType
-      }
-    });
+      role :session.user.role
+    }, startup.userId);
 
     console.log("Step 7: Request created successfully");
 

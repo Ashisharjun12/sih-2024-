@@ -393,35 +393,51 @@ const startupSchema = new mongoose.Schema({
   requests: [{
     fundingAgency: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'FundingAgency'
+      ref: 'Startup'
     },
     message: {
       type: String,
       required: true
+    },
+    fundingType: {
+      type: String,
+      enum: [
+        'Private_Equity',
+        'Equity_Funding',
+        'Debt_Funding',
+        'Grants',
+        'Convertible_Notes',
+        'Revenue_Based_Financing',
+        'Scholarship'
+      ],
+    },
+    amount:{
+      type:Number,
     }
   }],
   requested: [{
     fundingAgency: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'FundingAgency'
-    },
-    amount: {
-      type: Number,
-      required: true
-    },
-    fundingType: {
-      type: String,
-      enum: ['Debt', 'Equity'],
-      required: true
+      ref: 'Startup'
     },
     message: {
       type: String,
       required: true
     },
-    status: {
+    fundingType: {
       type: String,
-      enum: ['pending', 'accepted', 'rejected'],
-      default: 'pending'
+      enum: [
+        'Private_Equity',
+        'Equity_Funding',
+        'Debt_Funding',
+        'Grants',
+        'Convertible_Notes',
+        'Revenue_Based_Financing',
+        'Scholarship'
+      ],
+    },
+    amount:{
+      type:Number,
     }
   }]
 }, { timestamps: true });
