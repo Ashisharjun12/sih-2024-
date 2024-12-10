@@ -35,11 +35,16 @@ const researchSchema = new mongoose.Schema({
     },
     price: {
         type: Number,
+        required: function (this: { isFree: boolean }) {
+            return !this.isFree;
+        }
     },
-    purchasedBy: [{
+    downloads: { type: Number, default: 0 },
+    researcher: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }]
+        ref: 'Researcher',
+        required: true
+    }
 });
 
 const ResearchPaper = mongoose.models.ResearchPaper || mongoose.model("ResearchPaper", researchSchema);

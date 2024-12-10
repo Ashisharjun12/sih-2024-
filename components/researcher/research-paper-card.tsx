@@ -1,17 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar,
-  Clock,
-  CheckCircle2,
-  Link2,
-  File,
-  ArrowUpRight,
-  IndianRupee
-} from "lucide-react";
+import { CalendarIcon, FileText, Building2, User, Lock, Unlock, ArrowUpRight, BookOpen } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 
 interface ResearchPaper {
@@ -19,11 +12,23 @@ interface ResearchPaper {
   title: string;
   description: string;
   publicationDate: string;
-  stage: string;
   doi?: string;
-  images: Array<{ public_id: string; secure_url: string }>;
-  isFree: boolean;
+  stage: string;
+  isPublished: boolean;
+  isFree?: boolean;
   price?: number;
+  images: Array<{
+    public_id: string;
+    secure_url: string;
+  }>;
+  researcher: {
+    personalInfo: {
+      name: string;
+    };
+    academicInfo: {
+      institution: string;
+    };
+  } | null;
 }
 
 interface ResearchPaperCardProps {
@@ -41,95 +46,113 @@ const STAGE_COLORS = {
   "default": "bg-slate-500/10 text-slate-700"
 };
 
+const BANNER_GRADIENTS = [
+  "from-purple-600/90 to-blue-600/90",
+  "from-emerald-600/90 to-cyan-600/90",
+  "from-orange-600/90 to-red-600/90",
+];
+
 export function ResearchPaperCard({ paper, index }: ResearchPaperCardProps) {
   const router = useRouter();
-  const stageColor = STAGE_COLORS[paper.stage as keyof typeof STAGE_COLORS] || STAGE_COLORS.default;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      onClick={() => router.push(`/researcher/papers/${paper._id}`)}
+      onClick={() => router.push(`/explore/research-papers/${paper._id}`)}
       className="cursor-pointer"
     >
-      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-slate-50">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        
-        <CardHeader className="pb-3">
-          <div className="space-y-2.5">
+      <Card className="group h-full overflow-hidden hover:shadow-lg transition-all duration-300">
+        <div className="relative">
+          {/* Banner Section */}
+          <div className="h-24 relative overflow-hidden">
+            <div className="absolute inset-0 bg-cover bg-center bg-[url('/research-banner.jpg')]" />
+            <div className={`absolute inset-0 bg-gradient-to-r ${BANNER_GRADIENTS[index % BANNER_GRADIENTS.length]} mix-blend-multiply`} />
+            <div className="absolute inset-0 bg-black/20" />
+            
+            {/* Title and Access Badge */}
+            <div className="relative p-4">
+              <div className="flex items-start justify-between">
+                <h3 className="font-semibold text-lg line-clamp-2 text-white group-hover:text-white/90 transition-colors">
+                  {paper.title}
+                </h3>
+                {paper.isPublished && (
+                  paper.isFree ? (
+                    <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">
+                      <Unlock className="h-3 w-3 mr-1" />
+                      Free Access
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">
+                      <Lock className="h-3 w-3 mr-1" />
+                      ${paper.price}
+                    </Badge>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Content Section */}
+          <div className="p-4 space-y-4">
+            {/* Researcher Info */}
+            {paper.researcher && (
+              <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>{paper.researcher.personalInfo.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span>{paper.researcher.academicInfo.institution}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Description */}
+            <p className="text-sm text-muted-foreground line-clamp-3">
+              {paper.description}
+            </p>
+
+            {/* Stage and DOI */}
             <div className="flex items-center justify-between">
-              <CardTitle className="line-clamp-1 text-lg font-medium">
-                {paper.title}
-              </CardTitle>
-              {paper.isFree ? (
-                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 font-medium">
-                  Free Access
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 flex items-center gap-1.5 font-medium">
-                  <IndianRupee className="w-3 h-3" />
-                  {paper.price?.toLocaleString('en-IN')}
+              <Badge 
+                variant="outline" 
+                className={`${STAGE_COLORS[paper.stage as keyof typeof STAGE_COLORS] || STAGE_COLORS.default} border-none flex items-center gap-1`}
+              >
+                <BookOpen className="h-3 w-3" />
+                {paper.stage}
+              </Badge>
+              {paper.doi && (
+                <Badge 
+                  variant="outline" 
+                  className="text-xs flex items-center gap-1 group-hover:bg-primary/5 transition-colors"
+                >
+                  <FileText className="h-3 w-3" />
+                  DOI: {paper.doi}
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CalendarIcon className="h-4 w-4" />
+                <span>
+                  {formatDistanceToNow(new Date(paper.publicationDate), { addSuffix: true })}
+                </span>
+              </div>
               <Badge 
                 variant="secondary" 
-                className={`${stageColor}`}
+                className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
               >
-                {paper.stage === "Completed" ? (
-                  <CheckCircle2 className="w-3 h-3 mr-1.5" />
-                ) : (
-                  <Clock className="w-3 h-3 mr-1.5" />
-                )}
-                {paper.stage}
+                View Details
+                <ArrowUpRight className="h-3 w-3 ml-1" />
               </Badge>
             </div>
           </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4 relative z-10">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {paper.description}
-          </p>
-
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" />
-              <span>{new Date(paper.publicationDate).toLocaleDateString('en-IN')}</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {paper.doi && (
-                <a 
-                  href={`https://doi.org/${paper.doi}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors group/link"
-                >
-                  <Link2 className="h-3.5 w-3.5" />
-                  <span>DOI</span>
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity" />
-                </a>
-              )}
-
-              {paper.images.map((image) => (
-                <a 
-                  key={image.public_id}
-                  href={image.secure_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group/link flex items-center gap-1.5 text-slate-600 hover:text-slate-900 transition-colors"
-                >
-                  <File className="h-3.5 w-3.5" />
-                  <span>Document</span>
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity" />
-                </a>
-              ))}
-            </div>
-          </div>
-        </CardContent>
+        </div>
       </Card>
     </motion.div>
   );

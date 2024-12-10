@@ -16,6 +16,7 @@ import { CustomerAcquisitionRate } from "@/components/graphs/customerAcquisition
 import Revenue from "@/components/graphs/revenue";
 import GrossMargin from "@/components/graphs/grossMargin";
 import { ROIChart } from "@/components/graphs/roi";
+import { KPIChart } from "@/components/graphs/kpi";
 import { MetricsData, TimeframeKey } from "@/types/metrics";
 import { 
   TrendingUp, 
@@ -26,41 +27,82 @@ import {
   PieChart,
   Activity
 } from "lucide-react";
-import { KPIChart } from "@/components/graphs/kpi";
+
+// Define stat types
+interface StatData {
+  value: number;
+  change: number;
+}
+
+interface TimeframedStats {
+  revenue: StatData;
+  customerGrowth: StatData;
+  burnRate: StatData;
+  roi: StatData;
+  marketShare: StatData;
+  growthRate: StatData;
+}
+
+interface Startup {
+  id: string;
+  name: string;
+  logo?: string;
+  industries: string[];
+  stage: string;
+  businessModel: string;
+  revenueModel: string;
+}
 
 export default function StartupMetrics() {
   const [timeFrame, setTimeFrame] = useState<TimeframeKey>("monthly");
   const [loading, setLoading] = useState(true);
   const [metricsData, setMetricsData] = useState<MetricsData | null>(null);
   const [startupId, setStartupId] = useState<string>('default');
+  const [stats, setStats] = useState<TimeframedStats | null>(null);
+  const [startups, setStartups] = useState<Startup[]>([]);
   const { toast } = useToast();
 
+  // Fetch startups list
   useEffect(() => {
-    const fetchStartupId = async () => {
+    const fetchStartups = async () => {
       try {
-        const res = await fetch('/api/startup/profile');
-        const data = await res.json();
-        if (data.profile?._id) {
-          setStartupId(data.profile._id);
+        const response = await fetch('/api/startup/list');
+        const data = await response.json();
+        
+        if (data.success) {
+          setStartups(data.startups);
+          // Set first startup as default if available
+          if (data.startups.length > 0 && startupId === 'default') {
+            setStartupId(data.startups[0].id);
+          }
         }
+        console.log(data.startups);
       } catch (error) {
-        console.error('Error fetching startup ID:', error);
+        console.error('Error fetching startups:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch startups list",
+          variant: "destructive",
+        });
       }
     };
 
-    fetchStartupId();
+    fetchStartups();
   }, []);
 
   const fetchMetricsData = useCallback(async () => {
     try {
       setLoading(true);
+      console.log(startupId);
       const response = await fetch(
         `/api/startup/metrics?timeframe=${timeFrame}&startupId=${startupId}`
       );
       const result = await response.json();
+      console.log(result);
 
       if (result.success) {
         setMetricsData(result.data);
+        setStats(result.data.stats);
       } else {
         toast({
           title: "Error",
@@ -81,8 +123,10 @@ export default function StartupMetrics() {
   }, [timeFrame, startupId, toast]);
 
   useEffect(() => {
-    fetchMetricsData();
-  }, [fetchMetricsData]);
+    if (startupId !== 'default') {
+      fetchMetricsData();
+    }
+  }, [fetchMetricsData, startupId]);
 
   const handleTimeFrameChange = useCallback((newTimeFrame: string) => {
     setTimeFrame(newTimeFrame as TimeframeKey);
@@ -116,31 +160,6 @@ export default function StartupMetrics() {
     }
   };
 
-  const fetchMetric = async (metricKey: string) => {
-    try {
-      const response = await fetch(
-        `/api/startup/metrics?timeframe=${timeFrame}&startupId=${startupId}&metric=${metricKey}`
-      );
-      const result = await response.json();
-
-      if (result.success) {
-        setMetricsData(prev => prev ? {
-          ...prev,
-          metrics: {
-            ...prev.metrics,
-            [metricKey]: result.data.metrics[metricKey]
-          }
-        } : null);
-      }
-    } catch (error) {
-      console.error(`Error fetching ${metricKey} metric:`, error);
-    }
-  };
-
-  const changeStartup = async (newStartupId: string) => {
-    setStartupId(newStartupId);
-  };
-
   if (loading || !metricsData) {
     return (
       <div className="container py-8 flex items-center justify-center">
@@ -167,18 +186,26 @@ export default function StartupMetrics() {
             {/* Startup Selector */}
             <Select
               value={startupId}
-              onValueChange={changeStartup}
+              onValueChange={setStartupId}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[250px]">
                 <SelectValue placeholder="Select startup" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="startup-1">AI/ML Startup</SelectItem>
-                <SelectItem value="startup-2">Early Stage Startup</SelectItem>
-                <SelectItem value="startup-3">Growth Stage Startup</SelectItem>
-                <SelectItem value="startup-4">SaaS Startup</SelectItem>
-                <SelectItem value="startup-5">Hardware Startup</SelectItem>
-                <SelectItem value="default">Demo Startup</SelectItem>
+                {startups.map((startup) => (
+                  <SelectItem key={startup.id} value={startup.id}>
+                    <div className="flex items-center gap-2">
+                      {startup.logo && (
+                        <img 
+                          src={startup.logo} 
+                          alt={startup.name} 
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                      )}
+                      <span>{startup.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {/* Time Frame Selector */}
@@ -198,13 +225,13 @@ export default function StartupMetrics() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-4">
-          {Object.entries(metricsData.stats).map(([key, stat], index) => {
-            const isNegativeGood = key === 'burnRate' || key === 'churnRate';
+        <div className="grid gap-4 md:grid-cols-3">
+          {stats && Object.entries(stats).map(([key, stat], index) => {
+            const isNegativeGood = key === 'burnRate';
             const isPositive = stat.change > 0;
-            const changeColor = isNegativeGood
-              ? (isPositive ? 'text-red-500' : 'text-green-500')
-              : (isPositive ? 'text-green-500' : 'text-red-500');
+            const textColorClass = isNegativeGood 
+              ? (!isPositive ? 'text-green-600' : 'text-red-600')
+              : (isPositive ? 'text-green-600' : 'text-red-600');
 
             return (
               <motion.div
@@ -213,30 +240,29 @@ export default function StartupMetrics() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card 
-                  className="hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => fetchMetric(key)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col gap-1">
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </p>
-                        <h3 className="text-2xl font-bold">
-                          {formatStatValue(key, stat.value)}
-                        </h3>
-                        <p className={`text-xs flex items-center gap-1 ${changeColor}`}>
-                          <TrendingUp 
-                            className={`h-3 w-3 ${stat.change < 0 ? 'rotate-180' : ''}`} 
-                          />
-                          {stat.change > 0 ? '+' : ''}{stat.change}%
-                          <span className="text-muted-foreground ml-1">
-                            {getStatDescription(key)}
-                          </span>
-                        </p>
-                      </div>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </CardTitle>
+                    <div className="p-2 bg-primary/10 rounded-full">
                       {getStatIcon(key)}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {formatStatValue(key, stat.value)}
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className={`text-xs ${textColorClass} flex items-center gap-1`}>
+                        {stat.change > 0 ? '+' : ''}{stat.change}%
+                        <TrendingUp 
+                          className={`h-3 w-3 ${!isPositive ? 'rotate-180' : ''}`} 
+                        />
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {getStatDescription(key)}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -252,20 +278,14 @@ export default function StartupMetrics() {
             animate={{ opacity: 1, y: 0 }}
           >
             <ROIChart startupId={startupId} />
+            <ROIChart startupId={startupId} />
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Revenue />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <BurnRate />
+            <KPIChart startupId={startupId} />
           </motion.div>
 
           <motion.div
@@ -279,47 +299,21 @@ export default function StartupMetrics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <GrossMargin />
-          </motion.div>
-
-          {/* Market Analysis Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Market Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(metricsData.marketAnalysis.currentPerformance).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                      <div className="flex items-center gap-4">
-                        <div className="w-48 h-2 bg-gray-200 rounded-full">
-                          <div 
-                            className="h-full bg-primary rounded-full"
-                            style={{ width: `${value}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{value}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <Revenue startupId={startupId} />
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <KPIChart startupId={startupId} />
+            <BurnRate startupId={startupId} />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <GrossMargin startupId={startupId} />
           </motion.div>
         </div>
       </div>

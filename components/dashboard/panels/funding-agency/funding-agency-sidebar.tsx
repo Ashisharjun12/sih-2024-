@@ -37,8 +37,8 @@ const fundingAgencyLinks = [
     icon: PieChart,
   },
   {
-    title: "Funded Startup",
-    href: "/funding-agency/funding-Startup",
+    title: "Funding Applications",
+    href: "/funding-agency/fundingApplications",
     icon: FileText,
   },
   {

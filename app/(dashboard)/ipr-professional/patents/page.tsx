@@ -127,15 +127,19 @@ export default function PatentsPage() {
         throw new Error("Failed to fetch patents");
       }
       const data = await response.json();
-      
+
       // Set patents immediately to show static data
       setPatents(data);
       setIsLoadingPatents(false);
 
       // Process similarities
       setIsLoadingGemini(true);
-      const pendingPatents = data.filter((tm: Patent) => tm.status === "Pending");
-      const acceptedPatents = data.filter((tm: Patent) => tm.status === "Accepted");
+      const pendingPatents = data.filter(
+        (tm: Patent) => tm.status === "Pending"
+      );
+      const acceptedPatents = data.filter(
+        (tm: Patent) => tm.status === "Accepted"
+      );
 
       console.log('Processing similarities for patents:', {
         pending: pendingPatents.length,
@@ -156,8 +160,10 @@ export default function PatentsPage() {
             );
 
             if (similarity) {
-              if (similarity.titleSimilarity > highestTitleSimilarity || 
-                  similarity.descriptionSimilarity > highestDescSimilarity) {
+              if (
+                similarity.titleSimilarity > highestTitleSimilarity ||
+                similarity.descriptionSimilarity > highestDescSimilarity
+              ) {
                 highestTitleSimilarity = similarity.titleSimilarity;
                 highestDescSimilarity = similarity.descriptionSimilarity;
                 mostSimilarTitle = accepted.title;
@@ -165,10 +171,19 @@ export default function PatentsPage() {
             }
           } catch (error) {
             // If rate limit hit, use basic similarity check
-            const titleSimilarity = calculateBasicSimilarity(pending.title, accepted.title);
-            const descSimilarity = calculateBasicSimilarity(pending.description, accepted.description);
-            
-            if (titleSimilarity > highestTitleSimilarity || descSimilarity > highestDescSimilarity) {
+            const titleSimilarity = calculateBasicSimilarity(
+              pending.title,
+              accepted.title
+            );
+            const descSimilarity = calculateBasicSimilarity(
+              pending.description,
+              accepted.description
+            );
+
+            if (
+              titleSimilarity > highestTitleSimilarity ||
+              descSimilarity > highestDescSimilarity
+            ) {
               highestTitleSimilarity = titleSimilarity * 100;
               highestDescSimilarity = descSimilarity * 100;
               mostSimilarTitle = accepted.title;
@@ -177,13 +192,13 @@ export default function PatentsPage() {
         }
 
         if (highestTitleSimilarity > 0 || highestDescSimilarity > 0) {
-          setSimilarityData(prev => ({
+          setSimilarityData((prev) => ({
             ...prev,
             [pending._id]: {
               similarTo: mostSimilarTitle,
               titleSimilarity: Math.round(highestTitleSimilarity),
-              descriptionSimilarity: Math.round(highestDescSimilarity)
-            }
+              descriptionSimilarity: Math.round(highestDescSimilarity),
+            },
           }));
         }
       }
@@ -207,16 +222,10 @@ export default function PatentsPage() {
     }
 
     try {
-      const pendingPatent = selectedPendingPatent;
-      const acceptedPatent = patents.find(p => p.status === "Accepted");
-      
       const response = await fetch("/api/gemini/compare-trademarks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          pending: pendingPatent, 
-          accepted: acceptedPatent 
-        }),
+        body: JSON.stringify({ pending, accepted }),
       });
 
       if (!response.ok) throw new Error("Failed to check similarity");
@@ -836,27 +845,49 @@ export default function PatentsPage() {
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <span>Title Similarity:</span>
-                              <Badge variant={similarityData[patent._id].titleSimilarity > 70 ? "destructive" : "secondary"}>
+                              <Badge
+                                variant={
+                                  similarityData[patent._id].titleSimilarity >
+                                  70
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
                                 {similarityData[patent._id].titleSimilarity}%
                               </Badge>
-                              {similarityData[patent._id].titleSimilarity > 70 && (
+                              {similarityData[patent._id].titleSimilarity >
+                                70 && (
                                 <span className="text-xs text-red-500">
-                                  Similar to: {similarityData[patent._id].similarTo}
+                                  Similar to:{" "}
+                                  {similarityData[patent._id].similarTo}
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
                               <span>Description Similarity:</span>
-                              <Badge variant={similarityData[patent._id].descriptionSimilarity > 70 ? "destructive" : "secondary"}>
-                                {similarityData[patent._id].descriptionSimilarity}%
+                              <Badge
+                                variant={
+                                  similarityData[patent._id]
+                                    .descriptionSimilarity > 70
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
+                                {
+                                  similarityData[patent._id]
+                                    .descriptionSimilarity
+                                }
+                                %
                               </Badge>
                             </div>
                           </div>
-                        ) : isLoadingGemini && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            Analyzing similarity...
-                          </div>
+                        ) : (
+                          isLoadingGemini && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                              Analyzing similarity...
+                            </div>
+                          )
                         )}
                       </div>
                     )}
@@ -867,7 +898,9 @@ export default function PatentsPage() {
                     ? patent.owner.startupName
                     : patent.owner.name}
                 </TableCell>
-                <TableCell>{format(new Date(patent.filingDate), "PP")}</TableCell>
+                <TableCell>
+                  {format(new Date(patent.filingDate), "PP")}
+                </TableCell>
                 <TableCell>
                   <Badge
                     variant="secondary"
@@ -880,7 +913,12 @@ export default function PatentsPage() {
                   {patent.status === "Pending" ? (
                     <Button
                       variant="outline"
-                      onClick={() => {setSelectedPatent(patent);
+                      onClick={() => {
+                        if (!isWalletConnected) {
+                          checkWalletConnection();
+                        } else {
+                          setSelectedPatent(patent);
+                        }
                       }}
                     >
                       Review
@@ -1018,7 +1056,7 @@ export default function PatentsPage() {
                   Please connect your MetaMask wallet to review patent
                   applications
                 </p>
-                <Button onClick={connectWallet}>Connect MetaMask</Button>
+                <Button onClick={checkWalletConnection}>Connect MetaMask</Button>
               </div>
             </>
           )}
