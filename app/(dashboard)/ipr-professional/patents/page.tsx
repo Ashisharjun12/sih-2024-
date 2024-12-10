@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import { ethers, Contract } from "ethers";
 import {
   Table,
   TableBody,
@@ -32,6 +32,7 @@ import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { checkSimilarityWithGemini } from "@/lib/gemini";
 
 interface IPROwner {
   _id: string;
@@ -65,7 +66,22 @@ interface SimilarityInfo {
   descriptionSimilarity: number;
 }
 
-const PatentsPage = () => {
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Pending":
+      return "bg-yellow-500/10 text-yellow-700";
+    case "Accepted":
+      return "bg-green-500/10 text-green-700";
+    case "Rejected":
+      return "bg-red-500/10 text-red-700";
+    default:
+      return "bg-gray-500/10 text-gray-700";
+  }
+};
+
+export default function PatentsPage() {
   const [patents, setPatents] = useState<Patent[]>([]);
   const [selectedPatent, setSelectedPatent] = useState<Patent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +89,7 @@ const PatentsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
+  const [contract, setContract] = useState<Contract | null>(null);
   const [transactionInProgress, setTransactionInProgress] = useState(false);
   const [similarityData, setSimilarityData] = useState<
     Record<string, SimilarityInfo>
@@ -206,121 +222,97 @@ const PatentsPage = () => {
     }
 
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts", []);
-      if (accounts.length > 0) {
-        setIsWalletConnected(true);
-        setWalletAddress(accounts[0]);
-        const currentContract = await initializeEthers(window.ethereum);
-        setContract(currentContract);
-      }
-    } catch (error: any) {
-      console.error("Wallet connection error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to connect wallet",
-        variant: "destructive",
+      const response = await fetch("/api/gemini/compare-trademarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pending, accepted }),
       });
+
+      if (!response.ok) throw new Error("Failed to check similarity");
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking similarity:", error);
+      return null;
     }
   };
 
-  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
-    if (!selectedPatent || !isWalletConnected) return;
-    setIsSubmitting(true);
-    setTransactionInProgress(true);
+  const calculateBasicSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+    
+    const commonWords = words1.filter(word => set2.has(word));
+    return (commonWords.length * 2) / (set1.size + set2.size);
+  };
 
+  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
+    if (!contract || !selectedPatent) return;
+    
     try {
-      // First update the status in database
-      const response = await fetch(
-        `/api/ipr-professional/${selectedPatent?._id}`,
+      setIsSubmitting(true);
+      setTransactionInProgress(true);
+
+      const { _id: id, title, owner: { _id: ownerId } } = selectedPatent;
+
+      const transaction = status === "Accepted" 
+        ? await contract.acceptPatent(id, title, ownerId)
+        : await contract.rejectPatent(id, title, ownerId);
+
+      // Show transaction pending toast
+      toast({
+        title: "Transaction Pending",
+        description:
+          "Please wait while the transaction is being processed...",
+      });
+
+      // Wait for transaction confirmation
+      const receipt = await transaction.wait();
+      console.log(receipt.hash);
+      console.log(receipt);
+
+      // Update transaction hash in database
+      await fetch(
+        `/api/ipr-professional/${selectedPatent._id}/transactionHash`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            status,
-            message,
+            transactionHash: receipt.hash,
           }),
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to update patent status");
-      }
-
-      const data = await response.json();
-
-      // Then handle blockchain transaction
-      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
-      const title = data.ipr.title;
-      const ownerId = BigInt(
-        parseInt(data.ipr.owner.details._id.toString(), 16)
-      ).toString();
-      try {
-        let transaction;
-        if (status === "Accepted") {
-          transaction = await contract.acceptPatent(id, title, ownerId);
-        } else {
-          transaction = await contract.rejectPatent(id, title, ownerId);
-        }
-
-        // Show transaction pending toast
-        toast({
-          title: "Transaction Pending",
-          description:
-            "Please wait while the transaction is being processed...",
-        });
-
-        // Wait for transaction confirmation
-        const receipt = await transaction.wait();
-        console.log(receipt.hash);
-        console.log(receipt);
-
-        // Update transaction hash in database
-        await fetch(
-          `/api/ipr-professional/${selectedPatent._id}/transactionHash`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              transactionHash: receipt.hash,
-            }),
-          }
-        );
-
-        toast({
-          title: "Success",
-          description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`,
-        });
-      } catch (error: any) {
-        if (error.code === "ACTION_REJECTED") {
-          toast({
-            title: "Transaction Rejected",
-            description: "You rejected the transaction in MetaMask",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-        return;
-      }
-
-      await fetchPatents();
-      setSelectedPatent(null);
-      setMessage("");
-    } catch (error: any) {
-      console.error("Error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update status",
-        variant: "destructive",
+        title: "Success",
+        description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`,
       });
+    } catch (error: any) {
+      if (error.code === "ACTION_REJECTED") {
+        toast({
+          title: "Transaction Rejected",
+          description: "You rejected the transaction in MetaMask",
+          variant: "destructive",
+        });
+      } else {
+        throw error;
+      }
+      return;
     } finally {
       setIsSubmitting(false);
       setTransactionInProgress(false);
+    }
+  };
+
+  const handleAnalyze = () => {
+    if (isAnalysisReady && Object.keys(similarityData).length > 0) {
+      setShowSimilarityResults(true);
     }
   };
 
@@ -338,7 +330,6 @@ const PatentsPage = () => {
         let mostSimilarPatent = null;
 
         for (const accepted of acceptedPatents) {
-          // Show which patents are being compared
           setAnalyzingPair({
             pending,
             accepted
@@ -535,9 +526,33 @@ const PatentsPage = () => {
     setSelectedPendingPatent(patent === selectedPendingPatent ? null : patent);
   };
 
-  useEffect(() => {
-    if (isAnalysisReady && Object.keys(similarityData).length > 0) {
-      setShowSimilarityResults(true);
+  const connectWallet = async () => {
+    try {
+      const { signer, address: walletAddr, contractInstance } = await initializeEthers();
+      
+      if (!signer || !walletAddr || !contractInstance) {
+        throw new Error("Failed to initialize wallet");
+      }
+
+      if (typeof walletAddr === 'string') {
+        setWalletAddress(walletAddr);
+        setIsWalletConnected(true);
+        setContract(contractInstance as unknown as ethers.Contract);
+        
+        toast({
+          title: "Success",
+          description: "Wallet connected successfully",
+        });
+      } else {
+        throw new Error("Invalid wallet address format");
+      }
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+      toast({
+        title: "Error",
+        description: "Failed to connect wallet. Please make sure MetaMask is installed and unlocked.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1049,6 +1064,4 @@ const PatentsPage = () => {
       </Dialog>
     </div>
   );
-};
-
-export default PatentsPage;
+}

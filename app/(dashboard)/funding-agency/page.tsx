@@ -20,6 +20,7 @@ import {
   IndianRupee,
   Plus,
 } from "lucide-react";
+import { FundingAgencyCard } from "@/components/cards/funding-agency-card";
 
 interface WalletData {
   balance: number;
@@ -28,6 +29,46 @@ interface WalletData {
     amount: number;
     description: string;
     createdAt: string;
+  }>;
+}
+
+interface FundingAgency {
+  _id: string;
+  userId: string;
+  personalInfo: {
+    name: string;
+    email: {
+      address: string;
+      verified: boolean;
+    };
+    phone: {
+      number: string;
+      verified: boolean;
+    };
+    uniqueId: {
+      type: string;
+      number: string;
+    };
+  };
+  agencyInfo: {
+    agencyName: string;
+    registrationNumber: string;
+    type: string;
+    establishmentYear: number;
+    location: string;
+    employeeCount: number;
+    website?: string;
+  };
+  documents: {
+    profilePicture?: {
+      public_id: string;
+      secure_url: string;
+    };
+  };
+  fundingHistory?: Array<{
+    startupId: string;
+    amount: number;
+    date: string;
   }>;
 }
 
@@ -40,9 +81,12 @@ export default function FundingAgencyDashboard() {
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const [amount, setAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [agencies, setAgencies] = useState<FundingAgency[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchWalletData();
+    fetchAgencies();
   }, []);
 
   const fetchWalletData = async () => {
@@ -57,6 +101,25 @@ export default function FundingAgencyDashboard() {
       }
     } catch (error) {
       console.error('Error fetching wallet:', error);
+    }
+  };
+
+  const fetchAgencies = async () => {
+    try {
+      const res = await fetch('/api/funding-agency/all');
+      const data = await res.json();
+      if (data.success) {
+        setAgencies(data.agencies);
+      }
+    } catch (error) {
+      console.error('Error fetching agencies:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch funding agencies",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -199,6 +262,27 @@ export default function FundingAgencyDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Funding Agencies Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : agencies.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          {agencies.map((agency) => (
+            <FundingAgencyCard key={agency._id} agency={agency} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">No Funding Agencies</h3>
+          <p className="text-sm text-muted-foreground">
+            No funding agencies are available at the moment
+          </p>
+        </div>
+      )}
     </div>
   );
 }
