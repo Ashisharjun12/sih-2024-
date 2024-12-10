@@ -393,7 +393,7 @@ const startupSchema = new mongoose.Schema({
   requests: [{
     fundingAgency: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Startup'
+      ref: 'FundingAgency'
     },
     message: {
       type: String,
@@ -413,12 +413,16 @@ const startupSchema = new mongoose.Schema({
     },
     amount:{
       type:Number,
+    },
+    status:{
+      type:String,
+      enum:["pending", "accepted", "rejected", "transfered"]
     }
   }],
   requested: [{
     fundingAgency: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Startup'
+      ref: 'FundingAgency'
     },
     message: {
       type: String,
@@ -438,6 +442,10 @@ const startupSchema = new mongoose.Schema({
     },
     amount:{
       type:Number,
+    },
+    status:{
+      type:String,
+      enum:["pending", "accepted", "rejected"]
     }
   }]
 }, { timestamps: true });

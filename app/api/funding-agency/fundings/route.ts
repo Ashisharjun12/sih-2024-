@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
     await addNotification({
       name: fundingAgency.agencyDetails.name,
       message: `${fundingAgency.agencyDetails?.name} has sent you a funding request.`,
-      role :session.user.role
+      role :"fundingAgency"
     }, startup.userId);
 
     console.log("Step 7: Request created successfully");

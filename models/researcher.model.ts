@@ -151,11 +151,11 @@ const researcherSchema = new mongoose.Schema({
     _id: false
   },
 
-  // Add published papers array
-  publishedPapers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ResearchPaper'
-  }]
+  // // Add published papers array
+  // publishedPapers: [{
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'ResearchPaper'
+  // }]
 }, { timestamps: true });
 
 const Researcher = mongoose.models.Researcher || mongoose.model("Researcher", researcherSchema);

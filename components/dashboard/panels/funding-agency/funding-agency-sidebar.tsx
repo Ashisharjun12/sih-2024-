@@ -42,8 +42,8 @@ const fundingAgencyLinks = [
     icon: FileText,
   },
   {
-    title: "Trends",
-    href: "/funding-agency/trends",
+    title: "Metrics",
+    href: "/funding-agency/metrics",
     icon: TrendingUp,
   },
   
@@ -51,11 +51,6 @@ const fundingAgencyLinks = [
     title: "Messages",
     href: "/funding-agency/messages",
     icon: MessageCircle,
-  },
-  {
-    title: "Network",
-    href: "/funding-agency/network",
-    icon: Users,
   },
  
 ];
