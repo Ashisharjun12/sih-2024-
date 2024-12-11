@@ -126,12 +126,6 @@ const FUNDING_TYPES = [
   'Scholarship'
 ] as const;
 
-const INVESTMENT_STATUS = [
-  'Proposed',
-  'In_Progress',
-  'Completed',
-  'Cancelled'
-] as const;
 
 const PREFERRED_SECTORS = ['3d printing',
       'Accounting',
@@ -475,7 +469,8 @@ export default function FundingAgencyRegistrationForm() {
             documentation: {
               registrationCertificate: uploadedFiles.registrationCertificate,
               governmentApprovals: uploadedFiles.governmentApprovals,
-              taxDocuments: uploadedFiles.taxDocuments
+              taxDocuments: uploadedFiles.taxDocuments,
+              logo : uploadedFiles.logo,
             }
           }
         })
@@ -493,7 +488,7 @@ export default function FundingAgencyRegistrationForm() {
         description: "Your funding agency application has been submitted for review",
       });
 
-      // router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       console.error("Form submission error:", error);
       toast({
@@ -1116,6 +1111,16 @@ export default function FundingAgencyRegistrationForm() {
                               fileType="taxDocuments"
                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                               onFileChange={(fileData) => handleFileChange('taxDocuments', fileData)}
+                            />
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Logo</FormLabel>
+                            <FileUpload
+                              label="Logo"
+                              fileType="logo"
+                              accept=".jpg,.jpeg,.png,.doc,.docx"
+                              onFileChange={(fileData) => handleFileChange('logo', fileData)}
                             />
                           </FormItem>
                         </div>
