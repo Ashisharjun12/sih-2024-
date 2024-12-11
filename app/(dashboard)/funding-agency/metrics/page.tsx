@@ -33,8 +33,10 @@ export default function MetricsPage() {
         try {
             const response = await fetch("/api/startups");
             if (!response.ok) throw new Error("Failed to fetch startups");
+            console.log("all startups___________,",response)
             const data = await response.json();
             setStartups(data.startups);
+            console.log("all startups___________,",data.startups)
         } catch (error) {
             toast({
                 title: "Error",

@@ -162,7 +162,8 @@ export async function POST(req: NextRequest) {
       console.log("Missing required fields:", { fundingAgencyId, amount, fundingType, message });
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
-
+ 
+    
     console.log("Step 3: Investment details:", { fundingAgencyId, amount, fundingType, message });
 
     await connectDB();

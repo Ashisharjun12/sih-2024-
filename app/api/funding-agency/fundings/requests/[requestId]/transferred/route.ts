@@ -47,6 +47,7 @@ export async function POST(
     if (!fundingAgency) {
       return NextResponse.json({ error: "Funding agency not found" }, { status: 404 });
     }
+    
     const requested = fundingAgency.requested.map((req)=>req.status === startup._id);
     requested.status = "transferred";
 

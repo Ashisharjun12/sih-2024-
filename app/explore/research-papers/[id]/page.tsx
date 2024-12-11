@@ -87,6 +87,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
   useEffect(() => {
     const fetchPaper = async () => {
       try {
+        console.log("FETCHING PAGE FDSF;LDSKF;LKDS;LFK;LDS//////////////////////////////")
         setLoading(true);
         const response = await fetch(`/api/explore/research-papers/${params.id}`);
         
@@ -115,7 +116,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
     };
 
     fetchPaper();
-  }, [params.id, toast, router]);
+  }, [params.id,]);
 
   const handleDownload = async () => {
     if (!paper?.isPublished) {
