@@ -99,7 +99,7 @@ export default function ResearcherDashboard() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/researcher/recommendation');
+      const response = await fetch('/api/researcher/all');
       const data = await response.json() as ApiResponse;
       
       if (data.success) {
@@ -122,6 +122,7 @@ export default function ResearcherDashboard() {
   const fetchPapers = async () => {
     try {
       const response = await fetch("/api/researcher/papers");
+      console.log(response)
       if (!response.ok) throw new Error("Failed to fetch research papers");
       const data = await response.json();
       
