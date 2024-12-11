@@ -58,6 +58,7 @@ const IPRProfessionalForm = () => {
     try {
       for (const file of files) {
         const formData = new FormData();
+        console.log(file)
         formData.append("file", file);
 
         const response = await fetch("/api/upload", {
