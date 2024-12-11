@@ -103,7 +103,7 @@ export default function MentorDashboard() {
   return (
     <div className="container py-6 space-y-8">
       {/* Welcome Section - Remove Schedule Button */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent p-6 md:p-8">
         <div className="relative">
           <div className="space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold">
@@ -128,20 +128,20 @@ export default function MentorDashboard() {
           <p className="text-2xl font-bold">12</p>
           <p className="text-sm text-blue-600/70">Active Mentees</p>
         </motion.div>
-        <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Clock className="h-6 w-6 text-emerald-500 mb-2" />
+        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Clock className="h-6 w-6 text-blue-500 mb-2" />
           <p className="text-2xl font-bold">48</p>
-          <p className="text-sm text-emerald-600/70">Hours Mentored</p>
+          <p className="text-sm text-blue-600/70">Hours Mentored</p>
         </div>
-        <div className="bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Wallet className="h-6 w-6 text-violet-500 mb-2" />
+        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Wallet className="h-6 w-6 text-blue-500 mb-2" />
           <p className="text-2xl font-bold">₹{totalEarnings.toLocaleString('en-IN')}</p>
-          <p className="text-sm text-violet-600/70">Earnings</p>
+          <p className="text-sm text-blue-600/70">Earnings</p>
         </div>
-        <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Star className="h-6 w-6 text-amber-500 mb-2" />
+        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Star className="h-6 w-6 text-blue-500 mb-2" />
           <p className="text-2xl font-bold">4.8</p>
-          <p className="text-sm text-amber-600/70">Rating</p>
+          <p className="text-sm text-blue-600/70">Rating</p>
         </div>
       </div>
 

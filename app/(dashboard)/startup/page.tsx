@@ -98,6 +98,7 @@ export default function StartupPage() {
     try {
       const response = await fetch("/api/startup/recommendations");
       const data = await response.json();
+      console.log("reco fundi",data);
       setRecommendedFundingAgencies(data);
     } catch (err) {
       console.error(err);

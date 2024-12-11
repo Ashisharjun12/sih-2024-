@@ -213,12 +213,12 @@ export default function MenteesPage() {
           <p className="text-xl font-bold">{mentees.length}</p>
           <p className="text-xs text-blue-600/70">Total Mentees</p>
         </motion.div>
-        <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl p-4">
-          <Calendar className="h-5 w-5 text-emerald-500 mb-2" />
+        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4">
+          <Calendar className="h-5 w-5 text-blue-500 mb-2" />
           <p className="text-xl font-bold">
             {mentees.reduce((total, mentee) => total + mentee.meetings.length, 0)}
           </p>
-          <p className="text-xs text-emerald-600/70">Total Sessions</p>
+          <p className="text-xs text-blue-600/70">Total Sessions</p>
         </div>
       </div>
 
