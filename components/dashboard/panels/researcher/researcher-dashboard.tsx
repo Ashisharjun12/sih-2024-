@@ -281,6 +281,7 @@ export default function ResearcherDashboard() {
         <ScrollArea className="w-full">
           <div className="flex space-x-6 pb-4">
             {researchers.map((researcher, index) => (
+              console.log(researcher),
               <div key={researcher._id} className="w-[400px] flex-none">
                 <ResearcherCard
                   researcher={{
