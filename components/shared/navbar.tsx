@@ -215,7 +215,7 @@ export default function Navbar() {
           </DropdownMenu>
 
           {/* Role Applications - Simplified on mobile */}
-          <DropdownMenu>
+          {session && session.user.role ==="user" && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -243,7 +243,7 @@ export default function Navbar() {
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
 
           {/* User Menu */}
           {status === "loading" ? (

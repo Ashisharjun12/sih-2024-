@@ -34,11 +34,10 @@ import { useToast } from "@/hooks/use-toast";
 
 // Constants
 const STARTUP_IDS = [
-  "67521b4dc2d6dc160b09d878",
-  "6752a4d92dd92150084ea81e",
-  "6752d2688720f7e63426f72f"
+  "6755f5059fc6ad8a5d7b684e",
+  "6755fb6dc8982ecb2e065854",
+  "67585013f94081f029fbb6d6"
 ];
-
 interface InvestmentData {
   month?: string;
   year?: string;
@@ -60,6 +59,15 @@ export default function InvestmentVsROI() {
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<any[]>([]);
   const { toast } = useToast();
+
+  const fetchStartups=async()=>{
+    try {
+      setLoading(true);
+      
+    } catch (error) {
+      
+    }
+  }
 
   const fetchData = async () => {
     try {
@@ -107,6 +115,7 @@ export default function InvestmentVsROI() {
   };
 
   useEffect(() => {
+    fetchStartups();
     fetchData();
   }, [timeframe, selectedStartup]);
 
@@ -136,9 +145,9 @@ export default function InvestmentVsROI() {
               <SelectValue placeholder="Select a startup" />
             </SelectTrigger>
             <SelectContent>
-              {STARTUP_IDS.map((id) => (
+              {STARTUP_IDS.map((id, index) => (
                 <SelectItem key={id} value={id}>
-                  {id}
+                  {index === 0 ? "startup 0":(index === 1 ? "startup a": "startup b")}
                 </SelectItem>
               ))}
             </SelectContent>
