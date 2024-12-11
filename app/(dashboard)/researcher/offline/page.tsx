@@ -39,13 +39,13 @@ const OfflinePage = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
-      {/* Hero Section with Blue Gradient */}
-      <div className="relative overflow-hidden rounded-2xl mb-8 bg-gradient-to-r from-blue-600 to-blue-400 p-8 md:p-12">
+      {/* Hero Section with orange Gradient */}
+      <div className="relative overflow-hidden rounded-2xl mb-8 bg-gradient-to-r from-orange-600 to-orange-400 p-8 md:p-12">
         <div className="relative z-10">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Offline Meetings
           </h1>
-          <p className="text-blue-50 text-lg max-w-2xl">
+          <p className="text-orange-50 text-lg max-w-2xl">
             Connect with investors and startups in person. Discover upcoming events and networking opportunities near you.
           </p>
         </div>
@@ -66,22 +66,22 @@ const OfflinePage = () => {
               className="pl-10 bg-white"
             />
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button className="bg-orange-600 hover:bg-orange-700">
             Create Meeting
           </Button>
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-blue-600 hover:text-white transition-colors">
+          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-orange-600 hover:text-white transition-colors">
             All Events
           </Badge>
-          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-blue-600 hover:text-white transition-colors">
+          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-orange-600 hover:text-white transition-colors">
             Pitch Days
           </Badge>
-          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-blue-600 hover:text-white transition-colors">
+          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-orange-600 hover:text-white transition-colors">
             Networking
           </Badge>
-          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-blue-600 hover:text-white transition-colors">
+          <Badge variant="outline" className="cursor-pointer bg-white hover:bg-orange-600 hover:text-white transition-colors">
             Workshops
           </Badge>
         </div>
@@ -101,7 +101,7 @@ const OfflinePage = () => {
               <div className="absolute top-4 left-4 flex gap-2">
                 <Badge 
                   variant={meeting.status === "Upcoming" ? "default" : "secondary"}
-                  className="bg-blue-600 text-white border-0"
+                  className="bg-orange-600 text-white border-0"
                 >
                   {meeting.status}
                 </Badge>
@@ -121,40 +121,40 @@ const OfflinePage = () => {
               {/* Meeting Details */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <Calendar className="h-4 w-4 text-orange-600" />
                   <span className="text-sm">{meeting.date}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Clock className="h-4 w-4 text-blue-600" />
+                  <Clock className="h-4 w-4 text-orange-600" />
                   <span className="text-sm">{meeting.time}</span>
                 </div>
                 <a 
                   href={`https://www.google.com/maps?q=${meeting.coordinates.lat},${meeting.coordinates.lng}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-2 text-gray-600 hover:text-blue-600 transition-colors group/map"
+                  className="flex items-start gap-2 text-gray-600 hover:text-orange-600 transition-colors group/map"
                 >
-                  <MapPin className="h-4 w-4 text-blue-600 mt-1" />
-                  <div className="text-sm group-hover/map:text-blue-600">
+                  <MapPin className="h-4 w-4 text-orange-600 mt-1" />
+                  <div className="text-sm group-hover/map:text-orange-600">
                     <div className="font-medium">{meeting.location}</div>
-                    <div className="text-xs text-gray-500 group-hover/map:text-blue-500">
+                    <div className="text-xs text-gray-500 group-hover/map:text-orange-500">
                       {meeting.address}
                     </div>
                   </div>
                 </a>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Users className="h-4 w-4 text-blue-600" />
+                  <Users className="h-4 w-4 text-orange-600" />
                   <span className="text-sm">{meeting.attendees} Attendees</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Building2 className="h-4 w-4 text-blue-600" />
+                  <Building2 className="h-4 w-4 text-orange-600" />
                   <span className="text-sm">{meeting.organizer}</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
+                <Button className="flex-1 bg-orange-600 hover:bg-orange-700">
                   Register
                 </Button>
                 <Button className="flex-1" variant="outline">
@@ -170,12 +170,12 @@ const OfflinePage = () => {
       {meetings.length === 0 && (
         <Card className="p-12 text-center bg-white">
           <div className="flex flex-col items-center gap-4">
-            <Calendar className="h-12 w-12 text-blue-600" />
+            <Calendar className="h-12 w-12 text-orange-600" />
             <h3 className="text-xl font-semibold text-gray-800">No Meetings Found</h3>
             <p className="text-gray-600">
               There are no offline meetings scheduled at the moment.
             </p>
-            <Button className="bg-blue-600 hover:bg-blue-700">Create a Meeting</Button>
+            <Button className="bg-orange-600 hover:bg-orange-700">Create a Meeting</Button>
           </div>
         </Card>
       )}

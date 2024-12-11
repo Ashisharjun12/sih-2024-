@@ -67,7 +67,7 @@ const IPRPage = () => {
       case "Rejected":
         return "bg-red-500";
       default:
-        return "bg-gray-500";
+        return "bg-orange-500";
     }
   };
 
@@ -83,7 +83,7 @@ const IPRPage = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Intellectual Property Rights</h1>
-        <Button asChild>
+        <Button className="bg-orange-400" asChild>
           <Link href="/researcher/ipr/create">
             <PlusCircle className="mr-2 h-4 w-4" />
             File New IPR
@@ -104,7 +104,7 @@ const IPRPage = () => {
           {iprs.map((ipr) => (
             <TableRow
               key={ipr.ipr._id}
-              className="cursor-pointer hover:bg-gray-100"
+              className="cursor-pointer hover:bg-orange-100"
               onClick={() => {
                 setSelectedIPR(ipr);
                 console.log(ipr);
@@ -137,16 +137,16 @@ const IPRPage = () => {
           <div className="mt-4 space-y-4">
             <div>
               <h3 className="font-semibold">Description</h3>
-              <p className="text-gray-600">{selectedIPR?.ipr.description}</p>
+              <p className="text-orange-600">{selectedIPR?.ipr.description}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold">Type</h3>
-                <p className="text-gray-600">{selectedIPR?.ipr.type}</p>
+                <p className="text-orange-600">{selectedIPR?.ipr.type}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Filing Date</h3>
-                <p className="text-gray-600">
+                <p className="text-orange-600">
                   {selectedIPR &&
                     format(new Date(selectedIPR.ipr.filingDate), "PP")}
                 </p>
@@ -168,7 +168,7 @@ const IPRPage = () => {
                 <h3 className="font-semibold">Transaction Hash</h3>
                 <Link
                   href={`https://sepolia.etherscan.io/tx/${selectedIPR?.ipr.transactionHash}#eventlog`}
-                  className="text-gray-600"
+                  className="text-orange-600"
                   target="_blank"
                 >
                   {selectedIPR?.ipr.transactionHash.slice(0, 10)}...
@@ -178,12 +178,12 @@ const IPRPage = () => {
             {selectedIPR?.iprProfessional && (
               <div>
                 <h3 className="font-semibold">IPR Professional</h3>
-                <p className="text-gray-600">
+                <p className="text-orange-600">
                   {selectedIPR.iprProfessional.name} (
                   {selectedIPR.iprProfessional.email})
                 </p>
                 {selectedIPR.message && (
-                  <p className="text-gray-600 mt-2">
+                  <p className="text-orange-600 mt-2">
                     Message: {selectedIPR.message}
                   </p>
                 )}
@@ -198,7 +198,7 @@ const IPRPage = () => {
                     href={doc.secure_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline block"
+                    className="text-orange-500 hover:underline block"
                   >
                     Document {index + 1}
                   </a>

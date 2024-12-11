@@ -45,11 +45,7 @@ const sidebarItems = [
     href: "/researcher/papers",
     icon : ScrollText
   },
-  {
-    title: "Profile",
-    href: "/researcher/profile",
-    icon: Users2, 
-  },
+
   {
     title: "Publications",
     href: "/researcher/publications",

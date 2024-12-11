@@ -229,7 +229,7 @@ export default function ResearchPapersPage() {
   return (
     <div className="container py-8 space-y-8">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent p-6 md:p-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Research Papers</h1>
@@ -237,7 +237,7 @@ export default function ResearchPapersPage() {
           </div>
           <Button
             onClick={() => setShowAddDialog(true)}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+            className="bg-gradient-to-r from-orange-600 to-orange-600 text-white hover:from-orange-700 hover:to-orange-700"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Research
@@ -270,7 +270,7 @@ export default function ResearchPapersPage() {
                           {paper.isFree ? (
                             <Badge variant="outline" className="text-green-600">Free</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-blue-600">
+                            <Badge variant="outline" className="text-orange-600">
                               ₹{paper.price}
                             </Badge>
                           )}
@@ -312,7 +312,7 @@ export default function ResearchPapersPage() {
                           {paper.isFree ? (
                             <Badge variant="outline" className="text-green-600">Free</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-blue-600">
+                            <Badge variant="outline" className="text-orange-600">
                               ₹{paper.price}
                             </Badge>
                           )}
@@ -353,7 +353,7 @@ export default function ResearchPapersPage() {
                           {paper.isFree ? (
                             <Badge variant="outline" className="text-green-600">Free</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-blue-600">
+                            <Badge variant="outline" className="text-orange-600">
                               ₹{paper.price}
                             </Badge>
                           )}
@@ -509,7 +509,7 @@ export default function ResearchPapersPage() {
                     </p>
                     {selectedFiles && selectedFiles.length > 0 && (
                       <div className="mt-4">
-                        <p className="text-sm font-medium text-green-600">
+                        <p className="text-sm font-medium text-orange-600">
                           {selectedFiles.length} file(s) selected
                         </p>
                         <ul className="mt-2 text-sm text-left">
@@ -529,7 +529,7 @@ export default function ResearchPapersPage() {
 
           <div className="sticky bottom-0 bg-background pt-4 border-t">
             <Button
-              className="w-full"
+              className="w-full bg-orange-500"
               onClick={handleSubmit}
               disabled={isSubmitting || !newPaper.title || !newPaper.description}
             >
@@ -540,7 +540,7 @@ export default function ResearchPapersPage() {
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2 " />
                   Create Research Paper
                 </>
               )}

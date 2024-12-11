@@ -185,7 +185,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
       <div className="h-[200px] relative overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-[url('/research-banner.jpg')] transition-transform duration-700 hover:scale-105" />
         <div className={`absolute inset-0 bg-gradient-to-br ${BANNER_GRADIENTS[0]} mix-blend-multiply`} />
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-orange/20" />
         
         {/* Content */}
         <div className="relative container h-full flex flex-col justify-between py-8">
@@ -269,7 +269,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
                   </h2>
                   <div className="flex items-center gap-3">
                     {!paper.isPublished && (
-                      <div className="flex items-center gap-2 text-yellow-600">
+                      <div className="flex items-center gap-2 text-orange-600">
                         <Lock className="h-4 w-4" />
                         <span className="text-sm font-medium">Private</span>
                       </div>
@@ -337,8 +337,8 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
                 </div>
 
                 {!paper.isPublished && !paper.isOwner && (
-                  <div className="rounded-lg bg-yellow-50/50 p-4 mt-4">
-                    <div className="flex items-center gap-2 text-yellow-600">
+                  <div className="rounded-lg bg-orange-50/50 p-4 mt-4">
+                    <div className="flex items-center gap-2 text-orange-600">
                       <AlertTriangle className="h-4 w-4" />
                       <p className="text-sm font-medium">
                         Documents will be visible once the paper is published
