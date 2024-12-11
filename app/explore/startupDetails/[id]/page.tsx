@@ -22,6 +22,7 @@ import {
   MessageSquareText,
   MessageSquare,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -189,19 +190,97 @@ export default function StartupDetails({
     }
   }, [session, params.projectid]);
 
-  const handleformsubmit = async()=>{
-    console.log("the startupsname",selectedstartups)
-    const formdata={
-      amount,
-      fundingType,
-      message,
-      fundingAgencyId: selectedstartups,
-      fundingAgencyName: selectedstartups.startupName|| '',
-      fundingTypeLabel: fundingTypes.find(t => t.value === fundingType)?.label
+  const [selectedStartupDetails, setSelectedStartupDetails] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleformsubmit = async () => {
+    try {
+      setIsSending(true);
+      const selectedFundingType = fundingTypes.find(t => t.value === fundingType);
+      
+      // Validate required fields
+      if (!amount || !fundingType || !message || !selectedstartups) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prepare data for API
+      const requestData = {
+        startupId: params.id,
+        amount: Number(amount),
+        fundingType: fundingType,
+        message: message
+      };
+
+      // Send request to API
+      const response = await fetch('/api/funding-agency/fundings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send funding request');
+      }
+
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Funding request sent successfully",
+      });
+
+      // Log the successful submission
+      console.log("Funding Request Submitted:", {
+        "Startup Being Viewed": {
+          id: params.id,
+          name: startup?.startupDetails.startupName,
+        },
+        "Funding Details": {
+          amount: Number(amount),
+          type: selectedFundingType?.label,
+          message: message,
+        },
+        "Submission Time": new Date().toLocaleString(),
+      });
+
+      // Reset form
+      setAmount("");
+      setFundingType("");
+      setMessage("");
+      setselectedstartups("");
+
+    } catch (error) {
+      console.error("Error submitting funding request:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send funding request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
     }
-    console.log("Form Data:", formdata);
-   alert("fdlskfjdslj")
-  }
+  };
+
+  const handleStartupSelection = (startupId: string) => {
+    setselectedstartups(startupId);
+    const selectedStartup = allstartups.find((s: any) => s._id === startupId);
+    if (selectedStartup) {
+      setSelectedStartupDetails({
+        id: startupId,
+        name: selectedStartup.startupDetails?.startupName || '',
+      });
+    }
+  };
 
   const handleSendRequest = async () => {
     if (!message.trim()) {
@@ -788,23 +867,26 @@ export default function StartupDetails({
                </div>
                <div className="space-y-2">
                  <label className="text-sm font-medium">Select startups </label>
-                 <RadioGroup value={selectedstartups} onValueChange={setselectedstartups}>
+                 <RadioGroup 
+                   value={selectedstartups} 
+                   onValueChange={handleStartupSelection}
+                 >
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[200px] overflow-y-auto rounded-lg border p-4">
-                     {allstartups?.map((startups) => (
+                     {allstartups.map((startup: any) => (
                        <Label
-                         key={startups?._id}
+                         key={startup._id}
                          className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-accent transition-colors ${
-                           selectedstartups === startups._id ? "border-primary bg-accent" : ""
+                           selectedstartups === startup._id ? "border-primary bg-accent" : ""
                          }`}
-                         htmlFor={startups.startupDetails?.startupName}
+                         htmlFor={startup._id}
                        >
-                         <RadioGroupItem value={startups._id} id={startups._id} />
+                         <RadioGroupItem value={startup._id} id={startup._id} />
                          <div className="flex items-center space-x-3">
                            <div className="relative h-10 w-10 overflow-hidden rounded-full bg-primary/10 flex-shrink-0">
-                             {startups.logo ? (
+                             {startup.logo ? (
                                <Image
-                                 src={startups.logo.secure_url}
-                                 alt={startups.agencyName}
+                                 src={startup.logo.secure_url}
+                                 alt={startup.agencyName}
                                  fill
                                  className="object-cover"
                                />
@@ -813,8 +895,8 @@ export default function StartupDetails({
                              )}
                            </div>
                            <div className="min-w-0">
-                             <p className="font-medium truncate">{startups.startupDetails?.startupName}</p>
-                             <p className="text-sm text-muted-foreground truncate">ID: {startups._id}</p>
+                             <p className="font-medium truncate">{startup.startupDetails?.startupName}</p>
+                             <p className="text-sm text-muted-foreground truncate">ID: {startup._id}</p>
                              </div>
                          </div>
                        </Label>
@@ -824,11 +906,20 @@ export default function StartupDetails({
                  <div className="pt-4 border-t">
                       <Button 
                         className="w-full" 
-                        onClick={()=>handleformsubmit()}
-                        
-                        // disabled={isSubmitting || !amount || !fundingType || !message || !selectedAgencyId}
+                        onClick={handleformsubmit}
+                        disabled={isSending || !amount || !fundingType || !message || !selectedstartups}
                       >
-                       Submit
+                       {isSending ? (
+                         <>
+                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                           Sending Request...
+                         </>
+                       ) : (
+                         <>
+                           <Plus className="h-4 w-4 mr-2" />
+                           Send Funding Request
+                         </>
+                       )}
                       </Button>
                     </div>
                </div>
