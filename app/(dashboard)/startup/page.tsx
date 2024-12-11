@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { FundingAgencyCard } from "@/components/cards/funding-agency-card";
 
 interface WalletData {
   balance: number;
@@ -94,7 +95,7 @@ export default function StartupPage() {
 
   const fetchFundingAgencies = async () => {
     try {
-      const response = await fetch("/api/startup/recommedations");
+      const response = await fetch("/api/startup/recommendations");
       const data = await response.json();
       setRecommendedFundingAgencies(data);
     } catch (err) {
@@ -302,19 +303,7 @@ export default function StartupPage() {
               .slice(0, 3)
               .map((fundingAgency, index) => (
                 <div key={fundingAgency._id} className="w-[400px] flex-none">
-                  //! Funding Agency card
-                  <FundingAgency
-                    fundingAgency={{
-                      ...fundingAgency,
-                      additionalInfo: {
-                        website: startup.additionalInfo?.website,
-                        socialMedia: startup.additionalInfo?.socialMedia || {},
-                      },
-                      isActivelyFundraising:
-                        startup.isActivelyFundraising || false,
-                    }}
-                    index={index}
-                  />
+                  <FundingAgencyCard agency={fundingAgency} index={index} />
                 </div>
               ))}
           </div>

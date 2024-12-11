@@ -18,7 +18,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState } from "react";
 
 interface FundingAgencyCardProps {
@@ -81,7 +86,10 @@ const BANNER_GRADIENTS = [
   "from-emerald-600/90 to-cyan-600/90",
 ];
 
-export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps & { index?: number }) {
+export function FundingAgencyCard({
+  agency,
+  index = 0,
+}: FundingAgencyCardProps & { index?: number }) {
   const [showDetails, setShowDetails] = useState(false);
 
   return (
@@ -95,14 +103,18 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
         <CardContent className="p-0">
           <div className="relative">
             {/* Clickable section */}
-            <div 
+            <div
               onClick={() => setShowDetails(true)}
               className="cursor-pointer"
             >
               {/* Banner Image with Gradient Overlay */}
               <div className="h-24 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('/agency-banner.jpg')] bg-cover bg-center" />
-                <div className={`absolute inset-0 bg-gradient-to-r ${BANNER_GRADIENTS[index % BANNER_GRADIENTS.length]} mix-blend-multiply`} />
+                <div
+                  className={`absolute inset-0 bg-gradient-to-r ${
+                    BANNER_GRADIENTS[index % BANNER_GRADIENTS.length]
+                  } mix-blend-multiply`}
+                />
                 <div className="absolute inset-0 bg-black/20" />
               </div>
 
@@ -110,10 +122,12 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
               <div className="relative px-4 -mt-8">
                 <div className="flex items-center gap-3">
                   {agency.documentation?.registrationCertificate ? (
-                    <img
-                      src={agency.documentation.registrationCertificate.secure_url}
+                    <Image
+                      width={56}
+                      height={56}
+                      src={agency.agencyDetails.logo.secure_url}
                       alt={agency.agencyDetails.name}
-                      className="h-14 w-14 rounded-full object-cover bg-white p-1 ring-2 ring-white shadow-lg"
+                      className="rounded-full object-cover bg-white p-1 ring-2 ring-white shadow-lg"
                     />
                   ) : (
                     <div className="h-14 w-14 rounded-full bg-white/90 flex items-center justify-center ring-2 ring-white shadow-lg">
@@ -125,11 +139,20 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                       {agency.agencyDetails.name}
                     </h3>
                     <div className="flex gap-1.5 flex-wrap mt-1">
-                      <Badge variant="secondary" className="bg-white/20 text-white border-none text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="bg-white/20 text-white border-none text-xs"
+                      >
                         {agency.agencyDetails.type}
                       </Badge>
-                      <Badge variant="secondary" className="bg-white/20 text-white border-none text-xs">
-                        Est. {new Date(agency.agencyDetails.establishmentDate).getFullYear()}
+                      <Badge
+                        variant="secondary"
+                        className="bg-white/20 text-white border-none text-xs"
+                      >
+                        Est.{" "}
+                        {new Date(
+                          agency.agencyDetails.establishmentDate
+                        ).getFullYear()}
                       </Badge>
                     </div>
                   </div>
@@ -146,37 +169,48 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                   </div>
                   <div className="flex items-center gap-1.5 text-xs">
                     <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{(agency.experience.averageTicketSize / 10000000).toFixed(1)}Cr Avg.</span>
+                    <span>
+                      {(agency.experience.averageTicketSize / 10000000).toFixed(
+                        1
+                      )}
+                      Cr Avg.
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs">
                     <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{agency.activeInvestments?.length || 0} Investments</span>
+                    <span>
+                      {agency.activeInvestments?.length || 0} Investments
+                    </span>
                   </div>
                 </div>
 
                 {/* Preferred Industries & Sectors */}
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap gap-1.5">
-                    {agency.fundingPreferences.preferredIndustries.slice(0, 3).map((industry, i) => (
-                      <Badge 
-                        key={i} 
-                        variant="outline"
-                        className="bg-transparent text-xs"
-                      >
-                        {industry}
-                      </Badge>
-                    ))}
+                    {agency.fundingPreferences.preferredIndustries
+                      .slice(0, 3)
+                      .map((industry, i) => (
+                        <Badge
+                          key={i}
+                          variant="outline"
+                          className="bg-transparent text-xs"
+                        >
+                          {industry}
+                        </Badge>
+                      ))}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {agency.fundingPreferences.preferredSectors.slice(0, 3).map((sector, i) => (
-                      <Badge 
-                        key={i} 
-                        variant="outline"
-                        className="bg-blue-500/10 text-blue-600 text-xs border-none"
-                      >
-                        {sector}
-                      </Badge>
-                    ))}
+                    {agency.fundingPreferences.preferredSectors
+                      .slice(0, 3)
+                      .map((sector, i) => (
+                        <Badge
+                          key={i}
+                          variant="outline"
+                          className="bg-blue-500/10 text-blue-600 text-xs border-none"
+                        >
+                          {sector}
+                        </Badge>
+                      ))}
                   </div>
                 </div>
 
@@ -191,9 +225,9 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground p-4 pt-2 border-t">
               <div className="flex items-center gap-2">
                 {agency.contactInformation.websiteURL && (
-                  <Link 
-                    href={agency.contactInformation.websiteURL} 
-                    target="_blank" 
+                  <Link
+                    href={agency.contactInformation.websiteURL}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
                     onClick={(e) => e.stopPropagation()}
@@ -201,7 +235,7 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                     <Globe className="h-3.5 w-3.5 text-blue-600" />
                   </Link>
                 )}
-                <Link 
+                <Link
                   href={`mailto:${agency.contactInformation.officialEmail}`}
                   className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
                   onClick={(e) => e.stopPropagation()}
@@ -221,7 +255,9 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                 }}
               >
                 <BarChart2 className="h-4 w-4 text-blue-600 mr-1.5" />
-                <span className="text-xs font-medium text-blue-600">Details</span>
+                <span className="text-xs font-medium text-blue-600">
+                  Details
+                </span>
               </Button>
             </div>
           </div>
@@ -241,7 +277,9 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
               <div className="relative h-24 w-24 rounded-xl overflow-hidden">
                 {agency.documentation?.registrationCertificate ? (
                   <Image
-                    src={agency.documentation.registrationCertificate.secure_url}
+                    src={
+                      agency.documentation.registrationCertificate.secure_url
+                    }
                     alt={agency.agencyDetails.name}
                     fill
                     className="object-cover"
@@ -260,7 +298,10 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline">{agency.agencyDetails.type}</Badge>
                   <Badge variant="secondary">
-                    Est. {new Date(agency.agencyDetails.establishmentDate).getFullYear()}
+                    Est.{" "}
+                    {new Date(
+                      agency.agencyDetails.establishmentDate
+                    ).getFullYear()}
                   </Badge>
                 </div>
               </div>
@@ -271,7 +312,9 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
               <h3 className="font-semibold">Agency Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Registration No.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Registration No.
+                  </p>
                   <p className="font-medium">
                     {agency.agencyDetails.registrationNumber}
                   </p>
@@ -280,7 +323,9 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                   <p className="text-sm text-muted-foreground">Location</p>
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    <p className="font-medium">{agency.contactInformation.officialAddress}</p>
+                    <p className="font-medium">
+                      {agency.contactInformation.officialAddress}
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -299,7 +344,10 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                       variant="link"
                       className="p-0 h-auto"
                       onClick={() =>
-                        window.open(agency.contactInformation.websiteURL, "_blank")
+                        window.open(
+                          agency.contactInformation.websiteURL,
+                          "_blank"
+                        )
                       }
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
@@ -342,19 +390,26 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <p className="text-sm">Minimum Investment</p>
                   <Badge variant="secondary">
-                    ₹{agency.fundingPreferences.minimumInvestment.toLocaleString('en-IN')}
+                    ₹
+                    {agency.fundingPreferences.minimumInvestment.toLocaleString(
+                      "en-IN"
+                    )}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <p className="text-sm">Average Ticket Size</p>
                   <Badge variant="secondary">
-                    ₹{agency.experience.averageTicketSize.toLocaleString('en-IN')}
+                    ₹
+                    {agency.experience.averageTicketSize.toLocaleString(
+                      "en-IN"
+                    )}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <p className="text-sm">Total Investments</p>
                   <Badge variant="secondary">
-                    ₹{agency.experience.totalInvestments.toLocaleString('en-IN')}
+                    ₹
+                    {agency.experience.totalInvestments.toLocaleString("en-IN")}
                   </Badge>
                 </div>
               </div>
@@ -364,4 +419,4 @@ export function FundingAgencyCard({ agency, index = 0 }: FundingAgencyCardProps 
       </Dialog>
     </motion.div>
   );
-} 
+}
