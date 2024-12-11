@@ -23,6 +23,8 @@ import {
   Menu,
   ScrollText,
   BookPlus,
+  Users2,
+  CalendarArrowUp,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,6 +46,11 @@ const sidebarItems = [
     icon : ScrollText
   },
   {
+    title: "Profile",
+    href: "/researcher/profile",
+    icon: Users2, 
+  },
+  {
     title: "Publications",
     href: "/researcher/publications",
     icon: FileText,
@@ -57,6 +64,11 @@ const sidebarItems = [
     title: "Meetings",
     href: "/researcher/meetings",
     icon: Calendar,
+  },
+  {
+    title: "Offline Meets",
+    href: "/researcher/offline",
+    icon: CalendarArrowUp,
   },
   {
     title: "Messages",

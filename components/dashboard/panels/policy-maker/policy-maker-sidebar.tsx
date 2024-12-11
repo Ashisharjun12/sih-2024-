@@ -44,11 +44,6 @@ const policyMakerLinks = [
     href: "/policy-maker/startups",
     icon: Building2,
   },
-  {
-    title: "Settings",
-    href: "/policy-maker",
-    icon: Settings,
-  },
 ];
 
 export function PolicyMakerSidebar() {

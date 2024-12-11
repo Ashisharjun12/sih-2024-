@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
 
 interface Investment {
   _id: string;
@@ -74,14 +75,16 @@ interface FundingType {
 }
 
 const fundingTypes: FundingType[] = [
-  { value: "seed", label: "Seed Funding" },
-  { value: "series_a", label: "Series A" },
-  { value: "series_b", label: "Series B" },
-  { value: "series_c", label: "Series C" },
-  { value: "private_equity", label: "Private Equity" },
-  { value: "venture_debt", label: "Venture Debt" },
-  { value: "convertible_note", label: "Convertible Note" },
-  { value: "bridge_round", label: "Bridge Round" },
+  { value: "Private_Equity", label: "Private Equity" },
+  { value: "Equity_Funding", label: "Equity Funding" },
+  { value: "Debt_Funding", label: "Debt Funding" },
+  { value: "Grants", label: "Grants " },
+  { value: "Convertible_Notes", label: "Convertible_Notes" },
+  { value: "Revenue_Based_Financing", label: "Revenue_Based_Financing" },
+  { value: "Scholarship", label: "Convertible Note" }
+
+
+  
 ];
 
 interface FundingAgency {
@@ -436,7 +439,7 @@ export default function FundingPage() {
                         <p className="text-sm text-muted-foreground mb-4">
                           {request.message}
                         </p>
-                        <div className="flex gap-2">
+                       { request.status ==="pending"?<div className="flex gap-2">
                           <Button 
                             className="flex-1"
                             onClick={() => handleAcceptRequest(request.fundingAgencyId.userId, request._id)}
@@ -452,7 +455,7 @@ export default function FundingPage() {
                             <XCircle className="h-4 w-4 mr-2" />
                             Reject
                           </Button>
-                        </div>
+                        </div>: <Badge>Accepted</Badge>}
                       </motion.div>
                     ))}
                   </div>

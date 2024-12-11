@@ -33,6 +33,9 @@ import { X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+import crypto from 'crypto';
+
+
 interface IPROwner {
   _id: string;
   startupName?: string;
@@ -65,7 +68,28 @@ interface SimilarityInfo {
   descriptionSimilarity: number;
 }
 
+
 const PatentsPage = () => {
+
+
+const secretKey = 'your-secret-key';
+
+const encrypt = (text) => {
+  const cipher = crypto.createCipher('aes-256-cbc', secretKey);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+};
+
+const decrypt = (encryptedText) => {
+  const decipher = crypto.createDecipher('aes-256-cbc', secretKey);
+  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+};
+
+export default function PatentsPage() {
+
   const [patents, setPatents] = useState<Patent[]>([]);
   const [selectedPatent, setSelectedPatent] = useState<Patent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -249,16 +273,20 @@ const PatentsPage = () => {
 
       // Then handle blockchain transaction
       const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+      const encryptedId = encrypt(id);
       const title = data.ipr.title;
+      const decryptedId = encrypt(title);
       const ownerId = BigInt(
         parseInt(data.ipr.owner.details._id.toString(), 16)
       ).toString();
+      const encryptedOwnerId = encrypt(ownerId);
+
       try {
         let transaction;
         if (status === "Accepted") {
-          transaction = await contract.acceptPatent(id, title, ownerId);
+          transaction = await contract.acceptPatent(encryptedId, decryptedId, encryptedOwnerId);
         } else {
-          transaction = await contract.rejectPatent(id, title, ownerId);
+          transaction = await contract.rejectPatent(encryptedId, decryptedId, encryptedOwnerId);
         }
 
         // Show transaction pending toast
@@ -544,7 +572,11 @@ const PatentsPage = () => {
   return (
     <div className="container py-6 space-y-6">
       {/* Header Section */}
+
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent p-6 md:p-8">
+
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Patent Applications</h1>
@@ -552,6 +584,7 @@ const PatentsPage = () => {
               Review and manage patent applications
             </p>
           </div>
+
        
         </div>
       </div>
@@ -653,6 +686,12 @@ const PatentsPage = () => {
                   </div>
                 )}
               </div>
+
+          {isLoadingGemini && (
+            <div className="text-sm text-muted-foreground flex items-center gap-2 bg-background/50 backdrop-blur-sm px-4 py-2 rounded-lg">
+              <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+              Analyzing similarities...
+
             </div>
           )}
         </div>
@@ -803,8 +842,15 @@ const PatentsPage = () => {
       {isLoadingPatents ? (
         <div className="flex items-center justify-center p-12">
           <div className="flex flex-col items-center gap-3">
+
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-muted-foreground">Loading patent applications...</p>
+
+            <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">
+              Loading patent applications...
+            </p>
+
           </div>
         </div>
       ) : (
@@ -851,9 +897,169 @@ const PatentsPage = () => {
                             <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             Analyzing similarity...
                           </div>
+
                         )}
                       </div>
                     )}
+
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground">
+                            {format(new Date(secret.filingDate), "PP")}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "px-2 py-0.5",
+                              secret.status === "Pending" &&
+                                "bg-yellow-500/15 text-yellow-600",
+                              secret.status === "Accepted" &&
+                                "bg-teal-500/15 text-teal-600",
+                              secret.status === "Rejected" &&
+                                "bg-red-500/15 text-red-600"
+                            )}
+                          >
+                            {secret.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant={
+                              secret.status === "Pending"
+                                ? "default"
+                                : "secondary"
+                            }
+                            size="sm"
+                            onClick={() => setSelectedPatent(secret)}
+                            className={cn(
+                              "transition-all",
+                              secret.status === "Pending"
+                                ? "bg-teal-600 hover:bg-teal-700"
+                                : ""
+                            )}
+                          >
+                            {secret.status === "Pending" ? "Review" : "View"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="space-y-4 md:hidden">
+            {patents.map((secret) => (
+              <div
+                key={secret._id}
+                className="rounded-lg border bg-card text-card-foreground shadow-sm"
+              >
+                <div className="p-4 space-y-3">
+                  {/* Title and Status */}
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="font-medium flex items-center gap-2">
+                      {secret.title}
+                    </h3>
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "px-2 py-0.5 whitespace-nowrap",
+                        secret.status === "Pending" &&
+                          "bg-yellow-500/15 text-yellow-600",
+                        secret.status === "Accepted" &&
+                          "bg-sky-500/15 text-teal-600",
+                        secret.status === "Rejected" &&
+                          "bg-red-500/15 text-red-600"
+                      )}
+                    >
+                      {secret.status}
+                    </Badge>
+                  </div>
+
+                  {/* Owner Info */}
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Owner: </span>
+                      <span className="font-medium">
+                        {secret.ownerType === "Startup"
+                          ? secret.owner.startupName
+                          : secret.owner.name}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Filed on: </span>
+                      <span>{format(new Date(secret.filingDate), "PP")}</span>
+                    </div>
+                  </div>
+
+                  {/* Similarity Data */}
+                  {secret.status === "Pending" &&
+                    similarityData[secret._id] && (
+                      <div className="space-y-2 pt-2 border-t">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Title Match:
+                            </span>
+                            <Badge
+                              variant={
+                                similarityData[secret._id].titleSimilarity > 70
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                              className="px-2 py-0 text-xs"
+                            >
+                              {similarityData[secret._id].titleSimilarity}%
+                            </Badge>
+                          </div>
+                          {similarityData[secret._id].titleSimilarity > 70 && (
+                            <p className="text-xs text-red-500/80">
+                              Similar to: {similarityData[secret._id].similarTo}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Description Match:
+                            </span>
+                            <Badge
+                              variant={
+                                similarityData[secret._id]
+                                  .descriptionSimilarity > 70
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                              className="px-2 py-0 text-xs"
+                            >
+                              {similarityData[secret._id].descriptionSimilarity}
+                              %
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Action Button */}
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      variant={
+                        secret.status === "Pending" ? "default" : "secondary"
+                      }
+                      size="sm"
+                      onClick={() => setSelectedPatent(secret)}
+                      className={cn(
+                        "transition-all",
+                        secret.status === "Pending"
+                          ? "bg-teal-600 hover:bg-teal-700"
+                          : ""
+                      )}
+                    >
+                      {secret.status === "Pending" ? "Review" : "View"}
+                    </Button>
+
                   </div>
                 </TableCell>
                 <TableCell>
@@ -899,6 +1105,7 @@ const PatentsPage = () => {
         open={!!selectedPatent}
         onOpenChange={() => setSelectedPatent(null)}
       >
+
         <DialogContent className="max-w-2xl">
           {isWalletConnected ? (
             <>
@@ -917,6 +1124,29 @@ const PatentsPage = () => {
                       {selectedPatent?.ownerType === "Startup"
                         ? selectedPatent.owner.startupName
                         : selectedPatent?.owner.name}
+
+        <SheetContent side="bottom" className="h-[90vh] p-0">
+          <ScrollArea className="h-full">
+            <div className="p-6">
+              {/* Add Close Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-4 rounded-full hover:bg-teal-500/10"
+                onClick={() => setSelectedPatent(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+
+              {isWalletConnected ? (
+                <>
+                  <SheetHeader className="space-y-1 pr-8">
+                    <SheetTitle className="text-xl font-semibold flex items-center gap-2">
+                      {selectedPatent?.title}
+                    </SheetTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Review patent application details
+
                     </p>
                     <p className="text-sm text-gray-500">
                       {selectedPatent?.owner.email}
@@ -998,6 +1228,7 @@ const PatentsPage = () => {
                         </a>
                       </div>
                     )}
+
                   </>
                 )}
               </div>
@@ -1018,6 +1249,146 @@ const PatentsPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+
+                    {/* Documents Section */}
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-sm text-muted-foreground">
+                        Related Documents
+                      </h3>
+                      <div className="bg-muted/50 p-4 rounded-lg">
+                        {selectedPatent?.relatedDocuments.length ? (
+                          <div className="grid gap-2">
+                            {selectedPatent.relatedDocuments.map(
+                              (doc, index) => (
+                                <a
+                                  key={doc.public_id}
+                                  href={doc.secure_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-sm text-teal-500 hover:text-teal-600 hover:bg-teal-500/5 p-2 rounded-md transition-colors"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  <span>Document {index + 1}</span>
+                                </a>
+                              )
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No documents attached
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Wallet Address Section */}
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-sm text-muted-foreground">
+                        Wallet Address
+                      </h3>
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-sm font-mono">{walletAddress}</p>
+                      </div>
+                    </div>
+
+                    {selectedPatent?.status === "Pending" ? (
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-sm text-muted-foreground">
+                            Review Message
+                          </h3>
+                          <Textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder="Enter your review message..."
+                            className="resize-none"
+                            rows={4}
+                          />
+                        </div>
+                        <div className="flex gap-4">
+                          <Button
+                            onClick={() => handleStatusUpdate("Accepted")}
+                            className="flex-1 bg-teal-600 hover:bg-teal-700"
+                            disabled={
+                              isSubmitting || !message || transactionInProgress
+                            }
+                          >
+                            {transactionInProgress ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-teal-300 border-t-transparent rounded-full animate-spin mr-2" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Accept"
+                            )}
+                          </Button>
+                          <Button
+                            onClick={() => handleStatusUpdate("Rejected")}
+                            className="flex-1 bg-red-600 hover:bg-red-700"
+                            disabled={
+                              isSubmitting || !message || transactionInProgress
+                            }
+                          >
+                            {transactionInProgress ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-teal-300 border-t-transparent rounded-full animate-spin mr-2" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Reject"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      selectedPatent?.transactionHash && (
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-sm text-muted-foreground">
+                            Transaction Details
+                          </h3>
+                          <div className="bg-muted/50 p-3 rounded-lg">
+                            <a
+                              href={`https://sepolia.etherscan.io/tx/${selectedPatent.transactionHash}#eventlog`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-teal-500 hover:text-teal-600 break-all"
+                            >
+                              {selectedPatent.transactionHash}
+                            </a>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <SheetHeader>
+                    <SheetTitle>Connect Your Wallet</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    <div className="bg-teal-500/10 p-4 rounded-full">
+                      <FileCheck className="h-8 w-8 text-teal-500" />
+                    </div>
+                    <p className="text-center text-muted-foreground">
+                      Please connect your MetaMask wallet to review patent
+                      applications
+                    </p>
+                    <Button
+                      onClick={connectWallet}
+                      className="bg-teal-600 hover:bg-teal-700"
+                    >
+                      Connect MetaMask
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
     </div>
   );
 };

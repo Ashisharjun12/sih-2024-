@@ -174,7 +174,11 @@ export default function Navbar() {
   };
 
   const handleDeposit = async () => {
-    if (!depositAmount || isNaN(Number(depositAmount)) || Number(depositAmount) <= 0) {
+    if (
+      !depositAmount ||
+      isNaN(Number(depositAmount)) ||
+      Number(depositAmount) <= 0
+    ) {
       toast({
         title: "Invalid amount",
         description: "Please enter a valid amount",
@@ -204,7 +208,8 @@ export default function Navbar() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add money",
+        description:
+          error instanceof Error ? error.message : "Failed to add money",
         variant: "destructive",
       });
     } finally {
@@ -251,13 +256,16 @@ export default function Navbar() {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[280px] md:w-[320px]">
+              <DropdownMenuContent
+                align="end"
+                className="w-[280px] md:w-[320px]"
+              >
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-sm font-medium">Wallet Balance</p>
                       <p className="text-2xl font-bold text-primary">
-                        ₹{walletBalance.toLocaleString('en-IN')}
+                        ₹{walletBalance.toLocaleString("en-IN")}
                       </p>
                     </div>
                     <Button
@@ -270,7 +278,8 @@ export default function Navbar() {
                     </Button>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Use your wallet balance to purchase research papers and other services
+                    Use your wallet balance to purchase research papers and
+                    other services
                   </div>
                 </div>
               </DropdownMenuContent>
@@ -333,35 +342,40 @@ export default function Navbar() {
           </DropdownMenu>
 
           {/* Role Applications - Simplified on mobile */}
-          {session && session.user.role ==="user" && <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 md:h-10 md:w-auto md:px-4"
-              >
-                <PlusCircle className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Apply For Role</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[220px]">
-              <DropdownMenuLabel>Choose Role</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {roleApplications.map((role) => (
-                <DropdownMenuItem key={role.href} asChild>
-                  <Link href={role.href} className="flex items-start gap-2 p-2">
-                    <role.icon className="h-5 w-5" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{role.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {role.description}
-                      </span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>}
+          {session && session.user.role === "user" && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 md:h-10 md:w-auto md:px-4"
+                >
+                  <PlusCircle className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Apply For Role</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[220px]">
+                <DropdownMenuLabel>Choose Role</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {roleApplications.map((role) => (
+                  <DropdownMenuItem key={role.href} asChild>
+                    <Link
+                      href={role.href}
+                      className="flex items-start gap-2 p-2"
+                    >
+                      <role.icon className="h-5 w-5" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{role.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {role.description}
+                        </span>
+                      </div>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* User Menu */}
           {status === "loading" ? (
@@ -422,7 +436,10 @@ export default function Navbar() {
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/research-papers" className="flex items-center gap-2">
+                  <Link
+                    href="/research-papers"
+                    className="flex items-center gap-2"
+                  >
                     <FileText className="h-4 w-4" />
                     Research Papers
                   </Link>
@@ -458,7 +475,9 @@ export default function Navbar() {
               <Label>Current Balance</Label>
               <div className="p-3 bg-muted rounded-lg flex items-center gap-2">
                 <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{walletBalance.toLocaleString('en-IN')}</span>
+                <span className="font-medium">
+                  {walletBalance.toLocaleString("en-IN")}
+                </span>
               </div>
             </div>
             <div className="space-y-2">
