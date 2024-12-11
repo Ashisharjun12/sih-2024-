@@ -25,7 +25,6 @@ import {
   Cloud,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { Chatbot } from "@/components/chatbot/chatbot";
 
 const SUCCESS_STORIES = [
@@ -88,7 +87,7 @@ const PLATFORM_STATS = [
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen overflow-x-hidden">
       {/* Enhanced Hero Section with Data Visualization */}
       <div className="relative min-h-[85vh] flex items-center bg-gradient-to-br from-orange-950 via-orange-900 to-orange-800">
         {/* Animated Background Elements */}

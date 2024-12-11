@@ -271,7 +271,7 @@ export default function ExplorePage() {
           )}
         </TabsContent>
 
-        <TabsContent value="mentors">{/* Add Mentor cards here */}</TabsContent>
+        {/* <TabsContent value="fundingAgency">FundingAgency</TabsContent> */}
       </Tabs>
     </div>
   );
