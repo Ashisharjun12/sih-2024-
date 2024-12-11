@@ -170,16 +170,16 @@ export default function FundingAgencyDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent rounded-xl p-6"
+        className="bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent rounded-xl p-6"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Wallet className="h-6 w-6 text-green-500" />
+            <Wallet className="h-6 w-6 text-yellow-500" />
             <h2 className="text-xl font-semibold">Your Wallet</h2>
           </div>
           <Button
             onClick={() => setShowAddMoneyModal(true)}
-            className="bg-green-500 hover:bg-green-600"
+            className="bg-yellow-500 hover:bg-yellow-600"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Money
@@ -201,7 +201,7 @@ export default function FundingAgencyDashboard() {
                   <div key={index} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       {transaction.type === 'credit' ? (
-                        <ArrowUpRight className="h-4 w-4 text-green-500" />
+                        <ArrowUpRight className="h-4 w-4 text-yellow-500" />
                       ) : (
                         <ArrowDownRight className="h-4 w-4 text-red-500" />
                       )}
@@ -213,7 +213,7 @@ export default function FundingAgencyDashboard() {
                       </div>
                     </div>
                     <span className={`text-sm font-medium ${
-                      transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                      transaction.type === 'credit' ? 'text-yellow-600' : 'text-red-600'
                     }`}>
                       {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
                     </span>

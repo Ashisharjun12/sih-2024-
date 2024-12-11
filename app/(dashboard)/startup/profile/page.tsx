@@ -82,7 +82,7 @@ export default function ProfilePage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-8"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent p-8"
       >
         <div className="flex flex-col md:flex-row items-start gap-6">
           <Avatar className="h-24 w-24 border-4 border-background/50">
@@ -95,7 +95,7 @@ export default function ProfilePage() {
           <div className="space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{session?.user?.name}</h1>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors">
+              <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors">
                 Startup Founder
               </Badge>
               <Badge variant="outline" className="gap-1 bg-background/50">
@@ -116,7 +116,7 @@ export default function ProfilePage() {
         >
           <div className="h-full rounded-2xl bg-gradient-to-br from-background to-background/80 p-6">
             <div className="flex items-center gap-2 mb-6">
-              <User className="h-5 w-5 text-blue-500" />
+              <User className="h-5 w-5 text-green-500" />
               <h2 className="font-semibold">Personal Information</h2>
             </div>
             <div className="space-y-4">
@@ -150,11 +150,11 @@ export default function ProfilePage() {
         >
           <div className="h-full rounded-2xl bg-gradient-to-br from-background to-background/80 p-6">
             <div className="flex items-center gap-2 mb-6">
-              <Building2 className="h-5 w-5 text-blue-500" />
+              <Building2 className="h-5 w-5 text-green-500" />
               <h2 className="font-semibold">Startup Statistics</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 via-cyan-500/5 to-transparent">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <Rocket className="h-4 w-4" />
                   Total Startups
@@ -181,10 +181,10 @@ export default function ProfilePage() {
         className="grid gap-4 md:grid-cols-3"
       >
         <Link href="/startup/profile/edit" className="group">
-          <div className="h-full rounded-xl bg-gradient-to-br from-background to-background/80 p-6 hover:bg-blue-50/50 transition-colors">
+          <div className="h-full rounded-xl bg-gradient-to-br from-background to-background/80 p-6 hover:bg-green-50/50 transition-colors">
             <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                <Edit className="h-5 w-5 text-blue-500" />
+              <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                <Edit className="h-5 w-5 text-green-500" />
               </div>
               <div>
                 <p className="font-medium">Edit Profile</p>
@@ -196,10 +196,10 @@ export default function ProfilePage() {
         </Link>
 
         <Link href="/forms/startup" className="group">
-          <div className="h-full rounded-xl bg-gradient-to-br from-background to-background/80 p-6 hover:bg-blue-50/50 transition-colors">
+          <div className="h-full rounded-xl bg-gradient-to-br from-background to-background/80 p-6 hover:bg-green-50/50 transition-colors">
             <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                <Rocket className="h-5 w-5 text-blue-500" />
+              <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                <Rocket className="h-5 w-5 text-green-500" />
               </div>
               <div>
                 <p className="font-medium">New Startup</p>
@@ -211,10 +211,10 @@ export default function ProfilePage() {
         </Link>
 
         <Link href="/startup/projects" className="group">
-          <div className="h-full rounded-xl bg-gradient-to-br from-background to-background/80 p-6 hover:bg-blue-50/50 transition-colors">
+          <div className="h-full rounded-xl bg-gradient-to-br from-background to-background/80 p-6 hover:bg-green-50/50 transition-colors">
             <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                <Globe className="h-5 w-5 text-blue-500" />
+              <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                <Globe className="h-5 w-5 text-green-500" />
               </div>
               <div>
                 <p className="font-medium">View Portfolio</p>

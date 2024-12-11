@@ -56,16 +56,17 @@ interface Policy {
 const PolicyCard = ({
   policy,
   onReview,
+  hasReviewed,
 }: {
   policy: Policy;
   onReview: (policy: Policy) => void;
   hasReviewed: boolean;
 }) => (
-  <Card className="hover:shadow-lg transition-shadow">
+  <Card className="bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent border-0">
     <CardHeader>
       <CardTitle className="flex justify-between items-start">
-        <span>{policy.title}</span>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="text-yellow-700">{policy.title}</span>
+        <div className="flex items-center gap-2 text-sm text-yellow-600">
           <MessageSquare className="h-4 w-4" />
           <span>{policy.metrics.totalReviews}</span>
         </div>
@@ -78,8 +79,8 @@ const PolicyCard = ({
         </p>
 
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold flex items-center gap-2">
-            <Target className="h-4 w-4" /> Objectives
+          <h4 className="text-sm font-semibold flex items-center gap-2 text-yellow-700">
+            <Target className="h-4 w-4 text-yellow-500" /> Objectives
           </h4>
           <ul className="text-sm text-muted-foreground list-disc list-inside">
             {policy.objectives.slice(0, 2).map((objective, index) => (
@@ -95,12 +96,12 @@ const PolicyCard = ({
 
         <div className="flex flex-wrap gap-2">
           {policy.sectors.slice(0, 3).map((sector) => (
-            <Badge key={sector} variant="outline" className="text-xs">
+            <Badge key={sector} variant="outline" className="bg-yellow-100/50 text-yellow-700 border-yellow-200">
               {sector}
             </Badge>
           ))}
           {policy.sectors.length > 3 && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="bg-yellow-100/50 text-yellow-700 border-yellow-200">
               +{policy.sectors.length - 3} more
             </Badge>
           )}
@@ -108,7 +109,7 @@ const PolicyCard = ({
 
         <Button
           onClick={() => onReview(policy)}
-          className="w-full"
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white border-0"
           variant="outline"
         >
           Review Policy
@@ -137,22 +138,22 @@ const PolicyReviewDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent border-0">
         <DialogHeader>
-          <DialogTitle>{policy.title}</DialogTitle>
+          <DialogTitle className="text-yellow-700">{policy.title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Eye className="h-4 w-4" /> Vision
+          <div className="space-y-2 bg-white/50 rounded-lg p-4">
+            <h3 className="font-semibold flex items-center gap-2 text-yellow-700">
+              <Eye className="h-4 w-4 text-yellow-500" /> Vision
             </h3>
             <p className="text-sm text-muted-foreground">{policy.vision}</p>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Target className="h-4 w-4" /> Objectives
+          <div className="space-y-2 bg-white/50 rounded-lg p-4">
+            <h3 className="font-semibold flex items-center gap-2 text-yellow-700">
+              <Target className="h-4 w-4 text-yellow-500" /> Objectives
             </h3>
             <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
               {policy.objectives.map((objective, index) => (
@@ -161,51 +162,54 @@ const PolicyReviewDialog = ({
             </ul>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Layers className="h-4 w-4" /> Target Sectors
+          <div className="space-y-2 bg-white/50 rounded-lg p-4">
+            <h3 className="font-semibold flex items-center gap-2 text-yellow-700">
+              <Layers className="h-4 w-4 text-yellow-500" /> Target Sectors
             </h3>
             <div className="flex flex-wrap gap-2">
               {policy.sectors.map((sector) => (
-                <Badge key={sector} variant="outline">
+                <Badge key={sector} variant="outline" className="bg-yellow-100/50 text-yellow-700 border-yellow-200">
                   {sector}
                 </Badge>
               ))}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Factory className="h-4 w-4" /> Target Industries
+          <div className="space-y-2 bg-white/50 rounded-lg p-4">
+            <h3 className="font-semibold flex items-center gap-2 text-yellow-700">
+              <Factory className="h-4 w-4 text-yellow-500" /> Target Industries
             </h3>
             <div className="flex flex-wrap gap-2">
               {policy.industries.map((industry) => (
-                <Badge key={industry} variant="outline">
+                <Badge key={industry} variant="outline" className="bg-yellow-100/50 text-yellow-700 border-yellow-200">
                   {industry}
                 </Badge>
               ))}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" /> Your Review
+          <div className="space-y-2 bg-white/50 rounded-lg p-4">
+            <h3 className="font-semibold flex items-center gap-2 text-yellow-700">
+              <MessageSquare className="h-4 w-4 text-yellow-500" /> Your Review
             </h3>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Share your thoughts about this policy..."
               rows={4}
+              className="bg-white/50 border-0 focus-visible:ring-yellow-500"
             />
           </div>
 
           <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button variant="ghost" onClick={onClose} disabled={isSubmitting}
+              className="text-yellow-700 hover:bg-yellow-100/50">
               Cancel
             </Button>
             <Button
               onClick={() => onSubmit(message)}
               disabled={isSubmitting || !message.trim()}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white border-0"
             >
               {isSubmitting ? (
                 <>
