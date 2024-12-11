@@ -74,14 +74,16 @@ interface FundingType {
 }
 
 const fundingTypes: FundingType[] = [
-  { value: "seed", label: "Seed Funding" },
-  { value: "series_a", label: "Series A" },
-  { value: "series_b", label: "Series B" },
-  { value: "series_c", label: "Series C" },
-  { value: "private_equity", label: "Private Equity" },
-  { value: "venture_debt", label: "Venture Debt" },
-  { value: "convertible_note", label: "Convertible Note" },
-  { value: "bridge_round", label: "Bridge Round" },
+  { value: "Private_Equity", label: "Private Equity" },
+  { value: "Equity_Funding", label: "Equity Funding" },
+  { value: "Debt_Funding", label: "Debt Funding" },
+  { value: "Grants", label: "Grants " },
+  { value: "Convertible_Notes", label: "Convertible_Notes" },
+  { value: "Revenue_Based_Financing", label: "Revenue_Based_Financing" },
+  { value: "Scholarship", label: "Convertible Note" }
+
+
+  
 ];
 
 interface FundingAgency {
