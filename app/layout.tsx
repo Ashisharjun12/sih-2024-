@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Navbar from "@/components/shared/navbar";
 import AuthProvider from "@/providers/auth-provider";
 import { Toaster } from "@/components/ui/toaster"
+import { Chatbot } from "@/components/chatbot/chatbot";
 
 const inter = Inter({ subsets: ["latin"] });
 //hello
@@ -25,6 +26,7 @@ export default function RootLayout({
           <AuthProvider>
             <div className="min-h-screen flex flex-col">
               <Navbar />
+             <Chatbot/>
               <main className="flex-1">{children}</main>
             </div>
           </AuthProvider>

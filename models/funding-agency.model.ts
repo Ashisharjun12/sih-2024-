@@ -332,6 +332,7 @@ const fundingAgencySchema = new mongoose.Schema({
       public_id: String,
       secure_url: String
     },
+    email:String,
     establishmentDate: { type: Date, required: true },
     description: { type: String, required: true },
   },

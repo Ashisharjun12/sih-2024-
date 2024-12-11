@@ -74,17 +74,6 @@ export default function Home() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="h-12 px-6 gap-2 text-base group border-orange-200 hover:bg-orange-50" 
-                asChild
-              >
-                <Link href="/register">
-                  Join Ecosystem
-                  <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                </Link>
-              </Button>
             </motion.div>
           </div>
         </div>
@@ -263,9 +252,6 @@ export default function Home() {
           </div>
         </div>
       </motion.section>
-
-      {/* Add Chatbot */}
-      <Chatbot />
     </div>
   );
 }
