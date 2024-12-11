@@ -18,7 +18,7 @@ export async function GET(
         }
 
         await connectDB();
-        const type = await params.type;
+        const type = params.type;
 
         // Validate IPR type
         const validTypes = ['patents', 'trademarks', 'copyrights', 'trade_secrets'];
@@ -39,7 +39,7 @@ export async function GET(
         // Find all IPRs of the specified type
         const iprs = await IPR.find({ type: iprType });
 
-        // Get unique owner IDs and their types
+        // Get unique owner IDs
         const ownerIds = iprs.map(ipr => ipr.owner);
 
         // Fetch Startup owners with populated allIPR
@@ -47,6 +47,7 @@ export async function GET(
             _id: { $in: ownerIds }
         }).populate({
             path: 'allIPR.iprProfessional',
+            model: "User",
             select: 'name email metaMaskAccount'
         });
 
@@ -55,27 +56,28 @@ export async function GET(
             _id: { $in: ownerIds }
         }).populate({
             path: 'allIPR.iprProfessional',
+            model: "User",
             select: 'name email metaMaskAccount'
         });
 
-        // Create a map of owners for quick lookup
-        const ownerMap = new Map();
+        // Create a mapping of owners
+        const ownerMap = {};
 
         // Map Startup owners
         startupOwners.forEach(startup => {
-            ownerMap.set(startup._id.toString(), {
+            ownerMap[startup._id.toString()] = {
                 _id: startup._id,
                 startupName: startup.startupDetails.startupName,
                 email: startup.owner.email,
                 phone: startup.owner.phone,
                 businessAddress: startup.owner.businessAddress,
                 allIPR: startup.allIPR
-            });
+            };
         });
 
         // Map Researcher owners
         researcherOwners.forEach(researcher => {
-            ownerMap.set(researcher._id.toString(), {
+            ownerMap[researcher._id.toString()] = {
                 _id: researcher._id,
                 name: researcher.personalInfo.name,
                 email: researcher.personalInfo.email.address,
@@ -85,12 +87,12 @@ export async function GET(
                 position: researcher.academicInfo.position,
                 fieldOfResearch: researcher.personalInfo.fieldOfResearch,
                 allIPR: researcher.allIPR
-            });
+            };
         });
 
         // Format the response
         const formattedIPRs = iprs.map(ipr => {
-            const owner = ownerMap.get(ipr.owner.toString());
+            const owner = ownerMap[ipr.owner.toString()];
             return {
                 _id: ipr._id,
                 title: ipr.title,
@@ -100,7 +102,7 @@ export async function GET(
                 ownerType: ipr.ownerType,
                 owner: {
                     ...owner,
-                    allIPR: owner.allIPR.map((item: any) => ({
+                    allIPR: owner?.allIPR?.map((item) => ({
                         ipr: item.ipr,
                         iprProfessional: item.iprProfessional,
                         message: item.message

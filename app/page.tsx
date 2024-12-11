@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Rocket, Microscope, Scale, Banknote, Users, Brain, Sparkles, ArrowUpRight, Building2, Lightbulb, Factory } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Chatbot } from "@/components/chatbot/chatbot";
 
 export default function Home() {
   const containerVariants = {
@@ -262,6 +263,9 @@ export default function Home() {
           </div>
         </div>
       </motion.section>
+
+      {/* Add Chatbot */}
+      <Chatbot />
     </div>
   );
 }

@@ -99,16 +99,16 @@ export default function ResearcherDashboard() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/researcher/recommendation');
+      const response = await fetch('/api/researcher/all');
       const data = await response.json() as ApiResponse;
       
       if (data.success) {
         console.log("Researcher Data:", data);
-        setResearchers(data.researchers);
+        setResearchers(data.other);
         setMyProfile(data.myProfile);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
       toast({
         title: "Error",
         description: "Failed to fetch researcher data",
@@ -122,19 +122,24 @@ export default function ResearcherDashboard() {
   const fetchPapers = async () => {
     try {
       const response = await fetch("/api/researcher/papers");
+      console.log(response)
       if (!response.ok) throw new Error("Failed to fetch research papers");
       const data = await response.json();
-      
+
       console.log("Fetched papers:", data);
 
       setCompletedPapers(
-        data.papers.filter((paper: ResearchPaper) => paper.stage === "Completed")
+        data.papers.filter(
+          (paper: ResearchPaper) => paper.stage === "Completed"
+        )
       );
       setOngoingPapers(
-        data.papers.filter((paper: ResearchPaper) => paper.stage !== "Completed")
+        data.papers.filter(
+          (paper: ResearchPaper) => paper.stage !== "Completed"
+        )
       );
     } catch (error) {
-      console.error('Error fetching papers:', error);
+      console.error("Error fetching papers:", error);
       toast({
         title: "Error",
         description: "Failed to fetch research papers",
@@ -169,22 +174,28 @@ export default function ResearcherDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent rounded-xl p-4 md:p-6">
           <BookOpen className="h-6 w-6 text-purple-500 mb-2" />
-          <p className="text-2xl font-bold">{myProfile?.researchPapers?.length || 0}</p>
+          <p className="text-2xl font-bold">
+            {myProfile?.researchPapers?.length || 0}
+          </p>
           <p className="text-sm text-purple-600/70">Publications</p>
         </div>
         <div className="bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent rounded-xl p-4 md:p-6">
           <ScrollText className="h-6 w-6 text-cyan-500 mb-2" />
-          <p className="text-2xl font-bold">{myProfile?.onGoingResearches?.length || 0}</p>
+          <p className="text-2xl font-bold">
+            {myProfile?.onGoingResearches?.length || 0}
+          </p>
           <p className="text-sm text-cyan-600/70">Active Projects</p>
         </div>
         <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl p-4 md:p-6">
           <Trophy className="h-6 w-6 text-emerald-500 mb-2" />
-          <p className="text-2xl font-bold">{myProfile?.academicInfo?.yearsOfExperience || 0}</p>
+          <p className="text-2xl font-bold">
+            {myProfile?.academicInfo?.yearsOfExperience || 0}
+          </p>
           <p className="text-sm text-emerald-600/70">Years Experience</p>
         </div>
         <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 md:p-6">
           <Users className="h-6 w-6 text-blue-500 mb-2" />
-          <p className="text-2xl font-bold">{researchers.length}</p>
+          <p className="text-2xl font-bold">{researchers?.length}</p>
           <p className="text-sm text-blue-600/70">Fellow Researchers</p>
         </div>
       </div>
@@ -195,10 +206,10 @@ export default function ResearcherDashboard() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Completed Research Papers</h2>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="text-purple-500 hover:text-purple-600"
-              onClick={() => router.push('/researcher/papers')}
+              onClick={() => router.push("/researcher/papers")}
             >
               View All
               <ChevronRight className="h-4 w-4 ml-1" />
@@ -227,10 +238,10 @@ export default function ResearcherDashboard() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Ongoing Research</h2>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="text-purple-500 hover:text-purple-600"
-              onClick={() => router.push('/researcher/papers')}
+              onClick={() => router.push("/researcher/papers")}
             >
               View All
               <ChevronRight className="h-4 w-4 ml-1" />
@@ -260,7 +271,10 @@ export default function ResearcherDashboard() {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Fellow Researchers</h2>
-          <Button variant="ghost" className="text-purple-500 hover:text-purple-600">
+          <Button
+            variant="ghost"
+            className="text-purple-500 hover:text-purple-600"
+          >
             View All
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
@@ -270,22 +284,22 @@ export default function ResearcherDashboard() {
           <div className="flex space-x-6 pb-4">
             {researchers.map((researcher, index) => (
               <div key={researcher._id} className="w-[400px] flex-none">
-                <ResearcherCard 
+                <ResearcherCard
                   researcher={{
                     _id: researcher._id,
                     userId: researcher.userId,
                     personalInfo: {
                       name: researcher.personalInfo.name,
                       email: {
-                        address: researcher.personalInfo.email.address
+                        address: researcher.personalInfo.email.address,
                       },
-                      fieldOfResearch: researcher.personalInfo.fieldOfResearch
+                      fieldOfResearch: researcher.personalInfo.fieldOfResearch,
                     },
                     academicInfo: researcher.academicInfo,
                     professionalCredentials: researcher.professionalCredentials,
-                    documents: researcher.documents
-                  }} 
-                  index={index} 
+                    documents: researcher.documents,
+                  }}
+                  index={index}
                 />
               </div>
             ))}
@@ -295,4 +309,4 @@ export default function ResearcherDashboard() {
       </div>
     </div>
   );
-} 
+}

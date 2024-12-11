@@ -37,7 +37,7 @@ export async function POST(
 
     // Update submission status
     submission.status = action === "approve" ? "approved" : "rejected";
-    
+
     if (action === "reject") {
       await addNotification({
         name: "Admin",
@@ -63,6 +63,7 @@ export async function POST(
             type: submission.formData.agencyDetails.type,
             establishmentDate: new Date(submission.formData.agencyDetails.establishmentDate),
             description: submission.formData.agencyDetails.description,
+            logo: submission.formData.agencyDetails.logo
           },
           contactInformation: {
             officialAddress: submission.formData.contactInformation.officialAddress,
@@ -99,7 +100,7 @@ export async function POST(
         console.log("Creating funding agency with data:", fundingAgencyData);
 
         // Create funding agency profile
-        const fundingAgency = await FundingAgency.create(fundingAgencyData);
+        await FundingAgency.create(fundingAgencyData);
 
         // Update user role
         user.role = "fundingAgency";
@@ -123,7 +124,7 @@ export async function POST(
       } catch (error) {
         console.error("Error creating funding agency profile:", error);
         return NextResponse.json(
-          { 
+          {
             error: "Failed to create funding agency profile",
             details: error instanceof Error ? error.message : "Unknown error"
           },
