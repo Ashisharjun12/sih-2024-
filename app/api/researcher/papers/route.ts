@@ -15,8 +15,21 @@ export async function GET() {
         await connectDB();
 
         const researcher = await Researcher.findOne({ userId: session.user.id })
-            .populate("researchPapers")
-            .populate("onGoingResearches");
+            .populate({
+                path: "researchPapers",
+                populate: {
+                    path: "researcher",
+                    select: "personalInfo.name academicInfo.institution"
+                }
+            })
+            .populate({
+                path: "onGoingResearches", 
+                populate: {
+                    path: "researcher",
+                    select: "personalInfo.name academicInfo.institution"
+                }
+            });
+
 
         console.log("researchercard....",researcher);
 
@@ -44,6 +57,10 @@ export async function POST(req: NextRequest) {
 
         const { title, description, publicationDate, stage, doi, isFree, price, images, isPublished } = await req.json();
         console.log(title, description, publicationDate, stage, doi, isFree, price, images, isPublished);
+        const researcher = await Researcher.findOne({ userId: session.user.id });
+        if (!researcher) {
+            return NextResponse.json({ error: "Researcher not found" }, { status: 404 });
+        }
         const newPaper = new ResearchPaper({
             title,
             description,
@@ -53,15 +70,13 @@ export async function POST(req: NextRequest) {
             isFree,
             isPublished,
             price,
-            images
+            images,
+            researcher
         });
 
         await newPaper.save();
 
-        const researcher = await Researcher.findOne({ userId: session.user.id });
-        if (!researcher) {
-            return NextResponse.json({ error: "Researcher not found" }, { status: 404 });
-        }
+        
         console.log(researcher);
         if(stage==="Completed"){
             researcher.researchPapers.push(newPaper._id);

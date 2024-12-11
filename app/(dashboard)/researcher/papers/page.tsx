@@ -102,7 +102,7 @@ export default function ResearchPapersPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleCreatePaper = async () => {
     if (!newPaper.title || !newPaper.description || !newPaper.stage) {
       toast({
         title: "Error",
@@ -182,6 +182,11 @@ export default function ResearchPapersPage() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleCreatePaper();
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
@@ -209,62 +214,7 @@ export default function ResearchPapersPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    console.log(newPaper);
-
-    try {
-      newPaper.price = Number(newPaper.price);
-      const response = await fetch("/api/researcher/papers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newPaper),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to add research paper");
-      }
-
-      toast({
-        title: "Success",
-        description: "Research paper added successfully",
-      });
-
-      // Reset the form
-      setNewPaper({
-        title: "",
-        description: "",
-        publicationDate: "",
-        stage: "Identifying a Research Problem or Question",
-        doi: "",
-        images: [],
-        isFree: false,
-        price: undefined,
-        isPublished: false,
-      });
-
-      // Fetch updated research papers
-      fetchResearchPapers();
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to add research paper",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center min-h-[60vh]">

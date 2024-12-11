@@ -54,7 +54,7 @@ const BANNER_GRADIENTS = [
 
 export function ResearchPaperCard({ paper, index }: ResearchPaperCardProps) {
   const router = useRouter();
-
+console.log(paper)
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

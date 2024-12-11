@@ -76,6 +76,7 @@ export function ResearcherCard({ researcher, index }: ResearcherCardProps) {
     try {
       const response = await fetch(`/api/researcher/profile/${researcher._id}`);
       const data = await response.json();
+      console.log(data)
       
       if (data.success) {
         setResearcherData({

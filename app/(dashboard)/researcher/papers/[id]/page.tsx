@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
+import { BookOpen, FileText, Lock, Unlock } from "lucide-react";
 
 interface ResearchDocument {
   public_id: string;
@@ -88,7 +89,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
     const fetchPaper = async () => {
       try {
 
-        console.log("Fetching paperSHFJKDSHJKFHJKSDHFJSHDJKFHJKDSHFKJHSDJKFHFSJKDHFJKHDSJFKHDSJKHFJKSDHKFJK");
+
         setLoading(true);
         const response = await fetch(`/api/explore/research-papers/${params.id}`);
         const data = await response.json();
@@ -116,15 +117,16 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
   const handleDownload = async () => {
     try {
       setDownloadLoading(true);
-      const response = await fetch(`/api/researcher/papers/${params.id}/download`);
+      const response = await fetch(`/api/researcher/papers/${params.id}/download`)
+      console.log("response", response);
       
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to download paper");
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      
+      const url = window.URL.createObjectURL();
       const a = document.createElement('a');
       a.href = url;
       a.download = `${paper?.title || 'research-paper'}.pdf`;
