@@ -15,6 +15,7 @@ import {
   FileCheck,
   Activity,
   Briefcase,
+  Calendar,
   Menu,
   ChevronLeft
 } from "lucide-react";
@@ -29,48 +30,23 @@ const policyMakerLinks = [
     icon: BarChart3,
   },
   {
-    title: "Applications",
-    href: "/policy-maker/applications",
-    icon: FileText,
-  },
-  {
     title: "Policies",
     href: "/policy-maker/policy",
     icon: ScrollText,
   },
   {
-    title: "Startups",
+    title: "Meetings",
+    href: "/policy-maker/meeting",
+    icon: Calendar,
+  },
+  {
+    title: "Heat-Map",
     href: "/policy-maker/startups",
     icon: Building2,
   },
   {
-    title: "Frameworks",
-    href: "/policy-maker/frameworks",
-    icon: BookOpen,
-  },
-  {
-    title: "Compliance",
-    href: "/policy-maker/compliance",
-    icon: FileCheck,
-  },
-  {
-    title: "Analytics",
-    href: "/policy-maker/analytics",
-    icon: Activity,
-  },
-  {
-    title: "Stakeholders",
-    href: "/policy-maker/stakeholders",
-    icon: Users,
-  },
-  {
-    title: "Projects",
-    href: "/policy-maker/projects",
-    icon: Briefcase,
-  },
-  {
     title: "Settings",
-    href: "/policy-maker/settings",
+    href: "/policy-maker",
     icon: Settings,
   },
 ];
