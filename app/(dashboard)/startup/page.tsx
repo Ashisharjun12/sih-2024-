@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FundingAgencyCard } from "@/components/cards/funding-agency-card";
+import { Chatbot } from "@/components/chatbot/chatbot";
 
 interface WalletData {
   balance: number;
@@ -356,6 +357,8 @@ export default function StartupPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Chatbot pageContext="startup" />
     </div>
   );
 }
