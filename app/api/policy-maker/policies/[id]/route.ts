@@ -44,35 +44,35 @@ export async function GET(
         const populatedReviews = await Promise.all(policy.reviews.map(async (review) => {
             let reviewer;
             if (review.reviewerType === 'Startup') {
-                reviewer = await Startup.findById(review.reviewer).select('startupDetails.startupName email _id');
+                reviewer = await Startup.findById(review.reviewer);
                 console.log(reviewer)
                 return {
                     ...review.toObject(),
                     reviewer: {
                         _id: reviewer._id,
                         startupName: reviewer.startupDetails.startupName,
-                        email: reviewer.email
+                        email: reviewer.owner.email
                     }
                 };
             } else if (review.reviewerType === 'Researcher') {
-                reviewer = await Researcher.findById(review.reviewer).select('personalInfo.name email');
+                reviewer = await Researcher.findById(review.reviewer);
                 return {
                     ...review.toObject(),
                     reviewer: {
                         _id: reviewer._id,
                         name: reviewer.personalInfo.name,
-                        email: reviewer.email
+                        email: reviewer.personalInfo.email
                     }
                 };
             }
             else {
-                reviewer = await FundingAgency.findById(review.reviewer).select('agencyDetails.name owner.email');
+                reviewer = await FundingAgency.findById(review.reviewer);
                 return {
                     ...review.toObject(),
                     reviewer: {
                         _id: reviewer._id,
                         name: reviewer.agencyDetails.name,
-                        email: reviewer.owner.email
+                        email: "ritikraushan@gmail.com"
                     }
                 };
             }

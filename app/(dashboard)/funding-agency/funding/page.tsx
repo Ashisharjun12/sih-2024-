@@ -50,6 +50,7 @@ export default function FundingPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState("");
+  const [transferredRequests, setTransferredRequest] = useState([]);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -64,7 +65,11 @@ export default function FundingPage() {
       if (!response.ok) throw new Error("Failed to fetch fundings");
       const data = await response.json();
       setActiveInvestments(data.activeInvestments);
-      setRequests(data.requests);
+      console.log(data)
+      const requests = data.requests;
+      const transferredRequests = data.requested.filter(req=>req.status === "transferred")
+      setRequests(requests);
+      setTransferredRequest(transferredRequests);
       setIsLoading(false);
     } catch (err) {
       toast({
@@ -136,50 +141,50 @@ export default function FundingPage() {
   };
 
 
-  const handleFund = async () => {
-    if (!selectedStartup || !fundingAmount || !paymentMethod) {
-      toast({
-        title: "Error",
-        description: "Please fill all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
+  // const handleFund = async () => {
+  //   if (!selectedStartup || !fundingAmount || !paymentMethod) {
+  //     toast({
+  //       title: "Error",
+  //       description: "Please fill all required fields",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
 
-    setIsProcessing(true);
-    try {
-      const res = await fetch('/api/wallet/transfer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          receiverId: selectedStartup.userId,
-          amount: Number(fundingAmount)
-        })
-      });
+  //   setIsProcessing(true);
+  //   try {
+  //     const res = await fetch('/api/wallet/transfer', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         receiverId: selectedStartup.userId,
+  //         amount: Number(fundingAmount)
+  //       })
+  //     });
 
-      const data = await res.json();
+  //     const data = await res.json();
       
-      if (data.success) {
-        toast({
-          title: "Success",
-          description: `Successfully funded ${selectedStartup.startupDetails.startupName}`,
-        });
-        setShowFundingModal(false);
-        resetForm();
-      } else {
-        throw new Error(data.error || "Failed to process funding");
-      }
-    } catch (error) {
-      console.error('Funding error:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process funding",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  //     if (data.success) {
+  //       toast({
+  //         title: "Success",
+  //         description: `Successfully funded ${selectedStartup.startupDetails.startupName}`,
+  //       });
+  //       setShowFundingModal(false);
+  //       resetForm();
+  //     } else {
+  //       throw new Error(data.error || "Failed to process funding");
+  //     }
+  //   } catch (error) {
+  //     console.error('Funding error:', error);
+  //     toast({
+  //       title: "Error",
+  //       description: error instanceof Error ? error.message : "Failed to process funding",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsProcessing(false);
+  //   }
+  // };
   
 
   if (isLoading) {
@@ -209,6 +214,7 @@ export default function FundingPage() {
         <TabsList>
           <TabsTrigger value="investments">Active Investments</TabsTrigger>
           <TabsTrigger value="requests">Funding Requests</TabsTrigger>
+          <TabsTrigger value = "transfer">Transfer requests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="investments">
@@ -231,7 +237,7 @@ export default function FundingPage() {
                           <Building2 className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-semibold">{investment.startupId.startupName}</h3>
+                          <h3 className="font-semibold">{investment.startup.startupName}</h3>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -247,7 +253,7 @@ export default function FundingPage() {
                       <Button 
                         variant="outline" 
                         className="w-full"
-                        onClick={() => router.push(`/funding-agency/messages/${investment.startupId.userId}`)}
+                        onClick={() => router.push(`/funding-agency/messages/${investment.startup.userId}`)}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Open Chat
@@ -296,6 +302,60 @@ export default function FundingPage() {
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
                           Accept & Chat
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => handleRejectRequest(request._id)}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Reject
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="transfer">
+          <Card>
+            <CardHeader>
+              <CardTitle>Transfer Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {transferredRequests.map((request) => (
+                    <motion.div
+                      key={request._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 rounded-xl border bg-card hover:shadow-lg transition-all"
+                    >
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{request.startup.startupName}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(request.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {request.message}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button 
+                          className="flex-1"
+                          onClick={() => handleAcceptRequest(request.startup.userId, request._id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Accept & Pay
                         </Button>
                         <Button 
                           variant="outline" 

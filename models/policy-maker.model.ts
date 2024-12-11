@@ -18,7 +18,7 @@ const policyMakerSchema = new mongoose.Schema({
     policies: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Policy'
-    }]
+    }],
 }, { timestamps: true });
 
 const PolicyMaker = mongoose.models.PolicyMaker || mongoose.model('PolicyMaker', policyMakerSchema);

@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
 
 interface Investment {
   _id: string;
@@ -438,7 +439,7 @@ export default function FundingPage() {
                         <p className="text-sm text-muted-foreground mb-4">
                           {request.message}
                         </p>
-                        <div className="flex gap-2">
+                       { request.status ==="pending"?<div className="flex gap-2">
                           <Button 
                             className="flex-1"
                             onClick={() => handleAcceptRequest(request.fundingAgencyId.userId, request._id)}
@@ -454,7 +455,7 @@ export default function FundingPage() {
                             <XCircle className="h-4 w-4 mr-2" />
                             Reject
                           </Button>
-                        </div>
+                        </div>: <Badge>Accepted</Badge>}
                       </motion.div>
                     ))}
                   </div>

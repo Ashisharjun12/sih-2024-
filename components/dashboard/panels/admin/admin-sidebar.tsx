@@ -13,7 +13,8 @@ import {
   GraduationCap,
   Briefcase,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  BookPlus
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,24 +37,9 @@ const adminLinks = [
     icon: FileText,
   },
   {
-    title: "Startups",
-    href: "/admin/startups",
-    icon: Building2,
-  },
-  {
-    title: "Researchers",
-    href: "/admin/researchers",
-    icon: GraduationCap,
-  },
-  {
-    title: "IPR Professionals",
-    href: "/admin/ipr-professionals",
-    icon: Briefcase,
-  },
-  {
-    title: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
+    title: "Policy",
+    href: "/admin/policy",
+    icon: BookPlus,
   },
 ];
 

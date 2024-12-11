@@ -31,13 +31,6 @@ export async function PUT(
         }
 
         const { role } = await req.json();
-
-        // Start a session for transaction
-<<<<<<< HEAD
-        const dbSession = await mongoose.startSession();
-=======
->>>>>>> 3cb0777b5753845e605ca811f69535ba738b8696
-
         try {
                 // Find the user
                 const user = await User.findById(params.id);

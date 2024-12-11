@@ -155,7 +155,7 @@ export default function PolicyPage({ params }: { params: { id: string } }) {
               ))}
               <Badge variant="outline" className="bg-background/50 backdrop-blur-sm">
                 <Calendar className="h-3 w-3 mr-1" />
-                {new Date(policy.implementationDate).toLocaleDateString()}
+                {new Date(policy.createdAt).toLocaleDateString()}
               </Badge>
             </div>
           </div>
@@ -252,12 +252,6 @@ export default function PolicyPage({ params }: { params: { id: string } }) {
                   {policy.reviews?.length || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Total Reviews</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-2xl font-bold text-emerald-600">
-                  {policy.status === "Active" ? "Live" : policy.status}
-                </p>
-                <p className="text-sm text-muted-foreground">Status</p>
               </div>
             </CardContent>
           </Card>
