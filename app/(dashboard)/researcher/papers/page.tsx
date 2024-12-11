@@ -27,6 +27,7 @@ import { FileText, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
+import { useRouter } from "next/navigation";
 
 interface ResearchPaper {
   _id: string;
@@ -64,6 +65,7 @@ export default function ResearchPapersPage() {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const [newPaper, setNewPaper] = useState<Omit<ResearchPaper, '_id'>>({
     title: "",
@@ -247,7 +249,7 @@ export default function ResearchPapersPage() {
       <Tabs defaultValue="all" className="space-y-6">
         <TabsList>
           <TabsTrigger value="all">All Papers</TabsTrigger>
-          <TabsTrigger value="published">Published</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
         </TabsList>
 
@@ -274,7 +276,7 @@ export default function ResearchPapersPage() {
                           )}
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={()=>router.push(`/researcher/papers/${paper._id}`)}>
                         View Details
                       </Button>
                     </div>
@@ -292,8 +294,89 @@ export default function ResearchPapersPage() {
             </div>
           )}
         </TabsContent>
-
         {/* Similar content for other tabs */}
+        <TabsContent value="completed" className="space-y-4">
+          {papers.length > 0 ? (
+            <div className="grid gap-4">
+              {papers.filter(paper=>paper.stage === "completed").map((paper, index) => (
+                <Card key={paper._id}>
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <h3 className="font-semibold">{paper.title}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {paper.description}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{paper.stage}</Badge>
+                          {paper.isFree ? (
+                            <Badge variant="outline" className="text-green-600">Free</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-blue-600">
+                              ₹{paper.price}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={()=>router.push(`/researcher/papers/${paper._id}`)}>
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Research Papers</h3>
+              <p className="text-sm text-muted-foreground">
+                Get started by creating your first research paper
+              </p>
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="ongoing" className="space-y-4">
+          {papers.length > 0 ? (
+            <div className="grid gap-4">
+              {papers.filter(paper=>paper.stage !== "completed").map((paper, index) => (
+                <Card key={paper._id}>
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <h3 className="font-semibold">{paper.title}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {paper.description}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{paper.stage}</Badge>
+                          {paper.isFree ? (
+                            <Badge variant="outline" className="text-green-600">Free</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-blue-600">
+                              ₹{paper.price}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={()=>router.push(`/researcher/papers/${paper._id}`)}>
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Research Papers</h3>
+              <p className="text-sm text-muted-foreground">
+                Get started by creating your first research paper
+              </p>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Add Research Dialog */}

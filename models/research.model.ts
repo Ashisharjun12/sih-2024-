@@ -39,10 +39,6 @@ const researchSchema = new mongoose.Schema({
             return !this.isFree;
         }
     },
-<<<<<<< HEAD
-   
-=======
->>>>>>> c1cca49062179b2a05a995c54ad323a9a13b6b91
     researcher: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Researcher',

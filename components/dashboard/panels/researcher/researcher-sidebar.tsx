@@ -21,6 +21,8 @@ import {
   Calendar,
   ChevronLeft,
   Menu,
+  ScrollText,
+  BookPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,6 +37,11 @@ const sidebarItems = [
     title: "Overview",
     href: "/researcher",
     icon: LayoutDashboard,
+  },
+  {
+    title : "Research papers",
+    href: "/researcher/papers",
+    icon : ScrollText
   },
   {
     title: "Publications",
@@ -61,6 +68,11 @@ const sidebarItems = [
     href: "/researcher/ipr",
     icon: FileText,
   },
+  {
+    title : "Policy",
+    href : "/researcher/policy",
+    icon : BookPlus
+  }
 ];
 
 export function ResearcherSidebar({ className }: SidebarProps) {

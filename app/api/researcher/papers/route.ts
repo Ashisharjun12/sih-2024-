@@ -62,10 +62,6 @@ export async function POST(req: NextRequest) {
 
         const { title, description, publicationDate, stage, doi, isFree, price, images, isPublished } = await req.json();
         console.log(title, description, publicationDate, stage, doi, isFree, price, images, isPublished);
-        const researcher = await Researcher.findOne({ userId: session.user.id });
-        if (!researcher) {
-            return NextResponse.json({ error: "Researcher not found" }, { status: 404 });
-        }
         const newPaper = new ResearchPaper({
             title,
             description,
@@ -80,8 +76,6 @@ export async function POST(req: NextRequest) {
         });
 
         await newPaper.save();
-
-
         
         console.log(researcher);
 
