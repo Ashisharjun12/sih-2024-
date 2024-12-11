@@ -37,6 +37,10 @@ interface FundingAgencyCardProps {
       establishmentDate: string;
       description: string;
     };
+    logo: {
+      public_id: string;
+      secure_url: string;
+    };
     contactInformation: {
       officialAddress: string;
       officialEmail: string;
@@ -121,17 +125,13 @@ export function FundingAgencyCard({
               {/* Logo and Title Section */}
               <div className="relative px-4 -mt-8">
                 <div className="flex items-center gap-3">
-                  {agency.documentation?.registrationCertificate ? (
+                  {agency?.agencyDetails?.logo? (
                     <Image
                       width={56}
                       height={56}
-
-                      src={agency.documentation.registrationCertificate.secure_url}
-=======
-                      src={agency.documentation.taxDocuments.secure_url}
-
+                      src={agency.agencyDetails.logo.secure_url}
                       alt={agency.agencyDetails.name}
-                      className="rounded-full object-cover bg-white p-1 ring-2 ring-white shadow-lg"
+                      className="rounded-full object-cover w-14 h-14 bg-white p-1 ring-2 ring-white shadow-lg"
                     />
                   ) : (
                     <div className="h-14 w-14 rounded-full bg-white/90 flex items-center justify-center ring-2 ring-white shadow-lg">
