@@ -58,6 +58,11 @@ const sidebarItems = [
     icon: Calendar,
   },
   {
+    title: "offline",
+    href: "/startup/offline",
+    icon: Calendar,
+  },
+  {
     title: "Messages",
     href: "/startup/messages",
     icon: MessageSquare,

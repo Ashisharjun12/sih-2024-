@@ -397,7 +397,7 @@ export default function CopyrightsPage() {
   return (
     <div className="container py-6 space-y-6">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent p-6 md:p-8">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Copyright Applications</h1>
@@ -407,7 +407,7 @@ export default function CopyrightsPage() {
           </div>
           {isLoadingGemini && (
             <div className="text-sm text-muted-foreground flex items-center gap-2 bg-background/50 backdrop-blur-sm px-4 py-2 rounded-lg">
-              <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
               Analyzing similarities...
             </div>
           )}
@@ -418,7 +418,7 @@ export default function CopyrightsPage() {
       {isLoadingCopyrights ? (
         <div className="flex items-center justify-center p-12">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-muted-foreground">Loading copyright applications...</p>
           </div>
         </div>
@@ -484,7 +484,7 @@ export default function CopyrightsPage() {
                           <Badge variant="secondary" className={cn(
                             "px-2 py-0.5",
                             copyright.status === "Pending" && "bg-yellow-500/15 text-yellow-600",
-                            copyright.status === "Accepted" && "bg-violet-500/15 text-violet-600",
+                            copyright.status === "Accepted" && "bg-violet-500/15 text-teal-600",
                             copyright.status === "Rejected" && "bg-red-500/15 text-red-600"
                           )}>
                             {copyright.status}
@@ -497,7 +497,7 @@ export default function CopyrightsPage() {
                             onClick={() => setSelectedCopyright(copyright)}
                             className={cn(
                               "transition-all",
-                              copyright.status === "Pending" ? "bg-violet-600 hover:bg-violet-700" : ""
+                              copyright.status === "Pending" ? "bg-teal-600 hover:bg-teal-700" : ""
                             )}
                           >
                             {copyright.status === "Pending" ? "Review" : "View"}
@@ -525,7 +525,7 @@ export default function CopyrightsPage() {
                     <Badge variant="secondary" className={cn(
                       "px-2 py-0.5 whitespace-nowrap",
                       copyright.status === "Pending" && "bg-yellow-500/15 text-yellow-600",
-                      copyright.status === "Accepted" && "bg-violet-500/15 text-violet-600",
+                      copyright.status === "Accepted" && "bg-teal-500/15 text-teal-600",
                       copyright.status === "Rejected" && "bg-red-500/15 text-red-600"
                     )}>
                       {copyright.status}
@@ -581,7 +581,7 @@ export default function CopyrightsPage() {
                       onClick={() => setSelectedCopyright(copyright)}
                       className={cn(
                         "transition-all",
-                        copyright.status === "Pending" ? "bg-violet-600 hover:bg-violet-700" : ""
+                        copyright.status === "Pending" ? "bg-teal-600 hover:bg-teal-700" : ""
                       )}
                     >
                       {copyright.status === "Pending" ? "Review" : "View"}
@@ -602,7 +602,7 @@ export default function CopyrightsPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-4 top-4 rounded-full hover:bg-violet-500/10"
+                className="absolute right-4 top-4 rounded-full hover:bg-teal-500/10"
                 onClick={() => setSelectedCopyright(null)}
               >
                 <X className="h-4 w-4" />
@@ -662,7 +662,7 @@ export default function CopyrightsPage() {
                                 href={doc.secure_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-violet-500 hover:text-violet-600 hover:bg-violet-500/5 p-2 rounded-md transition-colors"
+                                className="flex items-center gap-2 text-sm text-teal-500 hover:text-teal-600 hover:bg-teal-500/5 p-2 rounded-md transition-colors"
                               >
                                 <FileText className="h-4 w-4" />
                                 <span>Document {index + 1}</span>
@@ -698,7 +698,7 @@ export default function CopyrightsPage() {
                         <div className="flex gap-4">
                           <Button
                             onClick={() => handleStatusUpdate("Accepted")}
-                            className="flex-1 bg-violet-600 hover:bg-violet-700"
+                            className="flex-1 bg-teal-600 hover:bg-teal-700"
                             disabled={isSubmitting || !message || transactionInProgress}
                           >
                             {transactionInProgress ? (
@@ -715,7 +715,7 @@ export default function CopyrightsPage() {
                           >
                             {transactionInProgress ? (
                               <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin mr-2" />
                                 Processing...
                               </>
                             ) : "Reject"}
@@ -731,7 +731,7 @@ export default function CopyrightsPage() {
                               href={`https://sepolia.etherscan.io/tx/${selectedCopyright.transactionHash}#eventlog`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-violet-500 hover:text-violet-600 break-all"
+                              className="text-sm text-teal-500 hover:text-teal-600 break-all"
                             >
                               {selectedCopyright.transactionHash}
                             </a>
@@ -748,14 +748,14 @@ export default function CopyrightsPage() {
                   </SheetHeader>
                   <div className="flex flex-col items-center justify-center py-8 space-y-4">
                     <div className="bg-violet-500/10 p-4 rounded-full">
-                      <FileCheck className="h-8 w-8 text-violet-500" />
+                      <FileCheck className="h-8 w-8 text-teal-500" />
                     </div>
                     <p className="text-center text-muted-foreground">
                       Please connect your MetaMask wallet to review copyright applications
                     </p>
                     <Button 
                       onClick={connectWallet}
-                      className="bg-violet-600 hover:bg-violet-700"
+                      className="bg-teal-600 hover:bg-teal-700"
                     >
                       Connect MetaMask
                     </Button>
