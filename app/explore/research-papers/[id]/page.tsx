@@ -88,7 +88,6 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
     const fetchPaper = async () => {
       try {
 
-        console.log("Fetching paper SKFHSDKFJDSHKJFHDSJKFHJKDSHFJKHDSJKHFKHDSKFJHJDSKHFJKHDSJKFHJKDSHFKHDSJKFHJDSKHFKJDSHKFJ");
         setLoading(true);
         const response = await fetch(`/api/explore/research-papers/${params.id}`);
         
@@ -118,7 +117,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
     };
 
     fetchPaper();
-  }, [params.id, toast, router]);
+  }, [params.id,]);
 
   const handleDownload = async () => {
     if (!paper?.isPublished) {

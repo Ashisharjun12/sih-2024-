@@ -54,6 +54,11 @@ export async function POST(req: NextRequest) {
         }
 
         await connectDB();
+        const researcher = await Researcher.findOne({ userId: session.user.id });
+        if (!researcher) {
+            return NextResponse.json({ error: "Researcher not found" }, { status: 404 });
+        }
+        console.log(researcher);
 
         const { title, description, publicationDate, stage, doi, isFree, price, images, isPublished } = await req.json();
         console.log(title, description, publicationDate, stage, doi, isFree, price, images, isPublished);
@@ -76,8 +81,10 @@ export async function POST(req: NextRequest) {
 
         await newPaper.save();
 
+
         
         console.log(researcher);
+
         if(stage==="Completed"){
             researcher.researchPapers.push(newPaper._id);
         }else{

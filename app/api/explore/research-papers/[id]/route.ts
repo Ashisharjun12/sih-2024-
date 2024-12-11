@@ -26,9 +26,12 @@ export async function GET(
         { status: 400 }
       );
     }
+    console.log("FETCHING ROUTE   ROUTE$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
     // Find research paper
     const paper = await ResearchPaper.findById(params.id).lean();
+
+    console.log("PAPER ______________________________", paper)
 
     if (!paper) {
       return NextResponse.json(
@@ -49,6 +52,7 @@ export async function GET(
       }
     }
 
+    console.log("TESTINH THE ROUTE NEST ____________________________________ FIND USER ", paper.researcher)
     // Fetch researcher details
     const researcher = await Researcher.findById(paper.researcher)
       .select({
@@ -59,12 +63,15 @@ export async function GET(
       })
       .lean();
 
+    console.log("FLDJFJDSFLKFSDJ__________________", researcher)
+
     if (!researcher) {
       return NextResponse.json(
         { success: false, message: "Researcher not found" },
         { status: 404 }
       );
     }
+    console.log("RESEARCHER THE ROUTE NEST ____________________________________ FIND USER ")
 
     // Combine paper and researcher data with proper typing
     const response = {
@@ -97,6 +104,9 @@ export async function GET(
       },
     };
 
+    console.log("RESPOST THE ROUTE NEST ____________________________________ FIND USER ")
+
+
     return NextResponse.json(response);
   } catch (error) {
     console.error("API Error:", error);
@@ -121,14 +131,6 @@ export async function POST(
       return NextResponse.json(
         { success: false, message: "Authentication required" },
         { status: 401 }
-      );
-    }
-
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid paper ID format" },
-        { status: 400 }
       );
     }
 
@@ -163,12 +165,12 @@ export async function POST(
     // );
     console.log(paper._id, paper.isFree, user._id);
     // Add paper to user's accessible papers
-   const userData=await User.findOne({_id:user._id});
-   userData.accessibleResearchPapers.push({researchPaper:paper._id,accessType:paper.isFree ? 'free' : 'purchased'});
-   await userData.save();
+    const userData = await User.findOne({ _id: user._id });
+    userData.accessibleResearchPapers.push({ researchPaper: paper._id, accessType: paper.isFree ? 'free' : 'purchased' });
+    await userData.save();
     console.log(userData);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: paper.isFree ? "Paper added to your library" : "Paper purchased successfully",
     });

@@ -1,4 +1,8 @@
 import { FundingAgencySidebar } from "@/components/dashboard/panels/funding-agency/funding-agency-sidebar";
+<<<<<<< HEAD
+
+=======
+>>>>>>> c1cca49062179b2a05a995c54ad323a9a13b6b91
 export default function FundingAgencyLayout({
   children,
 }: {
