@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { FileText, FileCheck, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import crypto from 'crypto';
 
 interface IPROwner {
   _id: string;
@@ -55,6 +56,23 @@ interface SimilarityInfo {
   titleSimilarity: number;
   descriptionSimilarity: number;
 }
+
+
+const secretKey = 'your-secret-key';
+
+const encrypt = (text) => {
+  const cipher = crypto.createCipher('aes-256-cbc', secretKey);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+};
+
+const decrypt = (encryptedText) => {
+  const decipher = crypto.createDecipher('aes-256-cbc', secretKey);
+  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+};
 
 export default function PatentsPage() {
   const [patents, setPatents] = useState<Patent[]>([]);
@@ -297,16 +315,20 @@ export default function PatentsPage() {
 
       // Then handle blockchain transaction
       const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+      const encryptedId = encrypt(id);
       const title = data.ipr.title;
+      const decryptedId = encrypt(title);
       const ownerId = BigInt(
         parseInt(data.ipr.owner.details._id.toString(), 16)
       ).toString();
+      const encryptedOwnerId = encrypt(ownerId);
+
       try {
         let transaction;
         if (status === "Accepted") {
-          transaction = await contract.acceptPatent(id, title, ownerId);
+          transaction = await contract.acceptPatent(encryptedId, decryptedId, encryptedOwnerId);
         } else {
-          transaction = await contract.rejectPatent(id, title, ownerId);
+          transaction = await contract.rejectPatent(encryptedId, decryptedId, encryptedOwnerId);
         }
 
         // Show transaction pending toast

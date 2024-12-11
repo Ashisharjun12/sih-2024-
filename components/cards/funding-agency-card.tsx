@@ -125,7 +125,7 @@ export function FundingAgencyCard({
                     <Image
                       width={56}
                       height={56}
-                      src={agency.agencyDetails.logo.secure_url}
+                      src={agency.documentation.taxDocuments.secure_url}
                       alt={agency.agencyDetails.name}
                       className="rounded-full object-cover bg-white p-1 ring-2 ring-white shadow-lg"
                     />
