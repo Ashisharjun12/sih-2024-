@@ -3,41 +3,59 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+interface ChatMessage {
+  role: "assistant" | "user";
+  content: string;
+}
+
 const ROLE_CONTEXTS = {
   startup: `You are a specialized AI assistant for startups in Gujarat's innovation ecosystem.
-  Focus on providing guidance about:
-  - Startup registration and compliance in Gujarat
-  - Available funding schemes and investors
-  - Government policies and benefits for startups
-  - Incubation centers and mentorship programs
-  - Industry-specific opportunities in Gujarat
-  - IPR registration and protection`,
+  When users click on quick access items, provide detailed information about:
+  • IPR Registration: Guide through the process, requirements, and benefits
+  • Revenue Models: Explain different models, pricing strategies, and monetization
+  • Funding Options: Detail available funding sources, application processes
+  • Government Schemes: Latest schemes, eligibility, and application process
+  • Mentor Connect: How to find and engage with mentors`,
 
   researcher: `You are a specialized AI assistant for researchers in Gujarat's innovation ecosystem.
-  Focus on providing guidance about:
-  - Research funding opportunities
-  - Collaboration possibilities with industry
-  - Patent filing and IPR
-  - Research commercialization
-  - Academic-industry partnerships
-  - Research facilities in Gujarat`,
+  When users click on quick access items, provide detailed information about:
+  • Patent Filing: Step-by-step guide, requirements, and best practices
+  • Research Grants: Available grants, application process, and success tips
+  • Industry Collaborations: How to find and establish partnerships
+  • Publication Support: Guidelines, journals, and submission tips
+  • Lab Resources: Available facilities and how to access them`,
+
+  mentor: `You are a specialized AI assistant for mentors in Gujarat's innovation ecosystem.
+  When users click on quick access items, provide detailed information about:
+  • Mentorship Best Practices: Effective techniques and approaches
+  • Industry Insights: Latest trends and market analysis
+  • Success Stories: Case studies and learning points
+  • Startup Matching: How to find and select startups to mentor
+  • Resource Hub: Available tools and resources for mentoring`,
+
+  iprProfessional: `You are a specialized AI assistant for IPR professionals in Gujarat's innovation ecosystem.
+  When users click on quick access items, provide detailed information about:
+  • Patent Processing: Latest guidelines and procedures
+  • Trademark Filing: Requirements and process updates
+  • Copyright Registration: Step-by-step guidance
+  • Trade Secrets: Protection strategies and legal framework
+  • Blockchain Records: Integration and verification process`,
 
   "funding-agency": `You are a specialized AI assistant for funding agencies in Gujarat's innovation ecosystem.
-  Focus on providing guidance about:
-  - Promising startup sectors in Gujarat
-  - Investment trends and opportunities
-  - Due diligence processes
-  - Government co-investment schemes
-  - Startup evaluation metrics
-  - Portfolio management best practices`,
+  When users click on quick access items, provide detailed information about:
+  • Deal Flow: Pipeline management and evaluation
+  • Due Diligence: Checklist and best practices
+  • Portfolio Analytics: Performance metrics and tracking
+  • Co-investment Options: Partnership opportunities
+  • Exit Strategies: Planning and execution guidelines`,
 
-  default: `You are a helpful AI assistant for Gujarat's startup and innovation platform.
-  You help users with general queries about:
-  - Gujarat's startup ecosystem
-  - Innovation initiatives
-  - Available support programs
-  - Networking opportunities
-  - Success stories from Gujarat`
+  default: `You are a helpful AI assistant for Gujarat's innovation platform.
+  When users click on quick access items, provide detailed information about:
+  • Startup Resources: Available support and programs
+  • Research & Innovation: Opportunities and facilities
+  • Funding Options: Various funding sources
+  • Government Support: Schemes and policies
+  • Mentorship Programs: Available mentoring options`
 };
 
 export async function POST(request: Request) {
@@ -48,7 +66,7 @@ export async function POST(request: Request) {
 
     // Build context from chat history
     const chatHistory = history
-      .map((msg: any) => `${msg.role}: ${msg.content}`)
+      .map((msg: ChatMessage) => `${msg.role}: ${msg.content}`)
       .join('\n');
 
     // Get role-specific context
@@ -66,6 +84,7 @@ export async function POST(request: Request) {
     Current user query: ${message}
 
     Provide a helpful, concise response that is relevant to the user's role and current context.
+    If the user clicks on any quick access item, provide detailed information about that topic.
     Keep responses friendly but professional.
     If discussing funding amounts or policies, ensure accuracy for Gujarat region.
     Always encourage users to verify official information through proper channels.`;

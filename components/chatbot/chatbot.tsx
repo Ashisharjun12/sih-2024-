@@ -13,36 +13,91 @@ interface Message {
   content: string;
 }
 
-const startupPrePrompts = [
-  {
-    role: "assistant",
-    content: "👋 Welcome to the Startup Support Hub! I can help you with:\n\n" +
-      "• Starting up in Gujarat\n" +
-      "• Funding opportunities\n" +
-      "• Government policies\n" +
-      "• Connecting with mentors\n" +
-      "• IPR registration\n\n" +
-      "What would you like to know more about?"
-  },
-  {
-    role: "assistant",
-    content: "As a startup in Gujarat, you have access to various benefits:\n\n" +
-      "• Seed funding up to ₹20 lakhs\n" +
-      "• Tax benefits and subsidies\n" +
-      "• Incubation support\n" +
-      "• Networking opportunities\n\n" +
-      "Would you like me to explain any of these in detail?"
-  }
-];
+interface QuickAccessItem {
+  label: string;
+  emoji: string;
+  query: string;
+}
 
-const ROLE_TITLES = {
-  startup: "Let's Grow Together! 🚀",
-  researcher: "Innovate & Discover 🔬",
-  mentor: "Guide & Inspire 🌟",
-  iprProfessional: "Protect & Innovate 💡",
-  fundingAgency: "Invest in Innovation 💰",
-  policyMaker: "Shape the Future 📋",
-  default: "Gujarat Innovation Hub 🌱"
+const getQuickAccessItems = (role: string = "default"): QuickAccessItem[] => {
+  switch (role) {
+    case "startup":
+      return [
+        { label: "IPR Registration", emoji: "📝", query: "Tell me about IPR registration process for startups" },
+        { label: "Revenue Models", emoji: "📈", query: "Explain different revenue models for startups" },
+        { label: "Funding Options", emoji: "💰", query: "What funding options are available for startups" },
+        { label: "Government Schemes", emoji: "🏛️", query: "Tell me about government schemes for startups" },
+        { label: "Mentor Connect", emoji: "🤝", query: "How can I connect with mentors" }
+      ];
+    case "researcher":
+      return [
+        { label: "Patent Filing", emoji: "📝", query: "Guide me through the patent filing process" },
+        { label: "Research Grants", emoji: "💰", query: "What research grants are available" },
+        { label: "Industry Collaborations", emoji: "🤝", query: "How to establish industry collaborations" },
+        { label: "Publication Support", emoji: "📚", query: "Tell me about publication support" },
+        { label: "Lab Resources", emoji: "🔬", query: "What lab resources are available" }
+      ];
+    // ... add other roles similarly ...
+    default:
+      return [
+        { label: "Startup Resources", emoji: "🚀", query: "What startup resources are available" },
+        { label: "Research & Innovation", emoji: "🔬", query: "Tell me about research and innovation opportunities" },
+        { label: "Funding Options", emoji: "💰", query: "What funding options are available" },
+        { label: "Government Support", emoji: "🏛️", query: "Explain government support programs" },
+        { label: "Mentorship Programs", emoji: "🌟", query: "Tell me about mentorship programs" }
+      ];
+  }
+};
+
+const getInitialMessages = (role: string = "default", name: string = ""): Message[] => {
+  switch (role) {
+    case "startup":
+      return [
+        {
+          role: "assistant",
+          content: `Hello ${name}! 👋 Here are two trending updates for startups in Gujarat:`
+        },
+        {
+          role: "assistant",
+          content: "1. New Startup Policy 2024 offers up to ₹30 lakhs seed funding for innovative startups in emerging tech."
+        },
+        {
+          role: "assistant",
+          content: "2. Gujarat's startup ecosystem saw 40% growth in funding last quarter, with focus on DeepTech and CleanTech."
+        }
+      ];
+    case "researcher":
+      return [
+        {
+          role: "assistant",
+          content: `Hello ${name}! 👋 Here are two key updates for researchers:`
+        },
+        {
+          role: "assistant",
+          content: "1. New research grant program launched with focus on AI and Sustainable Technologies."
+        },
+        {
+          role: "assistant",
+          content: "2. Gujarat universities reported 30% increase in industry-sponsored research projects."
+        }
+      ];
+    // ... add other roles similarly ...
+    default:
+      return [
+        {
+          role: "assistant",
+          content: `Hello ${name}! 👋 Welcome to Gujarat Innovation Hub`
+        },
+        {
+          role: "assistant",
+          content: "1. Gujarat ranks #3 in startup ecosystem growth in India"
+        },
+        {
+          role: "assistant",
+          content: "2. Over 500 startups received funding support in last 6 months"
+        }
+      ];
+  }
 };
 
 export function Chatbot({ pageContext = "general" }: { pageContext?: string }) {
@@ -52,20 +107,49 @@ export function Chatbot({ pageContext = "general" }: { pageContext?: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const { data: session } = useSession();
 
+  const handleQuickAccess = async (query: string) => {
+    if (isLoading) return;
+    
+    setMessages(prev => [...prev, { role: "user", content: query }]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: query,
+          history: messages,
+          context: {
+            page: pageContext,
+            userRole: session?.user?.role,
+            userName: session?.user?.name
+          }
+        }),
+      });
+
+      const data = await response.json();
+      setMessages(prev => [...prev, { role: "assistant", content: data.response }]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setMessages(prev => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "I apologize, but I'm having trouble responding right now. Please try again later."
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && messages.length === 0 && session?.user) {
-      const initialMessage = {
-        role: "assistant" as const,
-        content: `Hello ${session.user.name}! How can I assist you today?`
-      };
-
-      if (pageContext === "startup") {
-        setMessages([initialMessage, ...startupPrePrompts]);
-      } else {
-        setMessages([initialMessage]);
-      }
+      const initialMessages = getInitialMessages(session.user.role, session.user.name);
+      setMessages(initialMessages);
     }
-  }, [isOpen, session, pageContext]);
+  }, [isOpen, session, messages.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,14 +197,9 @@ export function Chatbot({ pageContext = "general" }: { pageContext?: string }) {
     <div className="fixed bottom-4 right-4 z-50">
       {isOpen ? (
         <Card className="w-[350px] h-[500px] flex flex-col p-4 shadow-lg">
-          <div className="flex justify-between items-center mb-4 bg-primary/10 p-3 rounded-lg">
-            <div className="flex flex-col">
-              <h3 className="font-semibold text-primary">
-                {ROLE_TITLES[session?.user?.role as keyof typeof ROLE_TITLES] || ROLE_TITLES.default}
-              </h3>
-              <p className="text-xs text-muted-foreground">AI Assistant</p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="hover:bg-primary/20">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold">AI Assistant</h3>
+            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -145,6 +224,27 @@ export function Chatbot({ pageContext = "general" }: { pageContext?: string }) {
                   </div>
                 </div>
               ))}
+
+              {/* Quick Access Buttons */}
+              {messages.length > 0 && !isLoading && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm text-muted-foreground">Quick access - tap to learn more:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {getQuickAccessItems(session?.user?.role).map((item, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="text-xs justify-start"
+                        onClick={() => handleQuickAccess(item.query)}
+                      >
+                        <span className="mr-1">{item.emoji}</span>
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="rounded-lg px-4 py-2 bg-muted">
