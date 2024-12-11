@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
     console.log("Step 1: Starting investment process...");
 
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "fundingAgency") {
+    if (!session || session.user.role !== "startup") {
       console.log("Unauthorized access attempt:", {
         hasSession: !!session,
         role: session?.user?.role
