@@ -449,7 +449,7 @@ export default function TrademarksPage() {
   return (
     <div className="container py-6 space-y-6">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent p-6 md:p-8">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Trademark Applications</h1>
@@ -467,7 +467,7 @@ export default function TrademarksPage() {
       </div>
 
       {selectedPendingTrademark && (
-        <div className="mt-4 p-6 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl border border-emerald-100">
+        <div className="mt-4 p-6 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent rounded-xl border border-emerald-100">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold">Selected Trademark for Analysis</h3>
@@ -493,7 +493,7 @@ export default function TrademarksPage() {
           {/* Analysis Results for Selected Trademark */}
           {similarityData[selectedPendingTrademark._id] && (
             <div className="mt-4 space-y-4">
-              <div className="bg-white/50 rounded-lg p-4 space-y-3">
+              <div className="bg-teal/50 rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Similarity Analysis Results</span>
                   <Badge variant={
@@ -516,7 +516,7 @@ export default function TrademarksPage() {
                         <span>Title Similarity</span>
                         <span className="font-medium">{similarityData[selectedPendingTrademark._id].titleSimilarity}%</span>
                       </div>
-                      <div className="relative h-2 bg-emerald-100 rounded-full overflow-hidden">
+                      <div className="relative h-2 bg-emerald-400 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${similarityData[selectedPendingTrademark._id].titleSimilarity}%` }}
@@ -598,8 +598,8 @@ export default function TrademarksPage() {
                         key={trademark._id} 
                         className={cn(
                           "group cursor-pointer transition-colors",
-                          selectedPendingTrademark?._id === trademark._id && "bg-emerald-50/50 hover:bg-emerald-50/70",
-                          trademark.status === "Pending" && "hover:bg-gray-50/50"
+                          selectedPendingTrademark?._id === trademark._id && "bg-emerald-300/50 hover:bg-emerald-200/70",
+                          trademark.status === "Pending" && "hover:bg-green-50/50"
                         )}
                         onClick={() => {
                           if (trademark.status === "Pending") {
@@ -724,7 +724,7 @@ export default function TrademarksPage() {
                           </Badge>
                         </div>
                         {similarityData[trademark._id].titleSimilarity > 70 && (
-                          <p className="text-xs text-red-500/80">
+                          <p className="text-xs text-green-500/80">
                             Similar to: {similarityData[trademark._id].similarTo}
                           </p>
                         )}
@@ -769,7 +769,7 @@ export default function TrademarksPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-4 top-4 rounded-full hover:bg-emerald-500/10"
+                className="absolute right-4 top-4 rounded-full hover:bg-emerald-600/10"
                 onClick={() => setSelectedTrademark(null)}
               >
                 <X className="h-4 w-4" />
@@ -877,7 +877,7 @@ export default function TrademarksPage() {
                           </Button>
                           <Button
                             onClick={() => handleStatusUpdate("Rejected")}
-                            className="flex-1 bg-red-600 hover:bg-red-700"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
                             disabled={isSubmitting || !message || transactionInProgress}
                           >
                             {transactionInProgress ? (
