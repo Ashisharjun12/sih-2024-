@@ -1,25 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
-import {
-  Loader2,
-  Building,
-  GraduationCap,
-  Target,
-  Layers,
-  Factory,
-  MessageSquare,
-  Eye,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  FileText,
+  Calendar,
+  Target,
+  MessageCircle,
+  Building2,
+  Users,
+  CheckCircle,
+  XCircle,
+  Edit,
+  Trash2,
+  Clock,
+  Loader2,
+} from "lucide-react";
 
 interface Review {
   _id: string;
@@ -42,6 +50,8 @@ interface Policy {
   objectives: string[];
   sectors: string[];
   industries: string[];
+  status: "Draft" | "Active" | "Archived";
+  implementationDate: string;
   reviews: Review[];
   metrics: {
     totalReviews: number;
@@ -51,54 +61,7 @@ interface Policy {
   };
 }
 
-const PolicySection = ({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-}) => (
-  <Card className="mb-6">
-    <CardHeader>
-      <div className="flex items-center gap-2">
-        <Icon className="h-5 w-5 text-primary" />
-        <CardTitle>{title}</CardTitle>
-      </div>
-    </CardHeader>
-    <CardContent>{children}</CardContent>
-  </Card>
-);
-
-const ReviewCard = ({ review }: { review: Review }) => (
-  <Card className="mb-4">
-    <CardHeader>
-      <div className="flex justify-between items-start">
-        <div>
-          <CardTitle className="text-base">
-            {review.reviewerType === "Startup"
-              ? review.reviewer.startupName
-              : review.reviewer.name}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {review.reviewer.email}
-          </p>
-        </div>
-        <Badge>{review.reviewerType}</Badge>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <p className="text-sm">{review.message}</p>
-      <p className="text-xs text-muted-foreground mt-2">
-        {new Date(review.createdAt).toLocaleString()}
-      </p>
-    </CardContent>
-  </Card>
-);
-
-export default function PolicyDetailPage() {
-  const params = useParams();
+export default function PolicyPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { toast } = useToast();
   const [policy, setPolicy] = useState<Policy | null>(null);
@@ -126,27 +89,31 @@ export default function PolicyDetailPage() {
     }
   };
 
-  const deletePolicy = async () => {
+  const handleDelete = async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/policy-maker/policies/${params.id}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete policy");
-      router.push("/policy-maker/policy");
+      
+      if (!response.ok) {
+        throw new Error("Failed to delete policy");
+      }
+
       toast({
-        title: "Policy deleted",
-        description: "Policy has been deleted successfully",
-        variant: "default",
+        title: "Success",
+        description: "Policy deleted successfully",
       });
-      setIsLoading(false);
+
+      router.push("/policy-maker/policy");
     } catch (error) {
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to delete policy",
+        description: error instanceof Error ? error.message : "Failed to delete policy",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,126 +128,178 @@ export default function PolicyDetailPage() {
   if (!policy) return null;
 
   return (
-    <div className="container py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{policy.title}</h1>
-            <p className="text-muted-foreground">{policy.description}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
-              <span>{policy.metrics.startupReviews} Startups</span>
+    <div className="container py-6 space-y-8">
+      {/* Header Section */}
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-4 md:p-8">
+        <div className="flex flex-col gap-4">
+          <Button 
+            variant="outline" 
+            className="w-fit bg-background/50 backdrop-blur-sm hover:bg-background/60"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Policies
+          </Button>
+          
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl font-bold">{policy.title}</h1>
+            <div className="flex flex-wrap gap-2">
+              {policy.sectors.map((sector) => (
+                <Badge 
+                  key={sector}
+                  variant="secondary" 
+                  className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20"
+                >
+                  {sector}
+                </Badge>
+              ))}
+              <Badge variant="outline" className="bg-background/50 backdrop-blur-sm">
+                <Calendar className="h-3 w-3 mr-1" />
+                {new Date(policy.implementationDate).toLocaleDateString()}
+              </Badge>
             </div>
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4" />
-              <span>{policy.metrics.researcherReviews} Researchers</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4" />
-              <span>{policy.metrics.fundingAgencyReviews} Funding Agency</span>
-            </div>
-          </div>
-          <div>
-            <Button onClick={deletePolicy}>Delete</Button>
           </div>
         </div>
+      </div>
 
-        <PolicySection title="Vision" icon={Eye}>
-          <p className="text-gray-600">{policy.vision}</p>
-        </PolicySection>
+      {/* Main Content Grid */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Left Column - Main Content */}
+        <div className="md:col-span-2 space-y-6">
+          {/* Vision Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Target className="h-5 w-5 text-blue-600" />
+                Vision
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{policy.vision}</p>
+            </CardContent>
+          </Card>
 
-        <PolicySection title="Objectives" icon={Target}>
-          <ul className="list-disc list-inside space-y-2">
-            {policy.objectives.map((objective, index) => (
-              <li key={index} className="text-gray-600">
-                {objective}
-              </li>
-            ))}
-          </ul>
-        </PolicySection>
+          {/* Description Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
+                Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{policy.description}</p>
+            </CardContent>
+          </Card>
 
-        <PolicySection title="Target Sectors" icon={Layers}>
-          <div className="flex flex-wrap gap-2">
-            {policy.sectors.map((sector) => (
-              <Badge key={sector} variant="outline">
-                {sector}
-              </Badge>
-            ))}
-          </div>
-        </PolicySection>
-
-        <PolicySection title="Target Industries" icon={Factory}>
-          <div className="flex flex-wrap gap-2">
-            {policy.industries.map((industry) => (
-              <Badge key={industry} variant="outline">
-                {industry}
-              </Badge>
-            ))}
-          </div>
-        </PolicySection>
-
-        <PolicySection title="Reviews & Feedback" icon={MessageSquare}>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList>
-              <TabsTrigger value="all">
-                All Reviews ({policy.metrics.totalReviews})
-              </TabsTrigger>
-              <TabsTrigger value="startup">
-                Startup Reviews ({policy.metrics.startupReviews})
-              </TabsTrigger>
-              <TabsTrigger value="researcher">
-                Researcher Reviews ({policy.metrics.researcherReviews})
-              </TabsTrigger>
-              <TabsTrigger value="fundingAgency">
-                Funding Agency Reviews ({policy.metrics.fundingAgencyReviews})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="all">
-              <ScrollArea className="h-[calc(100vh-32rem)]">
-                {policy.reviews.map((review) => (
-                  <ReviewCard key={review._id} review={review} />
+          {/* Objectives Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Target className="h-5 w-5 text-blue-600" />
+                Objectives
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {policy.objectives.map((objective, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="h-6 w-6 flex items-center justify-center rounded-full bg-blue-500/10 text-blue-600 text-sm flex-shrink-0">
+                      {index + 1}
+                    </span>
+                    <span className="text-muted-foreground">{objective}</span>
+                  </li>
                 ))}
-              </ScrollArea>
-            </TabsContent>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
 
-            <TabsContent value="startup">
-              <ScrollArea className="h-[calc(100vh-32rem)]">
-                {policy.reviews
-                  .filter((review) => review.reviewerType === "Startup")
-                  .map((review) => (
-                    <ReviewCard key={review._id} review={review} />
-                  ))}
-              </ScrollArea>
-            </TabsContent>
+        {/* Right Column - Sidebar */}
+        <div className="space-y-6">
+          {/* Actions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => router.push(`/policy-maker/policy/${params.id}/edit`)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Policy
+              </Button>
+              <Button 
+                variant="destructive" 
+                className="w-full"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Policy
+              </Button>
+            </CardContent>
+          </Card>
 
-            <TabsContent value="researcher">
-              <ScrollArea className="h-[calc(100vh-32rem)]">
-                {policy.reviews
-                  .filter((review) => review.reviewerType === "Researcher")
-                  .map((review) => (
-                    <ReviewCard key={review._id} review={review} />
-                  ))}
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="fundingAgency">
-              <ScrollArea className="h-[calc(100vh-32rem)]">
-                {policy.reviews
-                  .filter((review) => review.reviewerType === "FundingAgency")
-                  .map((review) => (
-                    <ReviewCard key={review._id} review={review} />
-                  ))}
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
-        </PolicySection>
-      </motion.div>
+          {/* Stats Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Statistics</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-blue-600">
+                  {policy.reviews?.length || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">Total Reviews</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-emerald-600">
+                  {policy.status === "Active" ? "Live" : policy.status}
+                </p>
+                <p className="text-sm text-muted-foreground">Status</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Reviews Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <MessageCircle className="h-5 w-5 text-blue-600" />
+                Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {policy.reviews?.map((review) => (
+                  <div
+                    key={review._id}
+                    className="p-4 rounded-lg bg-muted/50 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">
+                        {review.reviewer.startupName || review.reviewer.name || review.reviewer.email}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{review.message}</p>
+                  </div>
+                ))}
+                {(!policy.reviews || policy.reviews.length === 0) && (
+                  <p className="text-center text-muted-foreground py-4">
+                    No reviews yet
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Keep all dialogs and modals same */}
     </div>
   );
 }
