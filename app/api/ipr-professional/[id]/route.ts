@@ -30,6 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
         // Find IPR
         const ipr = await IPR.findById(id);
+        console.log("ipr", ipr)
         if (!ipr) {
             return NextResponse.json({ error: "IPR not found" }, { status: 404 });
         }
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         } else if (ipr.ownerType === 'Researcher') {
             owner = await Researcher.findById(ipr.owner);
         }
+        console.log("owner", owner)
 
         if (!owner) {
             return NextResponse.json({ error: `${ipr.ownerType} not found` }, { status: 404 });
@@ -53,6 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             (item: { ipr: Types.ObjectId }) =>
                 item.ipr.toString() === id
         );
+        console.log("iprIndex", iprIndex)
 
         if (iprIndex === -1) {
             return NextResponse.json({ error: "IPR reference not found in owner's records" }, { status: 404 });

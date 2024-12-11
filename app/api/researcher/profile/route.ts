@@ -16,9 +16,10 @@ export async function GET() {
 
     // Get researcher profile with populated research papers
     const researcher = await Researcher.findOne({ userId: session.user.id })
-      .populate('researchPapers')
-      .populate('onGoingResearches')
-      .lean();
+    .populate({ path: "researchPapers", populate: { path: "researcher" } })
+    .populate({ path: "onGoingResearches", populate: { path: "researcher" } })
+    .populate({ path: "allIPR.ipr" })
+    .populate({ path: "allIPR.iprProfessional" });
     console.log("researcher singke",researcher);
 
     if (!researcher) {
