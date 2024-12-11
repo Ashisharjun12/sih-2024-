@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { initializeEthers } from "@/app/web3/function";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { FileText, FileCheck, X, Lock } from "lucide-react";
+import { FileText, FileCheck, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface IPROwner {
@@ -410,7 +410,6 @@ export default function TradeSecretsPage() {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium flex items-center gap-2">
-                              <Lock className="h-4 w-4 text-amber-500" />
                               {secret.title}
                             </div>
                             {secret.status === "Pending" && similarityData[secret._id] && (
@@ -491,7 +490,6 @@ export default function TradeSecretsPage() {
                   {/* Title and Status */}
                   <div className="flex justify-between items-start gap-2">
                     <h3 className="font-medium flex items-center gap-2">
-                      <Lock className="h-4 w-4 text-amber-500" />
                       {secret.title}
                     </h3>
                     <Badge variant="secondary" className={cn(
@@ -585,7 +583,6 @@ export default function TradeSecretsPage() {
                 <>
                   <SheetHeader className="space-y-1 pr-8">
                     <SheetTitle className="text-xl font-semibold flex items-center gap-2">
-                      <Lock className="h-5 w-5 text-amber-500" />
                       {selectedTradeSecret?.title}
                     </SheetTitle>
                     <p className="text-sm text-muted-foreground">
