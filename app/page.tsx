@@ -45,7 +45,7 @@ export default function Home() {
               className="inline-block mb-4 px-4 py-1.5 bg-orange-100 text-orange-800 rounded-full text-sm font-medium"
               variants={itemVariants}
             >
-              ગુજરાત નું ���ૌરવ - Gujarat&apos;s Pride
+              ગુજરાત નું ગૌરવ - Gujarat&apos;s Pride
             </motion.div>
             <motion.h1 
               className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-gradient-to-r from-orange-800 via-orange-700 to-orange-800 bg-clip-text text-transparent"
