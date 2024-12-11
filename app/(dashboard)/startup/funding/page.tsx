@@ -82,9 +82,6 @@ const fundingTypes: FundingType[] = [
   { value: "Convertible_Notes", label: "Convertible_Notes" },
   { value: "Revenue_Based_Financing", label: "Revenue_Based_Financing" },
   { value: "Scholarship", label: "Convertible Note" }
-
-
-  
 ];
 
 interface FundingAgency {

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Timeline from "./timeline.model";
 
 const contactSchema = new mongoose.Schema({
   officialAddress: { type: String, required: true },
@@ -422,7 +421,10 @@ const fundingAgencySchema = new mongoose.Schema({
       enum:["pending", "accepted", "rejected", "transfered"]
     }
   }],  
-  timeline:Timeline
+  timeline:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"Timeline"
+  }
 }, { timestamps: true });
 
 const FundingAgency = mongoose.models.FundingAgency || mongoose.model("FundingAgency", fundingAgencySchema);

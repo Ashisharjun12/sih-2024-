@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import Timeline from "./timeline.model";
-
 
 const founderSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -449,7 +447,10 @@ const startupSchema = new mongoose.Schema({
       enum:["pending", "accepted", "rejected"]
     }
   }],
-  timeline:Timeline
+  timeline:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"Timeline"
+  }
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);
