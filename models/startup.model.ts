@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Timeline from "./timeline.model";
 
 
 const founderSchema = new mongoose.Schema({
@@ -447,7 +448,8 @@ const startupSchema = new mongoose.Schema({
       type:String,
       enum:["pending", "accepted", "rejected"]
     }
-  }]
+  }],
+  timeline:Timeline
 }, { timestamps: true });
 
 const Startup = mongoose.models.Startup || mongoose.model("Startup", startupSchema);
