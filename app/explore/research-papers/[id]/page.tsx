@@ -19,7 +19,9 @@ import {
   GraduationCap,
   FileText,
   ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  IndianRupee
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
@@ -83,6 +85,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
   const [buyLoading, setBuyLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const fetchPaper = async () => {
@@ -174,45 +177,40 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
     }
   };
 
-  const handleBuy = async () => {
-    if (!paper?.isPublished) {
-      toast({
-        title: "Access Denied",
-        description: "This paper is not yet published",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handlePurchase = async () => {
+    if (!paper || isProcessing) return;
+    
+    setIsProcessing(true);
     try {
-      console.log("Buying paper");
-      setBuyLoading(true);
-      const response = await fetch(`/api/explore/research-papers/${params.id}`, {
+      const response = await fetch('/api/research-papers/purchase', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paperId: paper._id })
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.message || "Failed to purchase paper");
+        throw new Error(data.error || 'Failed to purchase paper');
       }
 
-      // Update local paper state to reflect access
-      setPaper(prev => prev ? { ...prev, hasAccess: true } : null);
-
       toast({
-        title: "Success",
-        description: data.message || "Paper purchased successfully",
+        title: "Success!",
+        description: "Research paper purchased successfully",
       });
+
+      // Update UI or redirect
+      router.refresh();
+      window.location.reload();
+
     } catch (error) {
-      console.error("Error purchasing paper:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to purchase paper",
-        variant: "destructive",
+        description: error.message || "Failed to purchase paper",
+        variant: "destructive"
       });
     } finally {
-      setBuyLoading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -284,7 +282,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
                 ) : (
                   <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none shadow-sm backdrop-blur-sm transition-colors duration-200">
                     <Lock className="h-4 w-4 mr-2" />
-                    ₹{paper.price}
+                    {paper.price}
                   </Badge>
                 )
               )}
@@ -384,14 +382,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleDownload()}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
+                              
                             </>
                           ) : (
                             <div className="text-sm text-muted-foreground">
@@ -506,18 +497,18 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
                       <Button 
                         className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white" 
                         size="lg" 
-                        onClick={handleBuy}
-                        disabled={buyLoading}
+                        onClick={handlePurchase}
+                        disabled={isProcessing}
                       >
-                        {buyLoading ? (
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             Processing...
-                          </div>
+                          </>
                         ) : (
                           <>
-                            <Lock className="h-4 w-4 mr-2" />
-                            Buy Now (₹{paper.price})
+                            <IndianRupee className="h-4 w-4 mr-2" />
+                            Purchase for ₹{paper.price}
                           </>
                         )}
                       </Button>
