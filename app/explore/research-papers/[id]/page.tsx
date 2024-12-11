@@ -201,6 +201,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
 
       // Update UI or redirect
       router.refresh();
+      window.location.reload();
 
     } catch (error) {
       toast({
@@ -281,7 +282,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
                 ) : (
                   <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none shadow-sm backdrop-blur-sm transition-colors duration-200">
                     <Lock className="h-4 w-4 mr-2" />
-                    ₹{paper.price}
+                    {paper.price}
                   </Badge>
                 )
               )}
@@ -381,14 +382,7 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleDownload()}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
+                              
                             </>
                           ) : (
                             <div className="text-sm text-muted-foreground">

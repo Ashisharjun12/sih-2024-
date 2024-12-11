@@ -95,6 +95,7 @@ export async function POST(request: Request) {
         purchaseDate: new Date()
       });
       await user.save();
+     
 
       // Send notification to researcher
       await addNotification({
