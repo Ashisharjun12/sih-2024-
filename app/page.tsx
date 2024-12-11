@@ -56,120 +56,40 @@ const SUCCESS_STORIES = [
 
 const PLATFORM_STATS = [
   {
-    title: "ગુરાતી સ્ટાર્ટઅપ્સ",
-    englishTitle: "Gujarat Startups",
+    title: "Gujarat Startups",
     value: "1000+",
     icon: Rocket,
-    color: "text-orange-600"
+    color: "text-sky-600"
   },
   {
-    title: "કુલ ફંડિંગ",
-    englishTitle: "Total Funding",
+    title: "Total Funding",
     value: "₹250Cr+",
     icon: TrendingUp,
-    color: "text-orange-600"
+    color: "text-sky-600"
   },
   {
-    title: "સફળતા દર",
-    englishTitle: "Success Rate",
+    title: "Success Rate",
     value: "92%",
     icon: Target,
-    color: "text-orange-600"
+    color: "text-sky-600"
   },
   {
-    title: "રિસર્ચ કોલાબોરેશન",
-    englishTitle: "Research Projects",
+    title: "Research Projects",
     value: "2000+",
     icon: BookOpen,
-    color: "text-orange-600"
+    color: "text-sky-600"
   }
 ];
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen overflow-x-hidden">
-      {/* Enhanced Hero Section with Data Visualization */}
-      <div className="relative min-h-[85vh] flex items-center bg-gradient-to-br from-orange-950 via-orange-900 to-orange-800">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/gujarat-pattern.svg')] opacity-10" />
-          
-          {/* Floating Network Elements */}
-          <div className="absolute inset-0">
-            <motion.div
-              className="absolute top-20 left-[20%] text-orange-400/30"
-              animate={{
-                y: [0, -20, 0],
-                rotate: [0, 5, 0],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              <Network className="h-24 w-24" />
-            </motion.div>
-            
-            <motion.div
-              className="absolute top-40 right-[15%] text-orange-400/20"
-              animate={{
-                y: [0, 20, 0],
-                rotate: [0, -5, 0],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-            >
-              <Database className="h-16 w-16" />
-            </motion.div>
-
-            <motion.div
-              className="absolute bottom-32 left-[30%] text-orange-400/25"
-              animate={{
-                x: [0, 20, 0],
-                rotate: [0, 10, 0],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5,
-              }}
-            >
-              <Globe className="h-20 w-20" />
-            </motion.div>
-
-            {/* Data Flow Lines */}
-            <div className="absolute inset-0">
-              <svg className="w-full h-full opacity-10">
-                <motion.path
-                  d="M0 100 Q 250 200 500 100 T 1000 100"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  fill="none"
-                  className="text-orange-400"
-                  animate={{
-                    d: [
-                      "M0 100 Q 250 200 500 100 T 1000 100",
-                      "M0 150 Q 250 50 500 150 T 1000 150",
-                      "M0 100 Q 250 200 500 100 T 1000 100",
-                    ],
-                  }}
-                  transition={{
-                    duration: 10,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-              </svg>
-            </div>
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Section */}
+      <div className="relative min-h-screen flex items-center">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-900 via-sky-800 to-blue-900">
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-sky-400 via-transparent to-transparent" />
           </div>
-
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-950/90 via-orange-900/80 to-orange-800/70" />
         </div>
 
         {/* Main Content */}
@@ -181,34 +101,37 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-8"
             >
-              <Badge className="bg-white/10 text-orange-200 border-orange-400/30 backdrop-blur-sm">
-                ગુજરાતનું નંબર 1 ઇનોવેશન પ્લેટફોર્મ | Gujarat's #1 Innovation Platform
+              <Badge className="bg-white/10 text-sky-200 border-sky-400/30 backdrop-blur-sm">
+                Gujarat's #1 Innovation Platform
               </Badge>
               
               <h1 className="text-5xl md:text-7xl font-bold">
-                <span className="text-white">ગુજરાતમાં તમારું</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">
-                  {" "}ભવિષ્ય બનાવો
+                <span className="text-white">Building Gujarat's</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-300">
+                  {" "}Innovation Future
                 </span>
               </h1>
+              <p className="text-xl text-sky-200">
+                ગુજરાતનું ભવિષ્ય, ભારતનું ભવિષ્ય | Building Tomorrow's India
+              </p>
 
               {/* Quick Stats Grid */}
               <div className="grid grid-cols-2 gap-4 mt-8">
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <Zap className="h-8 w-8 text-orange-400" />
+                    <Zap className="h-8 w-8 text-sky-400" />
                     <div>
                       <p className="text-2xl font-bold text-white">50+</p>
-                      <p className="text-orange-200 text-sm">Active Startups</p>
+                      <p className="text-sky-200 text-sm">Active Startups</p>
                     </div>
                   </div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <LineChart className="h-8 w-8 text-orange-400" />
+                    <LineChart className="h-8 w-8 text-sky-400" />
                     <div>
                       <p className="text-2xl font-bold text-white">₹100Cr+</p>
-                      <p className="text-orange-200 text-sm">Total Funding</p>
+                      <p className="text-sky-200 text-sm">Total Funding</p>
                     </div>
                   </div>
                 </div>
@@ -218,17 +141,17 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-4">
                 <Button 
                   size="lg" 
-                  className="bg-orange-600 hover:bg-orange-500 text-white text-lg px-8 py-6 shadow-lg shadow-orange-900/20"
+                  className="bg-sky-600 hover:bg-sky-500 text-white text-lg px-8 py-6 shadow-lg shadow-sky-900/20"
                 >
-                  અભી જોડાઓ | Join Now
+                  Join Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="text-orange-200 border-orange-400/30 hover:bg-orange-800/50 text-lg px-8 py-6 backdrop-blur-sm"
+                  className="text-sky-200 border-sky-400/30 hover:bg-sky-800/50 text-lg px-8 py-6 backdrop-blur-sm"
                 >
-                  સફળ કહાનીઓ | Success Stories
+                  Success Stories
                   <Play className="ml-2 h-5 w-5" />
                 </Button>
               </div>
@@ -241,14 +164,14 @@ export default function HomePage() {
               className="hidden lg:block"
             >
               <div className="relative">
-                <div className="absolute -top-20 -left-20 w-40 h-40 bg-orange-400/30 rounded-full blur-3xl" />
-                <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-yellow-400/20 rounded-full blur-3xl" />
+                <div className="absolute -top-20 -left-20 w-40 h-40 bg-sky-400/30 rounded-full blur-3xl" />
+                <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-3xl" />
                 <Image
                   src="/startup-dashboard.png"
                   alt="Platform Dashboard"
                   width={600}
                   height={400}
-                  className="rounded-xl shadow-2xl border border-orange-400/20 backdrop-blur-sm"
+                  className="rounded-xl shadow-2xl border border-sky-400/20 backdrop-blur-sm"
                 />
                 
                 {/* Floating Tech Icons */}
@@ -257,21 +180,21 @@ export default function HomePage() {
                   animate={{ y: [0, -10, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Cpu className="h-6 w-6 text-orange-400" />
+                  <Cpu className="h-6 w-6 text-sky-400" />
                 </motion.div>
                 <motion.div
                   className="absolute top-20 -right-10 bg-white/10 backdrop-blur-md p-3 rounded-lg"
                   animate={{ y: [0, 10, 0] }}
                   transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                 >
-                  <Binary className="h-6 w-6 text-orange-400" />
+                  <Binary className="h-6 w-6 text-sky-400" />
                 </motion.div>
                 <motion.div
                   className="absolute -bottom-10 left-20 bg-white/10 backdrop-blur-md p-3 rounded-lg"
                   animate={{ y: [0, -10, 0] }}
                   transition={{ duration: 2, repeat: Infinity, delay: 1 }}
                 >
-                  <Cloud className="h-6 w-6 text-orange-400" />
+                  <Cloud className="h-6 w-6 text-sky-400" />
                 </motion.div>
               </div>
             </motion.div>
@@ -279,9 +202,18 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Stats with Orange Theme */}
-      <div className="bg-gradient-to-br from-orange-50 to-white py-20">
+      {/* Stats Section */}
+      <div className="bg-gradient-to-br from-sky-50 to-white py-20">
         <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-sky-950">
+              Empowering Innovation
+              <span className="block text-2xl mt-2 text-sky-600">
+                ઉત્કૃષ્ટતા અને નવીનતા | Excellence & Innovation
+              </span>
+            </h2>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
             {PLATFORM_STATS.map((stat, index) => (
               <motion.div
@@ -292,13 +224,12 @@ export default function HomePage() {
                 className="text-center"
               >
                 <div className="flex justify-center mb-4">
-                  <div className="h-16 w-16 rounded-2xl bg-orange-50 flex items-center justify-center">
-                    <stat.icon className="h-8 w-8 text-orange-600" />
+                  <div className="h-16 w-16 rounded-2xl bg-sky-50 flex items-center justify-center">
+                    <stat.icon className="h-8 w-8 text-sky-600" />
                   </div>
                 </div>
-                <h3 className="text-4xl font-bold text-orange-950">{stat.value}</h3>
-                <p className="text-orange-600 font-medium mt-2">{stat.title}</p>
-                <p className="text-sm text-orange-500">{stat.englishTitle}</p>
+                <h3 className="text-4xl font-bold text-sky-950">{stat.value}</h3>
+                <p className="text-sky-600 font-medium mt-2">{stat.title}</p>
               </motion.div>
             ))}
           </div>
@@ -313,7 +244,7 @@ export default function HomePage() {
               સફળ કહાનીઓ | Success Stories
             </Badge>
             <h2 className="text-4xl font-bold text-orange-950 mb-4">
-              ગુજરાતના ઇનોવેશન લીડર્સ
+              Gujarat's Innovation Leaders
             </h2>
             <p className="text-orange-600 max-w-2xl mx-auto text-lg">
               Gujarat's Innovation Leaders
@@ -367,10 +298,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
               <Badge className="bg-orange-900 text-orange-200 border-orange-700">
-                પ્લેટફોર્મ ઓવરવ્યૂ | Platform Overview
+                Platform Overview
               </Badge>
               <h2 className="text-4xl font-bold text-white leading-tight">
-                ગુજરાતના ઇનોવેશન ભવિષ્યનું નિર્માણ
+                Building Gujarat's Innovation Future
                 <span className="block text-2xl mt-2 text-orange-200">
                   Building Gujarat's Innovation Future
                 </span>
@@ -406,7 +337,7 @@ export default function HomePage() {
       <div className="bg-gradient-to-br from-orange-600 to-orange-700 py-20">
         <div className="container text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
-            તમારી ઇનોવેશન જર્ની શરૂ કરો
+            Start Your Innovation Journey
             <span className="block text-2xl mt-2">
               Start Your Innovation Journey
             </span>
@@ -415,7 +346,7 @@ export default function HomePage() {
             size="lg" 
             className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-12 py-6"
           >
-            અરજી કરો | Apply Now
+            Apply Now
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>

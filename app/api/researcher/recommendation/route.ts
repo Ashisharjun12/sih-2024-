@@ -20,7 +20,7 @@ export async function GET() {
     await connectDB();
 
     // Define the IDs to fetch
-    const ids = ["67592e7593868d4f17577354", "67592d8c93868d4f17576ac9"];
+    const ids = ["6759d5819132de56caaee694", "675a04a1efa33f4d73ed2afe"];
 
     // Fetch researchers by IDs concurrently
     const researchers = await Promise.all(

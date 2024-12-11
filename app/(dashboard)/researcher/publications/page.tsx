@@ -141,7 +141,7 @@ export default function PublicationsPage() {
   return (
     <div className="container py-8 space-y-8">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent p-6 md:p-8">
         <div className="relative">
           <h1 className="text-2xl md:text-3xl font-bold">Publications</h1>
           <p className="text-muted-foreground mt-2">
@@ -187,12 +187,13 @@ export default function PublicationsPage() {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-blue-500" />
+                        <FileText className="h-4 w-4 text-orange-500" />
                         <span className="text-sm">{paper.images.length} Documents</span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Button
+                        className="bg-orange-500"
                           variant="outline"
                           size="sm"
                           onClick={() => router.push(`/researcher/papers/${paper._id}`)}
@@ -201,6 +202,7 @@ export default function PublicationsPage() {
                           View
                         </Button>
                         <Button
+                        className="bg-orange-400"
                           variant="default"
                           size="sm"
                           onClick={() => {
@@ -243,7 +245,7 @@ export default function PublicationsPage() {
                             Free
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-blue-600">
+                          <Badge variant="secondary" className="text-orange-600">
                             ₹{paper.price}
                           </Badge>
                         )}
@@ -332,7 +334,8 @@ export default function PublicationsPage() {
                 )}
 
                 <Button
-                  className="w-full"
+
+                  className="w-full bg-orange-400"
                   onClick={handlePublish}
                   disabled={isPublishing}
                 >
