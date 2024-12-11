@@ -99,7 +99,7 @@ export default function ResearcherDashboard() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/researcher/all');
+      const response = await fetch('/api/researcher/recommendation');
       const data = await response.json() as ApiResponse;
       
       if (data.success) {

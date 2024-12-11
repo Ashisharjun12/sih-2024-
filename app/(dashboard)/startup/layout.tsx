@@ -1,7 +1,6 @@
 import BottomNav from "@/components/dashboard/panels/startup/bottom-nav";
 import { StartupSidebar } from "@/components/dashboard/panels/startup/startup-sidebar";
 
-
 export default function StartupLayout({
   children,
 }: {

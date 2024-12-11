@@ -148,7 +148,7 @@ export default function Navbar() {
         {/* Logo - Always visible */}
         <Link href="/" className="flex items-center space-x-2">
           <Building className="h-5 w-5 md:h-6 md:w-6" />
-          <span className="text-lg md:text-2xl font-bold">StartupHub</span>
+          <span className="text-lg md:text-2xl font-bold">Udyog Saathi</span>
         </Link>
 
         <div className="flex items-center gap-2 md:gap-6">
@@ -156,9 +156,6 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-6">
             <Link href="/explore" className="hover:text-primary">
               Explore
-            </Link>
-            <Link href="/researchers" className="hover:text-primary">
-              Researchers
             </Link>
           </div>
 

@@ -46,7 +46,7 @@ const iprProfessionalLinks = [
   },
   {
     title: "Settings",
-    href: "/ipr-professional/settings",
+    href: "/ipr-professional",
     icon: Settings,
   },
 ];

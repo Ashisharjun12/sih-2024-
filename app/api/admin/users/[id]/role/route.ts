@@ -6,6 +6,7 @@ import User from "@/models/user.model";
 import PolicyMaker from "@/models/policy-maker.model";
 import { Types } from "mongoose";
 import { addNotification } from "@/lib/notificationService";
+import mongoose from "mongoose";
 
 export async function PUT(
     req: NextRequest,
@@ -32,6 +33,10 @@ export async function PUT(
         const { role } = await req.json();
 
         // Start a session for transaction
+<<<<<<< HEAD
+        const dbSession = await mongoose.startSession();
+=======
+>>>>>>> 3cb0777b5753845e605ca811f69535ba738b8696
 
         try {
                 // Find the user

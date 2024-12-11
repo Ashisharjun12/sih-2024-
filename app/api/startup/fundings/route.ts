@@ -66,6 +66,7 @@ export async function GET() {
         select: "userId agencyDetails.name agencyDetails.logo",
         model: FundingAgency
       });
+      console.log(startup)
 
     if (!startup) {
       console.log("API Error: Startup not found for userId:", session.user.id);
