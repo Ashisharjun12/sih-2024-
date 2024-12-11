@@ -13,10 +13,32 @@ import {
   Building2,
   IndianRupee,
   Calendar,
+  Plus,
   AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import Image from "next/image";
 
 interface Investment {
   _id: string;
@@ -46,6 +68,41 @@ interface Request {
   createdAt: string;
 }
 
+interface FundingType {
+  value: string;
+  label: string;
+}
+
+const fundingTypes: FundingType[] = [
+  { value: "seed", label: "Seed Funding" },
+  { value: "series_a", label: "Series A" },
+  { value: "series_b", label: "Series B" },
+  { value: "series_c", label: "Series C" },
+  { value: "private_equity", label: "Private Equity" },
+  { value: "venture_debt", label: "Venture Debt" },
+  { value: "convertible_note", label: "Convertible Note" },
+  { value: "bridge_round", label: "Bridge Round" },
+];
+
+interface FundingAgency {
+  _id: string;
+  userId: {
+    name: string;
+    email: string;
+  };
+  agencyName: string;
+  logo?: {
+    secure_url: string;
+  };
+}
+
+interface FundingFormData {
+  amount: string;
+  fundingType: string;
+  message: string;
+  fundingAgencyId: string;
+}
+
 export default function FundingPage() {
   const [activeInvestments, setActiveInvestments] = useState<Investment[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
@@ -53,9 +110,18 @@ export default function FundingPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const [amount, setAmount] = useState("");
+  const [fundingType, setFundingType] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fundingAgencies, setFundingAgencies] = useState<FundingAgency[]>([]);
+  const [selectedAgencyId, setSelectedAgencyId] = useState("");
+  const [formData, setFormData] = useState<FundingFormData | null>(null);
+  const [showFormData, setShowFormData] = useState(false);
 
   useEffect(() => {
     fetchFundings();
+    fetchFundingAgencies();
   }, []);
 
   const fetchFundings = async () => {
@@ -93,6 +159,21 @@ export default function FundingPage() {
     } finally {
       setIsLoading(false);
       console.log("Step 4: Fetch operation completed");
+    }
+  };
+
+  const fetchFundingAgencies = async () => {
+    try {
+      const response = await fetch("/api/funding-agency/all");
+      if (!response.ok) throw new Error("Failed to fetch funding agencies");
+      const data = await response.json();
+      setFundingAgencies(data.agencies);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch funding agencies",
+        variant: "destructive",
+      });
     }
   };
 
@@ -157,6 +238,68 @@ export default function FundingPage() {
     }
   };
 
+  const handleSubmitFunding = async () => {
+    if (!amount || !fundingType || !message || !selectedAgencyId) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedAgency = fundingAgencies.find(a => a._id === selectedAgencyId);
+    const formData = {
+      amount,
+      fundingType,
+      message,
+      fundingAgencyId: selectedAgencyId,
+      fundingAgencyName: selectedAgency?.agencyName || '',
+      fundingTypeLabel: fundingTypes.find(t => t.value === fundingType)?.label
+    };
+
+    // Log the form data to console
+    console.log("Form Data:", formData);
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/startup/fundings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+      console.log("Response:", data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to submit funding request");
+      }
+
+      toast({
+        title: "Success",
+        description: "Funding request submitted successfully",
+    });
+    
+    // Reset form
+    setAmount("");
+    setFundingType("");
+    setMessage("");
+    setSelectedAgencyId("");
+    } catch (error) {
+      console.error("Error submitting funding:", error);
+    toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to submit funding request",
+        variant: "destructive",
+    });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container py-8">
@@ -181,7 +324,7 @@ export default function FundingPage() {
   }
 
   return (
-    <div className="container py-8 space-y-8">
+    <div className="container max-w-7xl py-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
@@ -194,13 +337,14 @@ export default function FundingPage() {
       </div>
 
       <Tabs defaultValue="investments" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full max-w-[600px] grid-cols-3">
           <TabsTrigger value="investments">
             Active Investments ({activeInvestments.length})
           </TabsTrigger>
           <TabsTrigger value="requests">
             Funding Requests ({requests.length})
           </TabsTrigger>
+          <TabsTrigger value="funding">Add Funding</TabsTrigger>
         </TabsList>
 
         <TabsContent value="investments">
@@ -314,6 +458,120 @@ export default function FundingPage() {
                   </div>
                 )}
               </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="funding">
+          <Card>
+            <CardHeader>
+              <CardTitle>Add New Funding</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-dashed border-2 h-[100px] hover:border-primary hover:text-primary transition-colors"
+                    >
+                      <Plus className="h-6 w-6 mr-2" />
+                      Add New Funding
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+                    <DialogHeader>
+                      <DialogTitle>Add New Funding</DialogTitle>
+                      <DialogDescription>
+                        Enter the funding details below
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto">
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Amount (₹)</label>
+                          <Input
+                            type="number"
+                            placeholder="Enter amount"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Funding Type</label>
+                          <Select value={fundingType} onValueChange={setFundingType}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select funding type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {fundingTypes.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Message</label>
+                          <Textarea
+                            placeholder="Enter additional details about the funding"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Select Funding Agency</label>
+                          <RadioGroup value={selectedAgencyId} onValueChange={setSelectedAgencyId}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[200px] overflow-y-auto rounded-lg border p-4">
+                              {fundingAgencies.map((agency) => (
+                                <Label
+                                  key={agency._id}
+                                  className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-accent transition-colors ${
+                                    selectedAgencyId === agency._id ? "border-primary bg-accent" : ""
+                                  }`}
+                                  htmlFor={agency._id}
+                                >
+                                  <RadioGroupItem value={agency._id} id={agency._id} />
+                                  <div className="flex items-center space-x-3">
+                                    <div className="relative h-10 w-10 overflow-hidden rounded-full bg-primary/10 flex-shrink-0">
+                                      {agency.logo ? (
+                                        <Image
+                                          src={agency.logo.secure_url}
+                                          alt={agency.agencyName}
+                                          fill
+                                          className="object-cover"
+                                        />
+                                      ) : (
+                                        <Building2 className="h-6 w-6 m-2 text-primary" />
+                                      )}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-medium truncate">{agency.agencyName}</p>
+                                      <p className="text-sm text-muted-foreground truncate">ID: {agency._id}</p>
+                                      <p className="text-sm text-muted-foreground truncate">{agency.userId.email}</p>
+                                    </div>
+                                  </div>
+                                </Label>
+                              ))}
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t">
+                      <Button 
+                        className="w-full" 
+                        onClick={handleSubmitFunding}
+                        disabled={isSubmitting || !amount || !fundingType || !message || !selectedAgencyId}
+                      >
+                        {isSubmitting ? "Submitting..." : "Add Funding"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
