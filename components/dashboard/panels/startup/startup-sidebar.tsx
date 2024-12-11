@@ -2,23 +2,17 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LayoutDashboard,
   FileText,
-  Settings,
   Building2,
-  Users,
   Banknote,
   LineChart,
-  Briefcase,
-  FileSpreadsheet,
   MessageSquare,
-  Mail,
-  Target,
   Calendar,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  BookPlus
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -26,7 +20,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const sidebarItems = [
   {
@@ -55,9 +48,9 @@ const sidebarItems = [
     icon: Building2,
   },
   {
-    title: "Reports",
-    href: "/startup/reports",
-    icon: FileSpreadsheet,
+    title: "Policy",
+    href: "/startup/policy",
+    icon: BookPlus,
   },
   {
     title: "Meetings",
@@ -76,7 +69,7 @@ const sidebarItems = [
   },
 ];
 
-export function StartupSidebar({ className }: SidebarProps) {
+export function StartupSidebar() {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
