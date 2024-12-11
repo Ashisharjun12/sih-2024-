@@ -7,12 +7,12 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 export async function POST(request: Request) {
   try {
     console.log("Handling funding agency form submission...");
-    
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       console.log("Unauthorized: No session found");
       return NextResponse.json(
-        { error: "Unauthorized" }, 
+        { error: "Unauthorized" },
         { status: 401 }
       );
     }
@@ -24,18 +24,18 @@ export async function POST(request: Request) {
     });
 
     await connectDB();
-    
+
     // Get form data from request
     const { formData } = await request.json();
     console.log("Received form data:", JSON.stringify(formData, null, 2));
 
     // Validate required fields based on the new model structure
-    if (!formData.agencyDetails?.name || 
-        !formData.agencyDetails?.registrationNumber || 
-        !formData.agencyDetails?.type ||
-        !formData.contactInformation?.officialEmail ||
-        !formData.contactInformation?.phoneNumber ||
-        !formData.fundingPreferences?.minimumInvestment) {
+    if (!formData.agencyDetails?.name ||
+      !formData.agencyDetails?.registrationNumber ||
+      !formData.agencyDetails?.type ||
+      !formData.contactInformation?.officialEmail ||
+      !formData.contactInformation?.phoneNumber ||
+      !formData.fundingPreferences?.minimumInvestment) {
       console.log("Validation failed - Missing required fields");
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -54,6 +54,7 @@ export async function POST(request: Request) {
           type: formData.agencyDetails.type,
           establishmentDate: formData.agencyDetails.establishmentDate,
           description: formData.agencyDetails.description,
+          logo:formData.documentation?.logo,
         },
         contactInformation: {
           officialAddress: formData.contactInformation.officialAddress,
@@ -90,14 +91,14 @@ export async function POST(request: Request) {
     console.log("Creating form submission with data:", JSON.stringify(submissionData, null, 2));
 
     const newSubmission = await FormSubmission.create(submissionData);
-    
+
     console.log("Form submission created:", {
       id: newSubmission._id,
       status: newSubmission.status,
       createdAt: newSubmission.createdAt
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: "Form submitted successfully",
       submission: {
@@ -110,10 +111,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error in form submission:", error);
     return NextResponse.json(
-      { 
+      {
         error: "Failed to submit form",
         details: error instanceof Error ? error.message : "Unknown error"
-      }, 
+      },
       { status: 500 }
     );
   }

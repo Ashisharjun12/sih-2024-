@@ -96,6 +96,9 @@ export async function POST(request: Request) {
       });
       await user.save();
 
+      window.location.reload();
+
+
       // Send notification to researcher
       await addNotification({
         name: session.user.name || "A user",
