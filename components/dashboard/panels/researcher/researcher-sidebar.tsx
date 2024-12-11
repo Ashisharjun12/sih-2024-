@@ -23,6 +23,7 @@ import {
   Menu,
   ScrollText,
   BookPlus,
+  Users2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,6 +43,11 @@ const sidebarItems = [
     title : "Research papers",
     href: "/researcher/papers",
     icon : ScrollText
+  },
+  {
+    title: "Profile",
+    href: "/researcher/profile",
+    icon: Users2, 
   },
   {
     title: "Publications",

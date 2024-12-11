@@ -182,6 +182,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Funding Agency not found" }, { status: 404 });
     }
 
+
+     console.log("funding agency___________",fundingAgency);
     // Add request to funding agency
     startup.requested.push({
       fundingAgency: fundingAgency._id,
@@ -190,8 +192,8 @@ export async function POST(req: NextRequest) {
       message,
       status: 'pending',
     });
-    await fundingAgency.save();
-
+    await startup.save();
+    
     // Add request to startup
     fundingAgency.requests.push({
       startup : startup._id,
@@ -200,7 +202,7 @@ export async function POST(req: NextRequest) {
       message,
       status: 'pending',
     });
-    await startup.save();
+    await fundingAgency.save();
 
     // Send notification to startup
     await addNotification({
@@ -210,6 +212,8 @@ export async function POST(req: NextRequest) {
     }, fundingAgency.userId);
 
     console.log("Step 7: Request created successfully");
+
+    console.log("THE NEW FUNDIG AGENCY AND THE STARTUPS ID ",)
 
     return NextResponse.json({ message: "Funding request sent successfully" });
   } catch (error) {

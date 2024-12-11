@@ -21,6 +21,8 @@ import {
   Linkedin,
   MessageSquareText,
   MessageSquare,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -35,6 +37,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import Startup from "@/models/startup.model";
 
 interface StartupDetails {
   _id: string;
@@ -112,9 +119,51 @@ export default function StartupDetails({
   const [startup, setStartup] = useState<StartupDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
+ 
   const [isSending, setIsSending] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [fundingType, setFundingType] = useState("");
+  const [message, setMessage] = useState("");
+  const [selectedstartups, setselectedstartups] = useState("");
+  const [allstartups,setallstartups ]=useState([])
+  
+  interface FundingType {
+    value: string;
+    label: string;
+  }
+  const fundingTypes: FundingType[] = [
+    { value: "Private_Equity", label: "Private Equity" },
+    { value: "Equity_Funding", label: "Equity Funding" },
+    { value: "Debt_Funding", label: "Debt Funding" },
+    { value: "Grants", label: "Grants " },
+    { value: "Convertible_Notes", label: "Convertible_Notes" },
+    { value: "Revenue_Based_Financing", label: "Revenue_Based_Financing" },
+    { value: "Scholarship", label: "Convertible Note" }
+  
+  
+    
+  ];
   const { toast } = useToast();
+
+ const fetchallstartup= async ()=>{
+  const response = await fetch(`/api/startup/each`);
+
+  const data = await response.json();
+  console.log("allthe statups ,,________________0",data.startups)
+
+  setallstartups(data.startups)
+
+
+
+ }
+
+ useEffect(()=>{
+  fetchallstartup()
+ },[allstartups])
+
+
+ console
+
 
   useEffect(() => {
     const fetchStartupDetails = async () => {
@@ -140,6 +189,98 @@ export default function StartupDetails({
       fetchStartupDetails();
     }
   }, [session, params.projectid]);
+
+  const [selectedStartupDetails, setSelectedStartupDetails] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleformsubmit = async () => {
+    try {
+      setIsSending(true);
+      const selectedFundingType = fundingTypes.find(t => t.value === fundingType);
+      
+      // Validate required fields
+      if (!amount || !fundingType || !message || !selectedstartups) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prepare data for API
+      const requestData = {
+        startupId: params.id,
+        amount: Number(amount),
+        fundingType: fundingType,
+        message: message
+      };
+
+      // Send request to API
+      const response = await fetch('/api/funding-agency/fundings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send funding request');
+      }
+
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Funding request sent successfully",
+      });
+
+      // Log the successful submission
+      console.log("Funding Request Submitted:", {
+        "Startup Being Viewed": {
+          id: params.id,
+          name: startup?.startupDetails.startupName,
+        },
+        "Funding Details": {
+          amount: Number(amount),
+          type: selectedFundingType?.label,
+          message: message,
+        },
+        "Submission Time": new Date().toLocaleString(),
+      });
+
+      // Reset form
+      setAmount("");
+      setFundingType("");
+      setMessage("");
+      setselectedstartups("");
+
+    } catch (error) {
+      console.error("Error submitting funding request:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send funding request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleStartupSelection = (startupId: string) => {
+    setselectedstartups(startupId);
+    const selectedStartup = allstartups.find((s: any) => s._id === startupId);
+    if (selectedStartup) {
+      setSelectedStartupDetails({
+        id: startupId,
+        name: selectedStartup.startupDetails?.startupName || '',
+      });
+    }
+  };
 
   const handleSendRequest = async () => {
     if (!message.trim()) {
@@ -675,38 +816,126 @@ export default function StartupDetails({
 
       {/* Funding Request Button for Funding Agencies */}
       {isFundingAgency && (
-        <Dialog>
-          <DialogTrigger asChild>
+         <Dialog>
+       <DialogTrigger asChild>
             <Button className="fixed bottom-8 right-8 shadow-lg">
               <MessageSquare className="h-4 w-4 mr-2" />
               Send Funding Request
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Send Funding Request</DialogTitle>
-              <DialogDescription>
-                Send a message to {startup?.startupDetails?.startupName}{" "}
-                expressing your interest in funding.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Textarea
-                placeholder="Write your message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="min-h-[100px]"
-              />
-              <Button
-                className="w-full"
-                onClick={handleSendRequest}
-                disabled={isSending || !message.trim()}
-              >
-                {isSending ? "Sending..." : "Send Request"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+         <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+           <DialogHeader>
+             <DialogTitle>Add New Funding</DialogTitle>
+             <DialogDescription>
+               Enter the funding details below
+             </DialogDescription>
+           </DialogHeader>
+           <div className="flex-1 overflow-y-auto">
+             <div className="space-y-4 py-4">
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">Amount (₹)</label>
+                 <Input
+                   type="number"
+                   placeholder="Enter amount"
+                   value={amount}
+                   onChange={(e) => setAmount(e.target.value)}
+                 />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">Funding Type</label>
+                 <Select value={fundingType} onValueChange={setFundingType}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Select funding type" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {fundingTypes.map((type) => (
+                       <SelectItem key={type.value} value={type.value}>
+                         {type.label}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">Message</label>
+                 <Textarea
+                   placeholder="Enter additional details about the funding"
+                   value={message}
+                   onChange={(e) => setMessage(e.target.value)}
+                   className="min-h-[100px]"
+                 />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">Select startups </label>
+                 <RadioGroup 
+                   value={selectedstartups} 
+                   onValueChange={handleStartupSelection}
+                 >
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[200px] overflow-y-auto rounded-lg border p-4">
+                     {allstartups.map((startup: any) => (
+                       <Label
+                         key={startup._id}
+                         className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-accent transition-colors ${
+                           selectedstartups === startup._id ? "border-primary bg-accent" : ""
+                         }`}
+                         htmlFor={startup._id}
+                       >
+                         <RadioGroupItem value={startup._id} id={startup._id} />
+                         <div className="flex items-center space-x-3">
+                           <div className="relative h-10 w-10 overflow-hidden rounded-full bg-primary/10 flex-shrink-0">
+                             {startup.logo ? (
+                               <Image
+                                 src={startup.logo.secure_url}
+                                 alt={startup.agencyName}
+                                 fill
+                                 className="object-cover"
+                               />
+                             ) : (
+                               <Building2 className="h-6 w-6 m-2 text-primary" />
+                             )}
+                           </div>
+                           <div className="min-w-0">
+                             <p className="font-medium truncate">{startup.startupDetails?.startupName}</p>
+                             <p className="text-sm text-muted-foreground truncate">ID: {startup._id}</p>
+                             </div>
+                         </div>
+                       </Label>
+                     ))}
+                   </div>
+                 </RadioGroup>
+                 <div className="pt-4 border-t">
+                      <Button 
+                        className="w-full" 
+                        onClick={handleformsubmit}
+                        disabled={isSending || !amount || !fundingType || !message || !selectedstartups}
+                      >
+                       {isSending ? (
+                         <>
+                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                           Sending Request...
+                         </>
+                       ) : (
+                         <>
+                           <Plus className="h-4 w-4 mr-2" />
+                           Send Funding Request
+                         </>
+                       )}
+                      </Button>
+                    </div>
+               </div>
+             </div>
+           </div>
+           <div className="pt-4 border-t">
+             {/* <Button 
+               className="w-full" 
+               onClick={handleSubmitFunding}
+               disabled={isSubmitting || !amount || !fundingType || !message || !selectedstartups}
+             >
+               {isSubmitting ? "Submitting..." : "Add Funding"}
+             </Button> */}
+           </div>
+         </DialogContent>
+       </Dialog>
       )}
     </div>
   );
