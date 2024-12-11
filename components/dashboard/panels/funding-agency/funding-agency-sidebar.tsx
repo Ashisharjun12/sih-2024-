@@ -31,7 +31,7 @@ const fundingAgencyLinks = [
   },
   {
     title: "Funding Applications",
-    href: "/funding-agency/fundingApplications",
+    href: "/funding-agency/funding",
     icon: FileText,
   },
   {
