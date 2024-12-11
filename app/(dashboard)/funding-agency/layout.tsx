@@ -1,5 +1,4 @@
 import { FundingAgencySidebar } from "@/components/dashboard/panels/funding-agency/funding-agency-sidebar";
-import "../../globals.css";
 export default function FundingAgencyLayout({
   children,
 }: {

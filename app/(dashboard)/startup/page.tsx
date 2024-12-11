@@ -17,19 +17,21 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
-import {
-  ScrollArea,
-  ScrollBar
-} from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 interface WalletData {
   balance: number;
   transactions: Array<{
-    type: 'credit' | 'debit';
+    type: "credit" | "debit";
     amount: number;
     description: string;
     createdAt: string;
@@ -84,23 +86,37 @@ export default function StartupPage() {
   const [isDepositing, setIsDepositing] = useState(false);
   const [walletData, setWalletData] = useState<WalletData>({
     balance: 0,
-    transactions: []
+    transactions: [],
   });
+  const [recommendedFundingAgencies, setRecommendedFundingAgencies] = useState(
+    []
+  );
+
+  const fetchFundingAgencies = async () => {
+    try {
+      const response = await fetch("/api/startup/recommedations");
+      const data = await response.json();
+      setRecommendedFundingAgencies(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     fetchStartups();
     fetchWalletData();
+    fetchFundingAgencies();
   }, []);
 
   const fetchStartups = async () => {
     try {
-      const res = await fetch('/api/startup/projects');
+      const res = await fetch("/api/startup/projects");
       const data = await res.json();
       if (data.startups) {
         setStartups(data.startups);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -108,21 +124,25 @@ export default function StartupPage() {
 
   const fetchWalletData = async () => {
     try {
-      const res = await fetch('/api/wallet/balance');
+      const res = await fetch("/api/wallet/balance");
       const data = await res.json();
       if (data.success) {
         setWalletData({
           balance: data.balance,
-          transactions: data.transactions
+          transactions: data.transactions,
         });
       }
     } catch (error) {
-      console.error('Error fetching wallet:', error);
+      console.error("Error fetching wallet:", error);
     }
   };
 
   const handleDeposit = async () => {
-    if (!depositAmount || isNaN(Number(depositAmount)) || Number(depositAmount) <= 0) {
+    if (
+      !depositAmount ||
+      isNaN(Number(depositAmount)) ||
+      Number(depositAmount) <= 0
+    ) {
       toast({
         title: "Invalid amount",
         description: "Please enter a valid amount",
@@ -133,10 +153,10 @@ export default function StartupPage() {
 
     setIsDepositing(true);
     try {
-      const res = await fetch('/api/wallet/deposit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: Number(depositAmount) })
+      const res = await fetch("/api/wallet/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(depositAmount) }),
       });
 
       const data = await res.json();
@@ -196,30 +216,48 @@ export default function StartupPage() {
             Add Money
           </Button>
         </div>
-        
+
         <div className="space-y-4">
-          <p className="text-2xl font-bold">₹{walletData.balance.toLocaleString('en-IN')}</p>
-          
+          <p className="text-2xl font-bold">
+            ₹{walletData.balance.toLocaleString("en-IN")}
+          </p>
+
           {/* Recent Transactions */}
           {walletData.transactions.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Recent Activity</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Recent Activity
+              </p>
               <div className="space-y-1">
-                {walletData.transactions.slice(0, 3).map((transaction, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      {transaction.type === 'credit' ? (
-                        <ArrowUpRight className="h-3 w-3 text-green-500" />
-                      ) : (
-                        <ArrowDownRight className="h-3 w-3 text-red-500" />
-                      )}
-                      <span className="text-muted-foreground">{transaction.description}</span>
+                {walletData.transactions
+                  .slice(0, 3)
+                  .map((transaction, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        {transaction.type === "credit" ? (
+                          <ArrowUpRight className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <ArrowDownRight className="h-3 w-3 text-red-500" />
+                        )}
+                        <span className="text-muted-foreground">
+                          {transaction.description}
+                        </span>
+                      </div>
+                      <span
+                        className={
+                          transaction.type === "credit"
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }
+                      >
+                        {transaction.type === "credit" ? "+" : "-"}₹
+                        {transaction.amount.toLocaleString("en-IN")}
+                      </span>
                     </div>
-                    <span className={transaction.type === 'credit' ? 'text-green-500' : 'text-red-500'}>
-                      {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           )}
@@ -253,35 +291,33 @@ export default function StartupPage() {
       {/* Recent Startups Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Recent Startups</h2>
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/startup/projects')}
-            className="text-blue-500 hover:text-blue-600"
-          >
-            View All
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+          <h2 className="text-xl font-semibold">
+            Recommended Funding Agencies
+          </h2>
         </div>
 
         <ScrollArea className="w-full">
           <div className="flex space-x-6 pb-4">
-            {startups.slice(0, 3).map((startup, index) => (
-              <div key={startup._id} className="w-[400px] flex-none">
-                <StartupCard 
-                  startup={{
-                    ...startup,
-                    additionalInfo: {
-                      website: startup.additionalInfo?.website,
-                      socialMedia: startup.additionalInfo?.socialMedia || {}
-                    },
-                    isActivelyFundraising: startup.isActivelyFundraising || false
-                  }} 
-                  index={index} 
-                />
-              </div>
-            ))}
-          </div>  
+            {recommendedFundingAgencies
+              .slice(0, 3)
+              .map((fundingAgency, index) => (
+                <div key={fundingAgency._id} className="w-[400px] flex-none">
+                  //! Funding Agency card
+                  <FundingAgency
+                    fundingAgency={{
+                      ...fundingAgency,
+                      additionalInfo: {
+                        website: startup.additionalInfo?.website,
+                        socialMedia: startup.additionalInfo?.socialMedia || {},
+                      },
+                      isActivelyFundraising:
+                        startup.isActivelyFundraising || false,
+                    }}
+                    index={index}
+                  />
+                </div>
+              ))}
+          </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
@@ -289,7 +325,7 @@ export default function StartupPage() {
       {/* Fixed Mobile FAB */}
       <div className="fixed bottom-24 right-6 z-50">
         <Button
-          onClick={() => router.push('/startup/projects/create')}
+          onClick={() => router.push("/startup/projects/create")}
           className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-500 
             flex items-center justify-center transition-all duration-200
             shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(59,130,246,0.3)]"
@@ -314,8 +350,8 @@ export default function StartupPage() {
                 onChange={(e) => setDepositAmount(e.target.value)}
               />
             </div>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleDeposit}
               disabled={isDepositing}
             >
@@ -325,7 +361,7 @@ export default function StartupPage() {
                   Adding...
                 </>
               ) : (
-                'Add Money'
+                "Add Money"
               )}
             </Button>
           </div>
