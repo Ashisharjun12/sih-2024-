@@ -100,7 +100,7 @@ export default function ResearcherDashboard() {
       const response = await fetch('/api/researcher/recommendation');
       const data = await response.json() as ApiResponse;
       
-      if (data.success) {
+      if (data) {
         console.log("Researcher Data:", data);
         setResearchers(data.other);
         setMyProfile(data.myProfile);

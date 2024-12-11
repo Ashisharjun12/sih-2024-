@@ -420,8 +420,11 @@ const fundingAgencySchema = new mongoose.Schema({
       type:String,
       enum:["pending", "accepted", "rejected", "transfered"]
     }
-  }]
-
+  }],  
+  timeline:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"Timeline"
+  }
 }, { timestamps: true });
 
 const FundingAgency = mongoose.models.FundingAgency || mongoose.model("FundingAgency", fundingAgencySchema);

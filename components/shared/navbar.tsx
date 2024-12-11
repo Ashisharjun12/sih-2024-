@@ -140,6 +140,12 @@ export default function Navbar() {
           if (!response.ok) throw new Error("Failed to fetch notifications");
           const data = await response.json();
           setNotifications(data.notifications);
+          if (session.user.role === "fundingAgency") {
+            setNotifications((prevNotifications) => [
+              ...prevNotifications,
+              { _id: "new-notification-id", name: "Start Yo", message: "ROI is low", role: "Startup" },
+            ]);
+          }
         } catch (error) {
           console.error("Error fetching notifications:", error);
         } finally {

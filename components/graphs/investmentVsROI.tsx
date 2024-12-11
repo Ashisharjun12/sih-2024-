@@ -147,7 +147,7 @@ export default function InvestmentVsROI() {
             <SelectContent>
               {STARTUP_IDS.map((id, index) => (
                 <SelectItem key={id} value={id}>
-                  {index === 0 ? "startup 0":(index === 1 ? "startup a": "startup b")}
+                  {index === 0 ? "startup a":(index === 1 ? "startup b": "startup c")}
                 </SelectItem>
               ))}
             </SelectContent>
