@@ -6,19 +6,12 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   BarChart3,
-  Building2,
   FileText,
-  DollarSign,
-  Users,
-  Settings,
-  PieChart,
-  Briefcase,
-  LineChart,
-  Target,
   MessageCircle,
   ChevronLeft,
   Menu,
-  TrendingUp
+  TrendingUp,
+  BookPlus
 
 } from "lucide-react";
 import { useState } from "react";
@@ -32,9 +25,9 @@ const fundingAgencyLinks = [
     icon: BarChart3,
   },
   {
-    title: "Investment Portfolio",
-    href: "/funding-agency/portfolio",
-    icon: PieChart,
+    title: "Policy",
+    href: "/funding-agency/policy",
+    icon: BookPlus,
   },
   {
     title: "Funding Applications",
