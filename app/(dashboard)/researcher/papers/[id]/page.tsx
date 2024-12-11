@@ -11,13 +11,13 @@ import {
   File,
   ArrowLeft,
   Download,
-  Building2,``
+  Building2,
   User,
   Lock,
   Unlock,
-  BookOpen,
   GraduationCap,
   FileText,
+  BookOpen,
   ExternalLink,
   Image,
   FileEdit,
@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
-import { BookOpen, FileText, Lock, Unlock } from "lucide-react";
 
 interface ResearchDocument {
   public_id: string;
@@ -93,9 +92,10 @@ export default function ResearchPaperPage({ params }: { params: { id: string } }
         setLoading(true);
         const response = await fetch(`/api/explore/research-papers/${params.id}`);
         const data = await response.json();
+        console.log(data);
 
         if (data.success) {
-          setPaper(data.paper);
+          setPaper(data.data);
         } else {
           throw new Error(data.message || "Failed to fetch paper details");
         }

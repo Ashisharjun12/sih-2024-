@@ -78,17 +78,6 @@ interface FundingAgencyFormData {
     totalInvestments: number;
     averageTicketSize: number;
   };
-  activeInvestments: Array<{
-    startup: string;
-    amount: number;
-    date: string;
-    status: string;
-    documents: Array<{
-      title: string;
-      public_id: string;
-      secure_url: string;
-    }>;
-  }>;
 }
 
 interface FileData {
@@ -429,7 +418,6 @@ export default function FundingAgencyRegistrationForm() {
         totalInvestments: 0,
         averageTicketSize: 0
       },
-      activeInvestments: []
     }
   });
 
@@ -1132,95 +1120,6 @@ export default function FundingAgencyRegistrationForm() {
                           </FormItem>
                         </div>
                       </div>
-
-                      {/* Active Investments */}
-                      <FormField
-                        control={form.control}
-                        name="activeInvestments"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Active Investments</FormLabel>
-                            <div className="space-y-4">
-                              {field.value.map((investment, index) => (
-                                <div key={index} className="flex gap-4">
-                                  <Input
-                                    placeholder="Startup Name"
-                                    value={investment.startup}
-                                    onChange={(e) => {
-                                      const newValue = [...field.value];
-                                      newValue[index].startup = e.target.value;
-                                      field.onChange(newValue);
-                                    }}
-                                  />
-                                  <Input
-                                    type="number"
-                                    placeholder="Amount"
-                                    value={investment.amount}
-                                    onChange={(e) => {
-                                      const newValue = [...field.value];
-                                      newValue[index].amount = Number(e.target.value);
-                                      field.onChange(newValue);
-                                    }}
-                                  />
-                                  <Input
-                                    type="date"
-                                    value={investment.date}
-                                    onChange={(e) => {
-                                      const newValue = [...field.value];
-                                      newValue[index].date = e.target.value;
-                                      field.onChange(newValue);
-                                    }}
-                                  />
-                                  <Select
-                                    value={investment.status}
-                                    onValueChange={(value) => {
-                                      const newValue = [...field.value];
-                                      newValue[index].status = value;
-                                      field.onChange(newValue);
-                                    }}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {INVESTMENT_STATUS.map((status) => (
-                                        <SelectItem key={status} value={status}>
-                                          {status.replace(/_/g, ' ')}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    onClick={() => {
-                                      const newValue = field.value.filter((_, i) => i !== index);
-                                      field.onChange(newValue);
-                                    }}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  field.onChange([
-                                    ...field.value,
-                                    { startup: '', amount: 0, date: '', status: '', documents: [] }
-                                  ]);
-                                }}
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Investment
-                              </Button>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </div>
                   )}
 

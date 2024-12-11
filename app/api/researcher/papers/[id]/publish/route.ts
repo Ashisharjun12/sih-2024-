@@ -45,17 +45,17 @@ export async function POST(
       );
     }
 
-    // Check if paper exists in either researchPapers or onGoingResearches
-    const hasAccess = 
-      researcher.researchPapers.includes(paper._id) || 
-      researcher.onGoingResearches.includes(paper._id);
+    // // Check if paper exists in either researchPapers or onGoingResearches
+    // const hasAccess = 
+    //   researcher.researchPapers.includes(paper._id) || 
+    //   researcher.onGoingResearches.includes(paper._id);
 
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: "Not authorized to publish this paper" },
-        { status: 403 }
-      );
-    }
+    // if (!hasAccess) {
+    //   return NextResponse.json(
+    //     { error: "Not authorized to publish this paper" },
+    //     { status: 403 }
+    //   );
+    // }
 
     // Update paper with publish settings
     const updates = {
@@ -71,22 +71,8 @@ export async function POST(
       { new: true }
     );
 
-    // Move paper from onGoingResearches to researchPapers if needed
-    if (researcher.onGoingResearches.includes(paper._id)) {
-      researcher.onGoingResearches = researcher.onGoingResearches.filter(
-        id => !id.equals(paper._id)
-      );
-      if (!researcher.researchPapers.includes(paper._id)) {
-        researcher.researchPapers.push(paper._id);
-      }
-    }
-
-    // Add to publishedPapers if not already there
-    if (!researcher.publishedPapers.includes(paper._id)) {
-      researcher.publishedPapers.push(paper._id);
-    }
-
     await researcher.save();
+    await updatedPaper.save();
 
     return NextResponse.json({
       success: true,

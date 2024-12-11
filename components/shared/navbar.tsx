@@ -27,10 +27,23 @@ import {
   Building,
   PlusCircle,
   Bell,
+  Wallet,
+  Plus,
+  IndianRupee,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/use-toast";
 
 interface Notification {
   _id: string;
@@ -99,6 +112,10 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
   const router = useRouter();
+  const [showAddMoneyDialog, setShowAddMoneyDialog] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [isDepositing, setIsDepositing] = useState(false);
 
   const handleSignIn = async () => {
     await signIn("google", {
@@ -134,6 +151,61 @@ export default function Navbar() {
     fetchNotifications();
   }, [session]);
 
+  useEffect(() => {
+    if (session) {
+      fetchWalletBalance();
+    }
+  }, [session]);
+
+  const fetchWalletBalance = async () => {
+    try {
+      const response = await fetch("/api/wallet/balance");
+      const data = await response.json();
+      setWalletBalance(data.balance);
+    } catch (error) {
+      console.error("Error fetching wallet:", error);
+    }
+  };
+
+  const handleDeposit = async () => {
+    if (!depositAmount || isNaN(Number(depositAmount)) || Number(depositAmount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDepositing(true);
+    try {
+      const response = await fetch("/api/wallet/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(depositAmount) }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      setWalletBalance(data.balance);
+      setShowAddMoneyDialog(false);
+      setDepositAmount("");
+      toast({
+        title: "Success",
+        description: "Money added to wallet successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add money",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDepositing(false);
+    }
+  };
+
   const handleProfileClick = () => {
     if (session?.user?.role === "startup") {
       router.push("/startup/profile");
@@ -158,6 +230,46 @@ export default function Navbar() {
               Explore
             </Link>
           </div>
+
+          {/* Wallet Button - Only show when logged in */}
+          {session?.user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 md:h-10 md:w-10"
+                >
+                  <div className="relative">
+                    <Wallet className="h-4 w-4 md:h-5 md:w-5" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[280px] md:w-[320px]">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-medium">Wallet Balance</p>
+                      <p className="text-2xl font-bold text-primary">
+                        ₹{walletBalance.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowAddMoneyDialog(true)}
+                      className="bg-primary/10 text-primary hover:bg-primary/20"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Money
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Use your wallet balance to purchase research papers and other services
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* Notifications - Show on both mobile and desktop */}
           <DropdownMenu>
@@ -215,7 +327,7 @@ export default function Navbar() {
           </DropdownMenu>
 
           {/* Role Applications - Simplified on mobile */}
-          <DropdownMenu>
+          {session && session.user.role ==="user" && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -243,7 +355,7 @@ export default function Navbar() {
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
 
           {/* User Menu */}
           {status === "loading" ? (
@@ -328,6 +440,56 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Add Money Dialog */}
+      <Dialog open={showAddMoneyDialog} onOpenChange={setShowAddMoneyDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Money to Wallet</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Current Balance</Label>
+              <div className="p-3 bg-muted rounded-lg flex items-center gap-2">
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{walletBalance.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Amount to Add</Label>
+              <div className="relative">
+                <IndianRupee className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleDeposit}
+              disabled={isDepositing}
+              className="w-full"
+            >
+              {isDepositing ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Money
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </nav>
   );
 }

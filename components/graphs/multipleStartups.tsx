@@ -29,9 +29,8 @@ import { Formatter } from "recharts/types/component/DefaultTooltipContent";
 
 // Constants
 const STARTUP_IDS = [
-  "67521b4dc2d6dc160b09d878",
-  "6752a4d92dd92150084ea81e",
-  "6752d2688720f7e63426f72f"
+  "6755f5059fc6ad8a5d7b684e",
+  "6755fb6dc8982ecb2e065854","67585013f94081f029fbb6d6"
 ];
 
 interface StartupData {
