@@ -196,7 +196,7 @@ const CreateIPRPage = () => {
             disabled={isFormDisabled}
           />
           {isUploading && (
-            <p className="text-sm text-yellow-600">Uploading documents...</p>
+            <p className="text-sm text-orange-600">Uploading documents...</p>
           )}
           {documents.length > 0 && (
             <div className="mt-2">
@@ -206,7 +206,7 @@ const CreateIPRPage = () => {
                   <li key={doc.public_id}>
                     <Link
                       href={doc.secure_url}
-                      className="text-sm text-gray-600"
+                      className="text-sm text-orange-600"
                     >
                       Document {index + 1}
                     </Link>
@@ -218,7 +218,7 @@ const CreateIPRPage = () => {
         </div>
 
         <div className="flex gap-4">
-          <Button type="submit" disabled={isFormDisabled} className="w-full">
+          <Button type="submit" disabled={isFormDisabled} className="w-full bg-orange-500 hover:bg-orange-400">
             {isSubmitting
               ? "Filing..."
               : isUploading

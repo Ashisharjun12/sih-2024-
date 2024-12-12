@@ -196,7 +196,7 @@ export default function StartupPage() {
   return (
     <div className="container py-6 space-y-8">
       {/* Welcome Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent p-6 md:p-8">
         <div className="relative">
           <h1 className="text-2xl md:text-3xl font-bold">
             Welcome back, {session?.user?.name}! ✨
@@ -269,25 +269,25 @@ export default function StartupPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Rocket className="h-6 w-6 text-blue-500 mb-2" />
+        <div className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Rocket className="h-6 w-6 text-green-500 mb-2" />
           <p className="text-2xl font-bold">{startups.length}</p>
-          <p className="text-sm text-blue-600/70">Active Startups</p>
+          <p className="text-sm text-green-600/70">Active Startups</p>
         </div>
         <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl p-4 md:p-6">
           <Users className="h-6 w-6 text-emerald-500 mb-2" />
           <p className="text-2xl font-bold">12</p>
           <p className="text-sm text-emerald-600/70">Team Members</p>
         </div>
-        <div className="bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Target className="h-6 w-6 text-violet-500 mb-2" />
+        <div className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Target className="h-6 w-6 text-green-500 mb-2" />
           <p className="text-2xl font-bold">89%</p>
-          <p className="text-sm text-violet-600/70">Goals Met</p>
+          <p className="text-sm text-green-600/70">Goals Met</p>
         </div>
-        <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Building2 className="h-6 w-6 text-amber-500 mb-2" />
+        <div className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Building2 className="h-6 w-6 text-green-500 mb-2" />
           <p className="text-2xl font-bold">8</p>
-          <p className="text-sm text-amber-600/70">Projects</p>
+          <p className="text-sm text-green-600/70">Projects</p>
         </div>
       </div>
 
@@ -317,7 +317,7 @@ export default function StartupPage() {
       <div className="fixed bottom-24 right-6 z-50">
         <Button
           onClick={() => router.push("/startup/projects/create")}
-          className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-500 
+          className="h-14 w-14 rounded-full bg-green-600 hover:bg-green-500 
             flex items-center justify-center transition-all duration-200
             shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(59,130,246,0.3)]"
         >

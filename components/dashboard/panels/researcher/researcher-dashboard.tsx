@@ -157,7 +157,7 @@ export default function ResearcherDashboard() {
   return (
     <div className="container py-6 space-y-8">
       {/* Welcome Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent p-6 md:p-8">
         <div className="relative">
           <h1 className="text-2xl md:text-3xl font-bold">
             Welcome back, {session?.user?.name}! 🔬
@@ -170,31 +170,31 @@ export default function ResearcherDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <BookOpen className="h-6 w-6 text-purple-500 mb-2" />
+        <div className="bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <BookOpen className="h-6 w-6 text-orange-500 mb-2" />
           <p className="text-2xl font-bold">
             {myProfile?.researchPapers?.length || 0}
           </p>
-          <p className="text-sm text-purple-600/70">Publications</p>
+          <p className="text-sm text-orange-600/70">Publications</p>
         </div>
-        <div className="bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <ScrollText className="h-6 w-6 text-cyan-500 mb-2" />
+        <div className="bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <ScrollText className="h-6 w-6 text-orange-500 mb-2" />
           <p className="text-2xl font-bold">
             {myProfile?.onGoingResearches?.length || 0}
           </p>
-          <p className="text-sm text-cyan-600/70">Active Projects</p>
+          <p className="text-sm text-orange-600/70">Active Projects</p>
         </div>
-        <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Trophy className="h-6 w-6 text-emerald-500 mb-2" />
+        <div className="bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Trophy className="h-6 w-6 text-orange-500 mb-2" />
           <p className="text-2xl font-bold">
             {myProfile?.academicInfo?.yearsOfExperience || 0}
           </p>
-          <p className="text-sm text-emerald-600/70">Years Experience</p>
+          <p className="text-sm text-orange-600/70">Years Experience</p>
         </div>
-        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 md:p-6">
-          <Users className="h-6 w-6 text-blue-500 mb-2" />
+        <div className="bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent rounded-xl p-4 md:p-6">
+          <Users className="h-6 w-6 text-orange-500 mb-2" />
           <p className="text-2xl font-bold">{researchers?.length}</p>
-          <p className="text-sm text-blue-600/70">Fellow Researchers</p>
+          <p className="text-sm text-orange-600/70">Fellow Researchers</p>
         </div>
       </div>
 
@@ -206,7 +206,7 @@ export default function ResearcherDashboard() {
             <h2 className="text-xl font-semibold">Completed Research Papers</h2>
             <Button
               variant="ghost"
-              className="text-purple-500 hover:text-purple-600"
+              className="text-orange-500 hover:text-orange-600"
               onClick={() => router.push("/researcher/papers")}
             >
               View All
@@ -238,7 +238,7 @@ export default function ResearcherDashboard() {
             <h2 className="text-xl font-semibold">Ongoing Research</h2>
             <Button
               variant="ghost"
-              className="text-purple-500 hover:text-purple-600"
+              className="text-orange-500 hover:text-orange-600"
               onClick={() => router.push("/researcher/papers")}
             >
               View All
@@ -271,7 +271,7 @@ export default function ResearcherDashboard() {
           <h2 className="text-xl font-semibold">Fellow Researchers</h2>
           <Button
             variant="ghost"
-            className="text-purple-500 hover:text-purple-600"
+            className="text-orange-500 hover:text-orange-600"
           >
             View All
             <ChevronRight className="h-4 w-4 ml-1" />
@@ -281,6 +281,7 @@ export default function ResearcherDashboard() {
         <ScrollArea className="w-full">
           <div className="flex space-x-6 pb-4">
             {researchers.map((researcher, index) => (
+              console.log(researcher),
               <div key={researcher._id} className="w-[400px] flex-none">
                 <ResearcherCard
                   researcher={{

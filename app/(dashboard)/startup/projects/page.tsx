@@ -64,7 +64,7 @@ export default function StartupProjects() {
   return (
     <div className="container py-6 space-y-8">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
         <div className="relative flex justify-between items-start">
           <div className="space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Your Startups</h1>
@@ -75,7 +75,7 @@ export default function StartupProjects() {
           <Button
             onClick={() => router.push('/startup/projects/create')}
             size="lg"
-            className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-700 hover:to-cyan-600 hidden md:flex"
+            className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600 hidden md:flex"
           >
             <Plus className="h-5 w-5 mr-2" />
             New Project
@@ -117,8 +117,8 @@ export default function StartupProjects() {
         <Button
           onClick={() => router.push('/startup/projects/create')}
           size="lg"
-          className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-blue-600 to-cyan-500 
-            hover:from-blue-700 hover:to-cyan-600 p-0"
+          className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-green-600 to-green-500 
+            hover:from-green-700 hover:to-green-600 p-0"
         >
           <Plus className="h-6 w-6 text-white" />
         </Button>
