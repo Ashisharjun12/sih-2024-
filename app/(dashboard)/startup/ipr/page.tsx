@@ -89,7 +89,7 @@ const IPRPage = () => {
   return (
     <div className="container py-4 px-2 md:px-6 space-y-6 md:space-y-8">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-4 md:p-8">
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-transparent p-4 md:p-8">
         <div className="relative flex flex-col md:flex-row md:justify-between md:items-start gap-4">
           <div>
             <h1 className="text-xl md:text-3xl font-bold">Intellectual Property Rights</h1>
@@ -100,8 +100,8 @@ const IPRPage = () => {
           {/* Desktop Create Button - Hide on Mobile */}
           <Button 
             asChild
-            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 
-              hover:to-blue-600 text-white transition-all duration-300 hidden md:flex"
+            className="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 
+              hover:to-teal-600 text-white transition-all duration-300 hidden md:flex"
           >
             <Link href="/startup/ipr/create">
               <PlusIcon className="mr-2 h-4 w-4" />
@@ -118,7 +118,7 @@ const IPRPage = () => {
             key={ipr.ipr._id}
             onClick={() => setSelectedIPR(ipr)}
             className="bg-gradient-to-br from-background to-background/80 border rounded-xl p-4 
-              cursor-pointer hover:bg-blue-50/50 transition-colors"
+              cursor-pointer hover:bg-teal-50/50 transition-colors"
           >
             <div className="flex justify-between items-start mb-3">
               <div>
@@ -161,7 +161,7 @@ const IPRPage = () => {
               {iprs.map((ipr) => (
                 <TableRow
                   key={ipr.ipr._id}
-                  className="cursor-pointer hover:bg-blue-50/50 transition-colors"
+                  className="cursor-pointer hover:bg-teal-50/50 transition-colors"
                   onClick={() => setSelectedIPR(ipr)}
                 >
                   <TableCell className="font-medium">{ipr.ipr.title}</TableCell>
@@ -233,7 +233,7 @@ const IPRPage = () => {
                     <h3 className="text-sm font-medium text-muted-foreground">Transaction Hash</h3>
                     <Link
                       href={`https://sepolia.etherscan.io/tx/${selectedIPR?.ipr.transactionHash}#eventlog`}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-sm text-teal-600 hover:underline"
                       target="_blank"
                     >
                       {selectedIPR?.ipr.transactionHash.slice(0, 10)}...
@@ -244,7 +244,7 @@ const IPRPage = () => {
                 {selectedIPR?.iprProfessional && (
                   <div className="space-y-2 pt-4 border-t">
                     <h3 className="text-sm font-medium text-muted-foreground">IPR Professional</h3>
-                    <div className="bg-blue-50/50 rounded-lg p-3 md:p-4">
+                    <div className="bg-teal-50/50 rounded-lg p-3 md:p-4">
                       <p className="text-sm font-medium">{selectedIPR.iprProfessional.name}</p>
                       <p className="text-sm text-muted-foreground">{selectedIPR.iprProfessional.email}</p>
                       {selectedIPR.message && (
@@ -265,12 +265,12 @@ const IPRPage = () => {
                         href={doc.secure_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50/50 
-                          border border-blue-100/50 transition-colors group"
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-teal-50/50 
+                          border border-teal-100/50 transition-colors group"
                       >
-                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center 
-                          group-hover:bg-blue-500/20 transition-colors">
-                          <FileText className="h-4 w-4 text-blue-500" />
+                        <div className="h-8 w-8 rounded-lg bg-teal-500/10 flex items-center justify-center 
+                          group-hover:bg-teal-500/20 transition-colors">
+                          <FileText className="h-4 w-4 text-teal-500" />
                         </div>
                         <span className="text-sm font-medium">Document {index + 1}</span>
                       </Link>
@@ -307,18 +307,18 @@ const IPRPage = () => {
               {/* Scrollable Content */}
               <div className="p-4 space-y-6 overflow-auto max-h-[calc(90vh-80px)]">
                 {/* Description Section */}
-                <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-blue-100/50 p-4">
+                <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-teal-100/50 p-4">
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
                   <p className="text-sm">{selectedIPR.ipr.description}</p>
                 </div>
 
                 {/* Details Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-blue-100/50 p-4">
+                  <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-teal-100/50 p-4">
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Type</h3>
                     <p className="text-sm font-medium">{selectedIPR.ipr.type}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-blue-100/50 p-4">
+                  <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-teal-100/50 p-4">
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Filing Date</h3>
                     <p className="text-sm font-medium">
                       {format(new Date(selectedIPR.ipr.filingDate), "PP")}
@@ -327,11 +327,11 @@ const IPRPage = () => {
                 </div>
 
                 {/* Transaction Hash */}
-                <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-blue-100/50 p-4">
+                <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-teal-100/50 p-4">
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Transaction Hash</h3>
                   <Link
                     href={`https://sepolia.etherscan.io/tx/${selectedIPR.ipr.transactionHash}#eventlog`}
-                    className="text-sm text-blue-600 hover:underline inline-flex items-center gap-2"
+                    className="text-sm text-teal-600 hover:underline inline-flex items-center gap-2"
                     target="_blank"
                   >
                     <span>{selectedIPR.ipr.transactionHash.slice(0, 10)}...</span>
@@ -341,7 +341,7 @@ const IPRPage = () => {
 
                 {/* IPR Professional Info */}
                 {selectedIPR.iprProfessional && (
-                  <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-blue-100/50 p-4">
+                  <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-teal-100/50 p-4">
                     <h3 className="text-sm font-medium text-muted-foreground mb-2">IPR Professional</h3>
                     <div className="space-y-1">
                       <p className="text-sm font-medium">{selectedIPR.iprProfessional.name}</p>
@@ -366,11 +366,11 @@ const IPRPage = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-background 
-                          to-background/80 border border-blue-100/50 hover:bg-blue-50/50 transition-colors group"
+                          to-background/80 border border-teal-100/50 hover:bg-teal-50/50 transition-colors group"
                       >
-                        <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center 
-                          group-hover:bg-blue-500/20 transition-colors">
-                          <FileText className="h-5 w-5 text-blue-500" />
+                        <div className="h-10 w-10 rounded-lg bg-teal-500/10 flex items-center justify-center 
+                          group-hover:bg-teal-500/20 transition-colors">
+                          <FileText className="h-5 w-5 text-teal-500" />
                         </div>
                         <span className="text-sm font-medium flex-1">Document {index + 1}</span>
                         <ExternalLink className="h-4 w-4 text-muted-foreground" />
@@ -389,7 +389,7 @@ const IPRPage = () => {
         <Button
           asChild
           className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg bg-gradient-to-r 
-            from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 transition-all duration-300"
+            from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-600 transition-all duration-300"
         >
           <Link href="/startup/ipr/create">
             <PlusCircle className="h-6 w-6 text-white" />

@@ -141,7 +141,7 @@ const CreateIPRPage = () => {
   return (
     <div className="container py-4 px-2 md:px-6 space-y-8">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-transparent p-6 md:p-8">
         <div className="relative">
           <h1 className="text-2xl md:text-3xl font-bold">File New IPR</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2">
@@ -153,11 +153,11 @@ const CreateIPRPage = () => {
       {/* Form Section */}
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-blue-100/50 p-6 md:p-8 space-y-8">
+          <div className="bg-gradient-to-br from-background to-background/80 rounded-xl border border-teal-100/50 p-6 md:p-8 space-y-8">
             {/* Title Input */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-sm font-medium flex items-center gap-2">
-                <span className="text-blue-500">01.</span> Title
+                <span className="text-teal-500">01.</span> Title
               </Label>
               <Input
                 id="title"
@@ -166,14 +166,14 @@ const CreateIPRPage = () => {
                 onChange={handleInputChange}
                 required
                 placeholder="Enter IPR title"
-                className="border border-blue-100/50 focus:border-blue-500/50 transition-colors bg-white/50"
+                className="border border-teal-100/50 focus:border-teal-500/50 transition-colors bg-white/50"
               />
             </div>
 
             {/* Description Input */}
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
-                <span className="text-blue-500">02.</span> Description
+                <span className="text-teal-500">02.</span> Description
               </Label>
               <Textarea
                 id="description"
@@ -183,21 +183,21 @@ const CreateIPRPage = () => {
                 required
                 placeholder="Describe your intellectual property"
                 rows={4}
-                className="border border-blue-100/50 focus:border-blue-500/50 transition-colors bg-white/50 resize-none"
+                className="border border-teal-100/50 focus:border-teal-500/50 transition-colors bg-white/50 resize-none"
               />
             </div>
 
             {/* Type Selection */}
             <div className="space-y-2">
               <Label htmlFor="type" className="text-sm font-medium flex items-center gap-2">
-                <span className="text-blue-500">03.</span> Type
+                <span className="text-teal-500">03.</span> Type
               </Label>
               <Select
                 value={formData.type}
                 onValueChange={handleTypeChange}
                 required
               >
-                <SelectTrigger className="border border-blue-100/50 focus:border-blue-500/50 transition-colors bg-white/50">
+                <SelectTrigger className="border border-teal-100/50 focus:border-teal-500/50 transition-colors bg-white/50">
                   <SelectValue placeholder="Select IPR type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -212,19 +212,19 @@ const CreateIPRPage = () => {
             {/* Document Upload */}
             <div className="space-y-2">
               <Label htmlFor="documents" className="text-sm font-medium flex items-center gap-2">
-                <span className="text-blue-500">04.</span> Related Documents
+                <span className="text-teal-500">04.</span> Related Documents
               </Label>
-              <div className="border border-blue-100/50 rounded-xl p-6 bg-white/50">
+              <div className="border border-teal-100/50 rounded-xl p-6 bg-white/50">
                 <div className="flex items-center justify-center w-full">
                   <label
                     htmlFor="documents"
                     className="flex flex-col items-center justify-center w-full h-32 
-                      border-2 border-dashed border-blue-200 rounded-lg cursor-pointer 
-                      hover:bg-blue-50/50 transition-colors"
+                      border-2 border-dashed border-teal-200 rounded-lg cursor-pointer 
+                      hover:bg-teal-50/50 transition-colors"
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <div className="p-3 rounded-xl bg-blue-500/10 mb-3">
-                        <FileText className="h-6 w-6 text-blue-500" />
+                      <div className="p-3 rounded-xl bg-teal-500/10 mb-3">
+                        <FileText className="h-6 w-6 text-teal-500" />
                       </div>
                       <p className="text-sm font-medium mb-1">Click to upload files</p>
                       <p className="text-xs text-muted-foreground">
@@ -250,20 +250,20 @@ const CreateIPRPage = () => {
 
               {/* Uploaded Documents List */}
               {documents.length > 0 && (
-                <div className="mt-4 space-y-3 bg-white/50 rounded-xl border border-blue-100/50 p-4">
+                <div className="mt-4 space-y-3 bg-white/50 rounded-xl border border-teal-100/50 p-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Uploaded Documents</h3>
                   <div className="grid gap-2">
                     {documents.map((doc, index) => (
                       <Link
                         key={doc.public_id}
                         href={doc.secure_url}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50/50 
-                          border border-blue-100/50 transition-colors group"
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-teal-50/50 
+                          border border-teal-100/50 transition-colors group"
                         target="_blank"
                       >
-                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center 
-                          group-hover:bg-blue-500/20 transition-colors">
-                          <FileText className="h-4 w-4 text-blue-500" />
+                        <div className="h-8 w-8 rounded-lg bg-teal-500/10 flex items-center justify-center 
+                          group-hover:bg-teal-500/20 transition-colors">
+                          <FileText className="h-4 w-4 text-teal-500" />
                         </div>
                         <span className="text-sm font-medium">Document {index + 1}</span>
                       </Link>
@@ -279,8 +279,8 @@ const CreateIPRPage = () => {
             <Button
               type="submit"
               disabled={isFormDisabled}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 
-                hover:to-blue-600 text-white transition-all duration-300"
+              className="flex-1 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 
+                hover:to-teal-600 text-white transition-all duration-300"
             >
               {isSubmitting ? "Filing..." : isUploading ? "Uploading..." : "File IPR"}
             </Button>
@@ -288,7 +288,7 @@ const CreateIPRPage = () => {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="flex-1 border border-blue-100/50 hover:bg-blue-50/50 transition-colors"
+              className="flex-1 border border-teal-100/50 hover:bg-teal-50/50 transition-colors"
               disabled={isFormDisabled}
             >
               Cancel
