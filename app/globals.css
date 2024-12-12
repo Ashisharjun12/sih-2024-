@@ -83,3 +83,39 @@ html{
   scroll-behavior: smooth;
 }
 
+.intro-tooltip-custom {
+  @apply bg-white rounded-xl shadow-xl border border-sky-100 p-6 max-w-md !important;
+}
+
+.intro-tooltip-custom .introjs-tooltip-title {
+  @apply text-xl font-bold text-sky-900 mb-2 !important;
+}
+
+.intro-tooltip-custom .introjs-tooltiptext {
+  @apply text-sky-700 !important;
+}
+
+.intro-button-custom {
+  @apply px-4 py-2 rounded-lg text-sm font-medium transition-colors !important;
+}
+
+.introjs-button {
+  @apply bg-sky-50 text-sky-700 hover:bg-sky-100 !important;
+}
+
+.introjs-nextbutton {
+  @apply bg-gradient-to-r from-sky-600 to-blue-600 text-white hover:from-sky-700 hover:to-blue-700 !important;
+}
+
+.introjs-bullets ul li a {
+  @apply bg-sky-200 !important;
+}
+
+.introjs-bullets ul li a.active {
+  @apply bg-sky-600 !important;
+}
+
+.intro-highlight-custom {
+  @apply ring-4 ring-sky-500/30 !important;
+}
+

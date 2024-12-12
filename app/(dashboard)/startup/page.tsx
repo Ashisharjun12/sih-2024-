@@ -16,6 +16,8 @@ import {
   Wallet2,
   ArrowUpRight,
   ArrowDownRight,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +31,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FundingAgencyCard } from "@/components/cards/funding-agency-card";
 import { Chatbot } from "@/components/chatbot/chatbot";
+import { StartupPopup } from "@/components/startup-popup";
+import { cn } from "@/lib/utils";
 
 interface WalletData {
   balance: number;
@@ -62,6 +66,7 @@ interface StartupData {
       ownerName: string;
       equityPercentage: number;
     }>;
+    iprFiled?: boolean;
   };
   businessActivities: {
     missionAndVision: string;
@@ -75,6 +80,14 @@ interface StartupData {
     };
   };
   isActivelyFundraising: boolean;
+}
+
+interface StageProps {
+  name: string;
+  description: string;
+  isCompleted: boolean;
+  isActive: boolean;
+  route?: string;
 }
 
 export default function StartupPage() {
@@ -185,6 +198,57 @@ export default function StartupPage() {
     }
   };
 
+  // Function to determine current stage based on startup data
+  const determineCurrentStage = (startups: StartupData[]) => {
+    if (!startups.length) return 1; // Default to prototype stage
+    
+    const hasIpr = startups.some(startup => 
+      startup.startupDetails?.iprFiled || false
+    );
+    
+    if (hasIpr) return 2; // IPR Stage
+    return 1; // Default to Prototype Stage
+  };
+
+  // Calculate current stage
+  const currentStageIndex = determineCurrentStage(startups);
+
+  const stages: StageProps[] = [
+    {
+      name: "Ideation",
+      description: "Initial concept and business planning",
+      isCompleted: true, // Always completed
+      isActive: false,
+    },
+    {
+      name: "Prototype",
+      description: "Product development and testing",
+      isCompleted: currentStageIndex > 1,
+      isActive: currentStageIndex === 1,
+    },
+    {
+      name: "IPR",
+      description: "Intellectual property protection",
+      isCompleted: currentStageIndex > 2,
+      isActive: currentStageIndex === 2,
+      route: "/startup/ipr"
+    },
+    {
+      name: "Incubation",
+      description: "Business growth and scaling",
+      isCompleted: currentStageIndex > 3,
+      isActive: currentStageIndex === 3,
+      route: "/startup/funding"
+    },
+  ];
+
+  // Handle stage click
+  const handleStageClick = (stage: StageProps) => {
+    if (stage.route) {
+      router.push(stage.route);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -195,6 +259,70 @@ export default function StartupPage() {
 
   return (
     <div className="container py-6 space-y-8">
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-lg font-semibold mb-4">Startup Journey</h2>
+        <div className="relative">
+          {/* Progress Line */}
+          <div className="absolute top-5 left-0 w-full h-1 bg-gray-200">
+            <div 
+              className="absolute top-0 left-0 h-full bg-green-500" 
+              style={{ width: `${((currentStageIndex + 1) / stages.length) * 100}%` }} 
+            />
+          </div>
+
+          {/* Stages */}
+          <div className="relative grid grid-cols-4 gap-4">
+            {stages.map((stage, index) => (
+              <div 
+                key={stage.name} 
+                className={cn(
+                  "text-center",
+                  stage.route && "cursor-pointer hover:opacity-80 transition-opacity"
+                )}
+                onClick={() => handleStageClick(stage)}
+              >
+                {/* Stage Icon */}
+                <div className="flex justify-center mb-2">
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center",
+                      stage.isCompleted && "bg-green-100",
+                      stage.isActive && "bg-blue-100",
+                      !stage.isCompleted && !stage.isActive && "bg-gray-100",
+                      stage.route && "hover:ring-2 hover:ring-offset-2 hover:ring-blue-500"
+                    )}
+                  >
+                    {stage.isCompleted ? (
+                      <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    ) : stage.isActive ? (
+                      <div className="w-3 h-3 rounded-full bg-blue-600 animate-pulse" />
+                    ) : (
+                      <Circle className="w-6 h-6 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Stage Name */}
+                <h3 className={cn(
+                  "font-medium",
+                  stage.isCompleted && "text-green-600",
+                  stage.isActive && "text-blue-600",
+                  stage.route && "hover:underline"
+                )}>
+                  {stage.name}
+                </h3>
+
+                {/* Stage Description */}
+                <p className="text-xs text-gray-500 mt-1">
+                  {stage.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <StartupPopup />
       {/* Welcome Section */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent p-6 md:p-8">
         <div className="relative">
