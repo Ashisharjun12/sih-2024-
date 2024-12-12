@@ -184,15 +184,8 @@ export default function HomePage() {
 
           <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
             <div className="aspect-video">
-              <iframe
-                width="100%"
-                height="100%"
-                 src="https://www.youtube.com/embed/PXrRbGNoBns?si=TW6dihFquN1pIFyr" 
-                title="Gujarat Innovation Initiative"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0"
-              />
+              <iframe  width="100%"
+                height="100%" src="https://www.youtube.com/embed/lH2AFRvImGc?si=VKS5AvoN8d7hFnHE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
           </div>
 
