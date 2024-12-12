@@ -219,7 +219,7 @@ export default function HomePage() {
         </div>
       </div>
 
-<<<<<<< HEAD
+
       {/* Startup Achievements Section */}
       <div className="bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 py-20">
         <div className="container mx-auto px-4">
@@ -236,12 +236,12 @@ export default function HomePage() {
               Discover innovative startups that have grown through our platform
             </p>
           </motion.div>
-=======
+
       {/* Startup Achievements*/}
       <div className="bg-gradient-to-r from-indigo-500 to-blue-600 py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl text-white font-extrabold text-center mb-12">Our Achievements</h2>
->>>>>>> 25e1f820774dd3760ad347538056ef7b497fe00f
+
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {STARTUP_ACHIEVEMENTS.map((item, index) => (
@@ -250,7 +250,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-<<<<<<< HEAD
+
                 className="group"
               >
                 <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl 
@@ -291,7 +291,7 @@ export default function HomePage() {
                             className="bg-blue-50/50 text-blue-700 border-blue-100 hover:bg-blue-100 
                               transition-colors text-xs"
                           >
-=======
+
                 className="group transform hover:scale-105 transition-all duration-300"
               >
                 <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
