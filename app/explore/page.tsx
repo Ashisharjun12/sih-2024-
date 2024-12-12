@@ -14,6 +14,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { FundingAgencyCard } from "@/components/cards/funding-agency-card";
+import BlogsPage from "./blogs/page";
 
 interface Startup {
   _id: string;
@@ -173,6 +174,7 @@ export default function ExplorePage() {
           <TabsTrigger value="papers">Research Papers</TabsTrigger>
           <TabsTrigger value="researchers">Researchers</TabsTrigger>
           <TabsTrigger value="fundingAgency">Funding Agencies</TabsTrigger>
+          <TabsTrigger value="blogs">blogs</TabsTrigger>
         </TabsList>
         <TabsContent value="startups">
           {isLoading ? (
@@ -306,6 +308,9 @@ export default function ExplorePage() {
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           )}
+        </TabsContent>
+        <TabsContent value="blogs">
+          <BlogsPage />
         </TabsContent>
       </Tabs>
     </div>

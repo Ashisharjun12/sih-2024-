@@ -33,7 +33,7 @@ const IPRSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Accepted', 'Rejected'],
+        enum: ['Pending', 'Accepted', 'Rejected', 'Basic Details', 'Document verified'],
         default: 'Pending',
     },
     relatedDocuments: [

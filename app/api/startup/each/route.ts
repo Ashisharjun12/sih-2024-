@@ -12,10 +12,7 @@ export async function GET() {
     }
 
     await connectDB();
-    const startups = await Startup.find().select('userId startupDetails');
-
-    console.log("ROUTE DATA __________________",startups)
-
+    const startups = await Startup.find();
 
     return NextResponse.json({
       success: true,
