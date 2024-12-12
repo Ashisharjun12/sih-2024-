@@ -298,7 +298,8 @@ const startupSchema = new mongoose.Schema({
         'Scaling',
         'Expansion'
       ],
-      required: true
+      required: true,
+      default : "Ideation"
     },
     registrationNumber: { type: String, required: true },
     incorporationDate: {

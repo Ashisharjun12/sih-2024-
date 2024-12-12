@@ -313,18 +313,19 @@ export default function PatentsPage() {
 
       const data = await response.json();
 
-      // Then handle blockchain transaction
-      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
-      const encryptedId = encrypt(id);
-      const title = data.ipr.title;
-      const decryptedId = encrypt(title);
-      const ownerId = BigInt(
-        parseInt(data.ipr.owner.details._id.toString(), 16)
-      ).toString();
-      const encryptedOwnerId = encrypt(ownerId);
+
 
       try {
         let transaction;
+        // Then handle blockchain transaction
+        const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+        const encryptedId = encrypt(id);
+        const title = data.ipr.title;
+        const decryptedId = encrypt(title);
+        const ownerId = BigInt(
+          parseInt(data.ipr.owner.details._id.toString(), 16)
+        ).toString();
+        const encryptedOwnerId = encrypt(ownerId);
         if (status === "Accepted") {
           transaction = await contract.acceptPatent(encryptedId, decryptedId, encryptedOwnerId);
         } else if (status === "Rejected") {
