@@ -18,8 +18,7 @@ import {
 import Image from "next/image";
 import { Chatbot } from "@/components/chatbot/chatbot";
 import { createTourDriver } from "@/lib/driver/config";
-import "driver.js/dist/driver.css";
-import { driverStyles } from "@/lib/driver/styles";
+
 import { useEffect } from "react";
 import { WelcomePopup } from "@/components/welcome-popup";
 
@@ -108,25 +107,25 @@ const FOOTER_LINKS = {
 };
 
 export default function HomePage() {
-  useEffect(() => {
-    // Add custom styles
-    const styleSheet = document.createElement("style");
-    styleSheet.textContent = driverStyles;
-    document.head.appendChild(styleSheet);
+  // useEffect(() => {
+  //   // Add custom styles
+  //   const styleSheet = document.createElement("style");
+  //   styleSheet.textContent = driverStyles;
+  //   document.head.appendChild(styleSheet);
 
-    return () => {
-      document.head.removeChild(styleSheet);
-    };
-  }, []);
+  //   return () => {
+  //     document.head.removeChild(styleSheet);
+  //   };
+  // }, []);
 
-  const startTour = () => {
-    const driverObj = createTourDriver();
-    driverObj.drive();
-  };
+  // const startTour = () => {
+  //   const driverObj = createTourDriver();
+  //   driverObj.drive();
+  // };
 
   return (
     <div className="flex flex-col">
-      <WelcomePopup onStartTour={startTour} />
+      {/* <WelcomePopup onStartTour={startTour} /> */}
       
       {/* Hero Section */}
       <div className="relative min-h-[90vh]  bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
@@ -437,15 +436,7 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* Add tour button */}
-      <Button
-        onClick={startTour}
-        className="fixed bottom-24 right-6 z-50 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-primary/25"
-        size="icon"
-        title="Start Tour"
-      >
-        <Play className="h-4 w-4" />
-      </Button>
+     
     </div>
   );
 }
