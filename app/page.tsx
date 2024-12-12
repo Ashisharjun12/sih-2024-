@@ -17,10 +17,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { Chatbot } from "@/components/chatbot/chatbot";
-import { createTourDriver } from "@/lib/driver/config";
-
-import { useEffect } from "react";
-import { WelcomePopup } from "@/components/welcome-popup";
 
 
 const ACHIEVEMENTS = [
@@ -52,7 +48,7 @@ const ACHIEVEMENTS = [
 
 const STARTUP_ACHIEVEMENTS = [
   {
-    logo: "https://example.com/logo1.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75e0009897f8bef/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "Blink Out",
     industries: ["Robotics Technology", "AI"],
     sectors: ["Electronics"],
@@ -60,7 +56,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "25 days"
   },
   {
-    logo: "https://example.com/logo2.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75b000745931acf/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "Future Robotics",
     industries: ["Robotics", "AI"],
     sectors: ["Robotics Technology", "Machine Learning", "Automation"],
@@ -68,7 +64,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "50 days"
   },
   {
-    logo: "https://example.com/logo3.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75d000ec3144c0f/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "HealthTech Innovations",
     industries: ["Healthcare & Lifesciences", "AI"],
     sectors: ["Healthcare Technology", "Medical Devices Biomedical", "Data Science"],
@@ -76,7 +72,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "100 days"
   },
   {
-    logo: "https://example.com/logo4.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75c0019987dba73/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "GreenFuture",
     industries: ["Green Technology", "Renewable Energy"],
     sectors: ["Renewable Solar Energy", "Environmental Services & Equipment", "Clean Tech"],
