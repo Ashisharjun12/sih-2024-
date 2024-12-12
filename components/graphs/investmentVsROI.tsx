@@ -34,9 +34,9 @@ import { useToast } from "@/hooks/use-toast";
 
 // Constants
 const STARTUP_IDS = [
-  "6755f5059fc6ad8a5d7b684e",
-  "6755fb6dc8982ecb2e065854",
-  "67585013f94081f029fbb6d6"
+  "6759d5659132de56caaee683",
+  "675a01e09132de56caaeff8a",
+  "675a0a5fefa33f4d73ed2d45"
 ];
 interface InvestmentData {
   month?: string;

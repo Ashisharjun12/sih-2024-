@@ -29,8 +29,9 @@ import { Formatter } from "recharts/types/component/DefaultTooltipContent";
 
 // Constants
 const STARTUP_IDS = [
-  "6755f5059fc6ad8a5d7b684e",
-  "6755fb6dc8982ecb2e065854","67585013f94081f029fbb6d6"
+  "6759d5659132de56caaee683",
+  "675a01e09132de56caaeff8a",
+  "675a0a5fefa33f4d73ed2d45"
 ];
 
 interface StartupData {
@@ -193,11 +194,11 @@ const MultipleStartups = () => {
               tickMargin={8}
               tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`}
             />
-            <ChartTooltip 
-              cursor={false} 
-              content={<ChartTooltipContent 
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent
                 formatter={formatValue}
-              />} 
+              />}
             />
             <defs>
               {Object.entries(chartConfig).map(([startup, config]) => (
