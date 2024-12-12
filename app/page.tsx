@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowRight,
-  Play,
-  ChevronRight,
-  Star,
   Building2,
   Users,
   Target,
@@ -16,9 +13,11 @@ import {
   MapPin,
   Mail,
   Phone,
+  Play,
 } from "lucide-react";
 import Image from "next/image";
 import { Chatbot } from "@/components/chatbot/chatbot";
+
 
 const ACHIEVEMENTS = [
   {
@@ -47,6 +46,41 @@ const ACHIEVEMENTS = [
   }
 ];
 
+const STARTUP_ACHIEVEMENTS = [
+  {
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75e0009897f8bef/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    name: "Blink Out",
+    industries: ["Robotics Technology", "AI"],
+    sectors: ["Electronics"],
+    stage: "Ideation",
+    joinedToFunding: "25 days"
+  },
+  {
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75b000745931acf/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    name: "Future Robotics",
+    industries: ["Robotics", "AI"],
+    sectors: ["Robotics Technology", "Machine Learning", "Automation"],
+    stage: "Validation",
+    joinedToFunding: "50 days"
+  },
+  {
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75d000ec3144c0f/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    name: "HealthTech Innovations",
+    industries: ["Healthcare & Lifesciences", "AI"],
+    sectors: ["Healthcare Technology", "Medical Devices Biomedical", "Data Science"],
+    stage: "Validation",
+    joinedToFunding: "100 days"
+  },
+  {
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75c0019987dba73/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    name: "GreenFuture",
+    industries: ["Green Technology", "Renewable Energy"],
+    sectors: ["Renewable Solar Energy", "Environmental Services & Equipment", "Clean Tech"],
+    stage: "Validation",
+    joinedToFunding: "35 days"
+  }
+]
+
 const FOOTER_LINKS = {
   platform: [
     { label: "About Us", href: "#" },
@@ -69,10 +103,28 @@ const FOOTER_LINKS = {
 };
 
 export default function HomePage() {
+  // useEffect(() => {
+  //   // Add custom styles
+  //   const styleSheet = document.createElement("style");
+  //   styleSheet.textContent = driverStyles;
+  //   document.head.appendChild(styleSheet);
+
+  //   return () => {
+  //     document.head.removeChild(styleSheet);
+  //   };
+  // }, []);
+
+  // const startTour = () => {
+  //   const driverObj = createTourDriver();
+  //   driverObj.drive();
+  // };
+
   return (
     <div className="flex flex-col">
+      {/* <WelcomePopup onStartTour={startTour} /> */}
+      
       {/* Hero Section */}
-      <div className="relative min-h-[90vh] bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
+      <div className="relative min-h-[90vh]  bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
         {/* Gujarat Map Overlay */}
         <div className="absolute inset-0 opacity-10">
           <Image
@@ -105,7 +157,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-xl text-sky-200 leading-relaxed max-w-xl">
-                Join Gujarat's premier platform for innovation and entrepreneurship. 
+                Join Gujarat's premier platform for innovation and entrepreneurship.
                 Where tradition meets technology to create tomorrow's success stories.
               </p>
 
@@ -118,7 +170,7 @@ export default function HomePage() {
                   Start Your Journey
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-               
+
               </div>
             </motion.div>
 
@@ -167,6 +219,118 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Startup Achievements Section */}
+      <div className="bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 py-20">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="text-center mb-16"
+          >
+            <Badge className="bg-white/10 text-white border-white/20 px-4 py-2 mb-4">
+              Success Stories
+            </Badge>
+            <h2 className="text-4xl md:text-5xl text-white font-extrabold mb-6">Our Achievements</h2>
+            <p className="text-blue-100 text-lg max-w-2xl mx-auto">
+              Discover innovative startups that have grown through our platform
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {STARTUP_ACHIEVEMENTS.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="group"
+              >
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl 
+                  transform hover:scale-102 transition-all duration-300 overflow-hidden border border-white/20">
+                  <div className="p-6">
+                    {/* Logo Section */}
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-sky-100 to-blue-50 rounded-2xl 
+                        transform -rotate-6 scale-90 opacity-50" />
+                      <div className="relative w-20 h-20 mx-auto bg-white rounded-2xl p-3 shadow-md">
+                        <img 
+                          src={item.logo} 
+                          alt={item.name} 
+                          className="w-full h-full object-contain" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-xl font-bold text-gray-900 text-center mb-4 group-hover:text-blue-600 
+                      transition-colors">
+                      {item.name}
+                    </h3>
+
+                    {/* Industries Section */}
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span className="font-medium">Industries</span>
+                        <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full">
+                          {item.industries.length}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {item.industries.map((industry, idx) => (
+                          <Badge 
+                            key={idx} 
+                            variant="outline" 
+                            className="bg-blue-50/50 text-blue-700 border-blue-100 hover:bg-blue-100 
+                              transition-colors text-xs"
+                          >
+                            {industry}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Sectors Section */}
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span className="font-medium">Sectors</span>
+                        <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full">
+                          {item.sectors.length}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {item.sectors.map((sector, idx) => (
+                          <Badge 
+                            key={idx} 
+                            variant="outline"
+                            className="bg-emerald-50/50 text-emerald-700 border-emerald-100 
+                              hover:bg-emerald-100 transition-colors text-xs"
+                          >
+                            {sector}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Info Section */}
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                      <div className="text-center p-2 rounded-lg bg-gray-50">
+                        <div className="text-xs font-medium text-gray-500 mb-1">Stage</div>
+                        <div className="text-sm font-semibold text-gray-900">{item.stage}</div>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-gray-50">
+                        <div className="text-xs font-medium text-gray-500 mb-1">Time to Funding</div>
+                        <div className="text-sm font-semibold text-gray-900">{item.joinedToFunding}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+
       {/* Video Section */}
       <div id="video-section" className="bg-sky-950 py-24">
         <div className="container mx-auto px-4">
@@ -184,15 +348,8 @@ export default function HomePage() {
 
           <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
             <div className="aspect-video">
-              <iframe
-                width="100%"
-                height="100%"
-                 src="https://www.youtube.com/embed/PXrRbGNoBns?si=TW6dihFquN1pIFyr" 
-                title="Gujarat Innovation Initiative"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0"
-              />
+              <iframe  width="100%"
+                height="100%" src="https://www.youtube.com/embed/lH2AFRvImGc?si=VKS5AvoN8d7hFnHE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
           </div>
 
@@ -233,8 +390,8 @@ export default function HomePage() {
                 <Image
                   src="/gujarat-logo.png" // Add your logo
                   alt="Gujarat Innovation Platform"
-                  width={40}
-                  height={40}
+                  width={36}
+                  height={36}
                   className="rounded-lg"
                 />
                 <h3 className="text-xl font-bold text-white">Gujarat Innovation</h3>
@@ -242,7 +399,7 @@ export default function HomePage() {
               <p className="text-sky-300">
                 Empowering innovators and entrepreneurs to build a brighter future for Gujarat.
               </p>
-              
+
             </div>
 
             {/* Quick Links */}
@@ -289,14 +446,14 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="h-5 w-5 text-sky-400" />
-                  <a href="mailto:contact@gujaratinnovation.gov.in" 
+                  <a href="mailto:contact@gujaratinnovation.gov.in"
                     className="hover:text-sky-100 transition-colors">
                     contact@gujaratinnovation.gov.in
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="h-5 w-5 text-sky-400" />
-                  <a href="tel:+91-79-23243471" 
+                  <a href="tel:+91-79-23243471"
                     className="hover:text-sky-100 transition-colors">
                     +91-79-23243471
                   </a>
@@ -326,6 +483,8 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+     
     </div>
   );
 }

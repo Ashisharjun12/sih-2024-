@@ -5,9 +5,14 @@ import Navbar from "@/components/shared/navbar";
 import AuthProvider from "@/providers/auth-provider";
 import { Toaster } from "@/components/ui/toaster"
 import { Chatbot } from "@/components/chatbot/chatbot";
+import { WelcomeOverlay } from "@/components/welcome-overlay";
+
+// Add these imports
+import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 const inter = Inter({ subsets: ["latin"] });
-//hello
 
 export default function RootLayout({
   children,
@@ -26,7 +31,8 @@ export default function RootLayout({
           <AuthProvider>
             <div className="min-h-screen flex flex-col">
               <Navbar />
-             <Chatbot/>
+              <WelcomeOverlay />
+              <Chatbot />
               <main className="flex-1">{children}</main>
             </div>
           </AuthProvider>
