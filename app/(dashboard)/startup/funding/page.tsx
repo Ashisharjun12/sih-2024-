@@ -283,11 +283,12 @@ export default function FundingPage() {
         description: "Funding request submitted successfully",
     });
     
-    // Reset form
+    // Reset form to clean the v value
     setAmount("");
     setFundingType("");
     setMessage("");
     setSelectedAgencyId("");
+
     } catch (error) {
       console.error("Error submitting funding:", error);
     toast({
