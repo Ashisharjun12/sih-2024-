@@ -163,7 +163,7 @@ export default function ResearcherDashboard() {
             Welcome back, {session?.user?.name}! 🔬
           </h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2">
-            Track your research progress and connect with fellow researchers.
+            Track your research progress and connect with researcher recommendations.
           </p>
         </div>
       </div>
@@ -268,7 +268,7 @@ export default function ResearcherDashboard() {
       {/* Researchers Section */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Fellow Researchers</h2>
+          <h2 className="text-xl font-semibold">Researcher Recommendations</h2>
           <Button
             variant="ghost"
             className="text-orange-500 hover:text-orange-600"

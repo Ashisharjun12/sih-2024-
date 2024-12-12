@@ -16,7 +16,7 @@ const FAKE_BLOGS = [
     description: "How tech innovations are helping to combat climate change.",
     author: "John Smith",
     date: "April 22, 2023",
-    imageUrl: ""
+    imageUrl: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75d000ec3144c0f/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin"
     
   },
   {
@@ -25,7 +25,7 @@ const FAKE_BLOGS = [
     description: "Key trends and strategies to protect your digital assets.",
     author: "Alex Johnson",
     date: "June 1, 2023",
-    imageUrl: "#"
+    imageUrl: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75c0019987dba73/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin"
   }
 ]
 
