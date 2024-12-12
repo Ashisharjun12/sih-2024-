@@ -1,11 +1,69 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { connectDB } from "@/lib/db";
+import Startup from "@/models/startup.model";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 interface ChatMessage {
   role: "assistant" | "user";
   content: string;
+}
+
+async function getStartupMetrics() {
+  await connectDB();
+  const startups = await Startup.find({}, {
+    name: 1,
+    fundingStage: 1,
+    totalFunding: 1,
+    sector: 1,
+    iprStatus: 1
+  });
+  
+  return startups;
+}
+
+async function generateWelcomeMessage(userRole: string, userName: string, startupData?: any) {
+  let contextPrompt = "";
+  
+  if (userRole === "startup") {
+    const metrics = startupData ? `
+      Current Ecosystem Metrics:
+      - Total Startups: ${startupData.length}
+      - Average Funding: ${startupData.reduce((acc: number, s: any) => acc + (s.totalFunding || 0), 0) / startupData.length}
+      - Top Sectors: ${[...new Set(startupData.map((s: any) => s.sector))].slice(0, 3).join(", ")}
+    ` : "";
+
+    contextPrompt = `
+      You are greeting a startup founder named ${userName}. 
+      ${metrics}
+      
+      Provide:
+      1. A warm welcome
+      2. 2-3 recent relevant startup ecosystem updates from Gujarat
+      3. Quick navigation tips:
+         - Mention they can check funding progress in Metrics section
+         - View IPR filing status in the IPR section
+         - Track growth metrics in Analytics
+      
+      Keep it concise but informative. Format with bullet points where appropriate.
+    `;
+  } else if (userRole === "researcher") {
+    contextPrompt = `
+      You are greeting a researcher named ${userName}.
+      Provide:
+      1. A warm welcome
+      2. 2-3 recent research/innovation updates
+      3. Quick tips on accessing research resources and grants
+      Keep it concise but informative.
+    `;
+  }
+  // Add similar blocks for other roles...
+
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const result = await model.generateContent(contextPrompt);
+  const response = await result.response;
+  return response.text();
 }
 
 const ROLE_CONTEXTS = {
@@ -61,18 +119,31 @@ const ROLE_CONTEXTS = {
 export async function POST(request: Request) {
   try {
     const { message, history, context } = await request.json();
-
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    // Build context from chat history
+    // For initial greeting or empty message, generate welcome message
+    if (!message || message.trim() === "") {
+      let startupData;
+      if (context.userRole === "startup") {
+        startupData = await getStartupMetrics();
+      }
+      
+      const welcomeMessage = await generateWelcomeMessage(
+        context.userRole,
+        context.userName,
+        startupData
+      );
+      
+      return NextResponse.json({ response: welcomeMessage });
+    }
+
+    // Regular chat flow
     const chatHistory = history
       .map((msg: ChatMessage) => `${msg.role}: ${msg.content}`)
       .join('\n');
 
-    // Get role-specific context
     const roleContext = ROLE_CONTEXTS[context.userRole as keyof typeof ROLE_CONTEXTS] || ROLE_CONTEXTS.default;
 
-    // Build the prompt with all context
     const prompt = `${roleContext}
 
     You are speaking to ${context.userName || "a user"} who is a ${context.userRole || "visitor"}.
