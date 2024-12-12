@@ -52,11 +52,6 @@ const sidebarItems = [
     icon: FileText,
   },
   {
-    title: "Funding",
-    href: "/researcher/funding",
-    icon: Banknote,
-  },
-  {
     title: "Meetings",
     href: "/researcher/meetings",
     icon: Calendar,
