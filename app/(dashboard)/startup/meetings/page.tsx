@@ -167,7 +167,7 @@ export default function MeetingsPage() {
   return (
     <div className="container py-4 px-2 md:px-6 space-y-6 md:space-y-8">
       {/* Header Section with Wallet */}
-      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-4 md:p-8">
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-transparent p-4 md:p-8">
         <div className="relative flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-0">
           <div>
             <h1 className="text-xl md:text-3xl font-bold">Your Meetings</h1>
@@ -176,7 +176,7 @@ export default function MeetingsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 bg-background/60 backdrop-blur-sm rounded-lg p-3 md:p-4 self-start">
-            <Wallet2 className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
+            <Wallet2 className="h-4 w-4 md:h-5 md:w-5 text-teal-500" />
             <div>
               <p className="text-xs md:text-sm text-muted-foreground">Balance</p>
               <p className="text-sm md:text-base font-bold">₹{walletBalance}</p>
@@ -188,10 +188,10 @@ export default function MeetingsPage() {
       {/* Stats Grid - Make it scroll horizontally on mobile */}
       <div className="flex md:grid md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
         {/* Stats cards with adjusted padding */}
-        <div className="min-w-[160px] md:min-w-0 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-3 md:p-6">
-          <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mb-2" />
+        <div className="min-w-[160px] md:min-w-0 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent rounded-xl p-3 md:p-6">
+          <Users className="h-5 w-5 md:h-6 md:w-6 text-teal-500 mb-2" />
           <p className="text-xl md:text-2xl font-bold">{meetings.length}</p>
-          <p className="text-xs md:text-sm text-blue-600/70">Total Meetings</p>
+          <p className="text-xs md:text-sm text-teal-600/70">Total Meetings</p>
         </div>
         <div className="min-w-[160px] md:min-w-0 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl p-3 md:p-6">
           <Clock className="h-5 w-5 md:h-6 md:w-6 text-emerald-500 mb-2" />
@@ -214,7 +214,7 @@ export default function MeetingsPage() {
         {/* Scheduling Section */}
         <div className="bg-gradient-to-br from-background to-background/80 border rounded-xl p-4 md:p-6">
           <h2 className="text-base md:text-lg font-semibold mb-4 md:mb-6 flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
+            <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-teal-500" />
             Schedule Meeting
           </h2>
           
@@ -275,8 +275,8 @@ export default function MeetingsPage() {
                     className={cn(
                       "p-3 md:p-4 rounded-xl transition-colors cursor-pointer border",
                       selectedMentor?._id === mentor._id
-                        ? "bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent"
-                        : "bg-gradient-to-br from-background to-background/80 hover:bg-blue-50/50 dark:hover:bg-blue-950/10"
+                        ? "bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent"
+                        : "bg-gradient-to-br from-background to-background/80 hover:bg-teal-50/50 dark:hover:bg-teal-950/10"
                     )}
                   >
                     <div className="flex justify-between items-start">
@@ -287,7 +287,7 @@ export default function MeetingsPage() {
                             <Badge 
                               key={exp} 
                               variant="secondary"
-                              className="text-xs md:text-sm bg-blue-500/10 text-blue-600 hover:bg-blue-500/20"
+                              className="text-xs md:text-sm bg-teal-500/10 text-teal-600 hover:bg-teal-500/20"
                             >
                               {exp}
                             </Badge>
@@ -304,8 +304,8 @@ export default function MeetingsPage() {
             </div>
 
             <Button
-              className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 
-                hover:to-blue-600 text-white transition-all duration-300 text-sm md:text-base"
+              className="w-full mt-4 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 
+                hover:to-teal-600 text-white transition-all duration-300 text-sm md:text-base"
               onClick={handleMeetingRequest}
               disabled={!date || !selectedTime || !selectedMentor}
             >
@@ -317,7 +317,7 @@ export default function MeetingsPage() {
         {/* Meetings List */}
         <div className="bg-gradient-to-br from-background to-background/80 border rounded-xl p-4 md:p-6">
           <h2 className="text-base md:text-lg font-semibold mb-4 md:mb-6 flex items-center gap-2">
-            <Users className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
+            <Users className="h-4 w-4 md:h-5 md:w-5 text-teal-500" />
             Your Meetings
           </h2>
           
@@ -326,7 +326,7 @@ export default function MeetingsPage() {
               <div
                 key={meeting._id}
                 className="bg-gradient-to-br from-background to-background/80 border rounded-xl p-3 md:p-4 
-                  hover:bg-blue-50/50 dark:hover:bg-blue-950/10 transition-colors"
+                  hover:bg-teal-50/50 dark:hover:bg-teal-950/10 transition-colors"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -348,7 +348,7 @@ export default function MeetingsPage() {
                   <div className="pt-3 border-t">
                     <Button
                       variant="link"
-                      className="p-0 h-auto text-blue-500 hover:text-blue-600"
+                      className="p-0 h-auto text-teal-500 hover:text-teal-600"
                       asChild
                     >
                       <a

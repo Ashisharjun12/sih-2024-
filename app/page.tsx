@@ -105,7 +105,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <div className="relative min-h-[90vh] bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
+      <div className="relative min-h-[90vh]  bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
         {/* Gujarat Map Overlay */}
         <div className="absolute inset-0 opacity-10">
           <Image
@@ -319,8 +319,8 @@ export default function HomePage() {
                 <Image
                   src="/gujarat-logo.png" // Add your logo
                   alt="Gujarat Innovation Platform"
-                  width={40}
-                  height={40}
+                  width={36}
+                  height={36}
                   className="rounded-lg"
                 />
                 <h3 className="text-xl font-bold text-white">Gujarat Innovation</h3>
