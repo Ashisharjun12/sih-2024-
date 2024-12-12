@@ -16,10 +16,9 @@ export async function POST(req: NextRequest) {
 
         // Connect to the database
         await connectDB();
-
         // Parse the request body
-        const { stageOfFunding, description, invoices, fundingAmount } = await req.json();
-
+        const data = await req.json();
+        const { stageOfFunding, description, invoices, fundingAmount } = data;
         // Fetch the startup associated with the current user
         const startup = await Startup.findOne({ userId: session.user.id }).populate("timeline");
         if (!startup) {
@@ -29,9 +28,9 @@ export async function POST(req: NextRequest) {
             stageOfFunding,
             description,
             invoices,
-            fundingAmount,
+            fundingAmount: parseInt(fundingAmount),
             isAccepted: "pending"
-        });    
+        });
 
         // Save the updates to both models
         await startup.save();

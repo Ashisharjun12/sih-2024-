@@ -1,6 +1,8 @@
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectDB } from "@/lib/db";
 import FundingAgency from "@/models/funding-agency.model";
+import Startup from "@/models/startup.model";
+import Timeline from "@/models/timeline.model";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -25,9 +27,12 @@ export async function POST(req: NextRequest) {
         if (!fundingAgency.timeline) {
             return NextResponse.json({ error: "Funding agency does not have an associated timeline" }, { status: 404 });
         }
+        const startup = await Startup.findOne({ timeline: fundingAgency.timeline });
+        startup.timeline = undefined;
+        fundingAgency.timeline = undefined;  // Set the timeline as rejected
 
-        // Update the timeline's isAccepted status and funding stages
-        fundingAgency.timeline.isAccepted = "rejected";  // Set the timeline as rejected
+        Timeline.deleteOne({ _id: fundingAgency.timeline });
+        await startup.save();
 
         // Save the updated timeline and funding agency
         await fundingAgency.timeline.save();  // Save the updated timeline

@@ -33,8 +33,8 @@ const sidebarItems = [
     icon: Building2,
   },
   {
-    title: "Funding",
-    href: "/startup/funding",
+    title: "Fundings",
+    href: "/startup/funds",
     icon: Banknote,
   },
   {

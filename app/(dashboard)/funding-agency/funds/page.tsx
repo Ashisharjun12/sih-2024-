@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, CheckCircle2, Clock, AlertCircle, Ban, Upload } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Ban,
+  Upload,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TimelineStage {
@@ -60,6 +67,34 @@ export default function FundsPage() {
     }
   };
 
+  const handleTimelineAction = async (action: "accept" | "reject") => {
+    try {
+      const response = await fetch(
+        `/api/funding-agency/timeline/requests/${action}`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Timeline ${action}ed successfully`,
+        });
+        fetchTimeline();
+      } else {
+        throw new Error(`Failed to ${action} timeline`);
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing timeline:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to ${action} timeline`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handlePayment = async () => {
     try {
       const response = await fetch("/api/funding-agency/timeline/pay", {
@@ -82,13 +117,17 @@ export default function FundsPage() {
     }
   };
 
-  const handleContingencyForm = async (formId: string, action: "accept" | "reject") => {
+  const handleContingencyForm = async (
+    formId: string,
+    action: "accept" | "reject"
+  ) => {
     try {
-      const response = await fetch(`/api/funding-agency/timeline/forms/${action}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId }),
-      });
+      const response = await fetch(
+        `/api/funding-agency/timeline/forms/${action}`,
+        {
+          method: "POST",
+        }
+      );
       if (response.ok) {
         toast({
           title: "Success",
@@ -135,25 +174,57 @@ export default function FundsPage() {
     );
   }
 
-  const timelineStages = timeline ? [
-    { key: "preSeedFunding", label: "Pre-Seed Funding", data: timeline.preSeedFunding },
-    { key: "seedFunding", label: "Seed Funding", data: timeline.seedFunding },
-    { key: "seriesA", label: "Series A", data: timeline.seriesA },
-    { key: "seriesB", label: "Series B", data: timeline.seriesB },
-    { key: "seriesC", label: "Series C", data: timeline.seriesC },
-    { key: "ipo", label: "IPO", data: timeline.ipo },
-  ] : [];
+  const timelineStages = timeline
+    ? [
+        {
+          key: "preSeedFunding",
+          label: "Pre-Seed Funding",
+          data: timeline.preSeedFunding,
+        },
+        {
+          key: "seedFunding",
+          label: "Seed Funding",
+          data: timeline.seedFunding,
+        },
+        { key: "seriesA", label: "Series A", data: timeline.seriesA },
+        { key: "seriesB", label: "Series B", data: timeline.seriesB },
+        { key: "seriesC", label: "Series C", data: timeline.seriesC },
+        { key: "ipo", label: "IPO", data: timeline.ipo },
+      ]
+    : [];
 
   return (
     <div className="container py-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Funding Timeline</h1>
-          <p className="text-muted-foreground">Manage funding stages and review contingency forms</p>
+          <p className="text-muted-foreground">
+            Manage funding stages and review contingency forms
+          </p>
         </div>
-        {timeline?.isAccepted === "accepted" && (
+        {timeline?.isAccepted === "pending" ? (
+          <div className="flex flex-col gap-2">
+            <div>Message : {timeline?.message}</div>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                onClick={() => handleTimelineAction("accept")}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Accept Timeline
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleTimelineAction("reject")}
+                className="text-red-600 hover:bg-red-50"
+              >
+                Reject Timeline
+              </Button>
+            </div>
+          </div>
+        ) : timeline?.isAccepted === "accepted" ? (
           <Button onClick={handlePayment}>Process Next Payment</Button>
-        )}
+        ) : null}
       </div>
 
       <div className="relative">
@@ -163,10 +234,13 @@ export default function FundsPage() {
         {/* Timeline Items */}
         <div className="space-y-12">
           {timelineStages.map((stage, index) => (
-            <div key={stage.key} className={cn(
-              "relative flex items-center",
-              index % 2 === 0 ? "flex-row" : "flex-row-reverse"
-            )}>
+            <div
+              key={stage.key}
+              className={cn(
+                "relative flex items-center",
+                index % 2 === 0 ? "flex-row" : "flex-row-reverse"
+              )}
+            >
               {/* Content */}
               <div className="w-5/12">
                 <Card className="p-4 hover:shadow-lg transition-shadow">
@@ -182,13 +256,18 @@ export default function FundsPage() {
 
                   {/* Contingency Forms */}
                   {timeline?.contingencyForms
-                    .filter(form => form.stageOfFunding === stage.key)
+                    .filter((form) => form.stageOfFunding === stage.key)
                     .map((form, formIndex) => (
-                      <div key={formIndex} className="mt-4 p-3 bg-muted rounded-lg">
+                      <div
+                        key={formIndex}
+                        className="mt-4 p-3 bg-muted rounded-lg"
+                      >
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-medium">Contingency Request</p>
-                            <p className="text-sm text-muted-foreground">{form.description}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {form.description}
+                            </p>
                             <p className="text-sm font-semibold mt-1">
                               Amount: {formatAmount(form.fundingAmount)}
                             </p>
@@ -218,14 +297,26 @@ export default function FundsPage() {
                           <div className="flex gap-2 mt-3">
                             <Button
                               size="sm"
-                              onClick={() => handleContingencyForm(form._id, "accept")}
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() =>
+                                handleContingencyForm(
+                                  formIndex.toString(),
+                                  "accept"
+                                )
+                              }
                             >
                               Accept
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleContingencyForm(form._id, "reject")}
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() =>
+                                handleContingencyForm(
+                                  formIndex.toString(),
+                                  "reject"
+                                )
+                              }
                             >
                               Reject
                             </Button>

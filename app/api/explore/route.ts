@@ -4,17 +4,18 @@ import Startup from "@/models/startup.model";
 import Researcher from "@/models/researcher.model";
 import Mentor from "@/models/mentor.model";
 import Research from "@/models/research.model";
+import FundingAgency from "@/models/funding-agency.model";
 
 export async function GET() {
   try {
     await connectDB();
 
     // Fetch all entities in parallel
-    const [startups, researchers, mentors, papers] = await Promise.all([
+    const [startups, researchers, papers, fundingAgencies] = await Promise.all([
       Startup.find({}),
       Researcher.find({}).lean(),
-      Mentor.find({}),
-      Research.find({ isPublished: true }).lean()
+      Research.find({ isPublished: true }).lean(),
+      FundingAgency.find({}).lean(),
     ]);
 
     console.log('Papers:', papers);
@@ -38,7 +39,6 @@ export async function GET() {
       startups: startups.length,
       researchers: researchers.length,
       papers: researchPapers.length,
-      mentors: mentors.length,
       samplePaper: researchPapers[0]
     });
 
@@ -46,7 +46,7 @@ export async function GET() {
       startups,
       researchers,
       researchPapers,
-      mentors
+      fundingAgencies
     });
 
   } catch (error) {

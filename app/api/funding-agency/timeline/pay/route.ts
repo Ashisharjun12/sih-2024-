@@ -48,13 +48,6 @@ export async function POST(req: NextRequest) {
         // Connect to the database
         await connectDB();
 
-        // Parse the request body
-        const { fundingAgencyId } = await req.json();
-
-        if (!fundingAgencyId) {
-            return NextResponse.json({ error: "Funding Agency ID is required" }, { status: 400 });
-        }
-
         // Find the FundingAgency by userId from the session
         const fundingAgency = await FundingAgency.findOne({ userId: session.user.id }).populate("timeline");
         if (!fundingAgency) {
