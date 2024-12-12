@@ -51,6 +51,7 @@ interface TimelineData {
 export default function FundsPage() {
   const [timeline, setTimeline] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     description: "",
     fundingAmount: "",
@@ -101,27 +102,9 @@ export default function FundsPage() {
     }
   };
 
-  const getFundingStage = () => {
-    const fundingStages = [
-      { name: "preSeedFunding", key: "preSeedFunding" },
-      { name: "seedFunding", key: "seedFunding" },
-      { name: "seriesA", key: "seriesA" },
-      { name: "seriesB", key: "seriesB" },
-      { name: "seriesC", key: "seriesC" },
-      { name: "ipo", key: "ipo" },
-    ];
-
-    // Find the first stage with 'pending' status
-    const currentStage = fundingStages.find(
-      (stage) => timeline?.[stage.key]?.isActive === "pending"
-    );
-
-    return currentStage ? currentStage.name : null;
-  };
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const stage = getFundingStage();
+    if (!selectedStage) return;
 
     try {
       // Upload each invoice individually to /api/upload and collect their URLs
@@ -148,7 +131,7 @@ export default function FundsPage() {
 
       // Prepare the final form data for submission
       const dataToSubmit = {
-        stageOfFunding: stage,
+        stageOfFunding: selectedStage,
         description: formData.description,
         fundingAmount: formData.fundingAmount,
         invoices: uploadedInvoices, // Send the URLs of the uploaded invoices
@@ -169,6 +152,7 @@ export default function FundsPage() {
           description: "Contingency form submitted successfully",
         });
         fetchTimeline();
+        setSelectedStage(null);
         setFormData({ description: "", fundingAmount: "", invoices: [] });
       } else {
         throw new Error("Failed to submit contingency form");
@@ -250,6 +234,24 @@ export default function FundsPage() {
                 <DialogTitle>Submit Contingency Form</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">
+                    Stage of Funding
+                  </label>
+                  <select
+                    className="w-full p-2 border rounded-md"
+                    value={selectedStage || ""}
+                    onChange={(e) => setSelectedStage(e.target.value)}
+                    required
+                  >
+                    <option value="">Select Stage</option>
+                    {timelineStages.map((stage) => (
+                      <option key={stage.key} value={stage.key}>
+                        {stage.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="text-sm font-medium">Description</label>
                   <Textarea

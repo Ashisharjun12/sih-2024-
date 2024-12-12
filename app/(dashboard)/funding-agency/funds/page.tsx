@@ -69,6 +69,7 @@ export default function FundsPage() {
 
   const handleTimelineAction = async (action: "accept" | "reject") => {
     try {
+      console.log(action)
       const response = await fetch(
         `/api/funding-agency/timeline/requests/${action}`,
         {
