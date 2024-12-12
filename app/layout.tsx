@@ -31,7 +31,7 @@ export default function RootLayout({
           <AuthProvider>
             <div className="min-h-screen flex flex-col">
               <Navbar />
-              <WelcomeOverlay />
+              
               <Chatbot />
               <main className="flex-1">{children}</main>
             </div>

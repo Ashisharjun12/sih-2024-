@@ -17,6 +17,11 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { Chatbot } from "@/components/chatbot/chatbot";
+import { createTourDriver } from "@/lib/driver/config";
+import "driver.js/dist/driver.css";
+import { driverStyles } from "@/lib/driver/styles";
+import { useEffect } from "react";
+import { WelcomePopup } from "@/components/welcome-popup";
 
 
 const ACHIEVEMENTS = [
@@ -48,7 +53,7 @@ const ACHIEVEMENTS = [
 
 const STARTUP_ACHIEVEMENTS = [
   {
-    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75e0009897f8bef/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    logo: "https://example.com/logo1.png",
     name: "Blink Out",
     industries: ["Robotics Technology", "AI"],
     sectors: ["Electronics"],
@@ -56,7 +61,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "25 days"
   },
   {
-    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75b000745931acf/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    logo: "https://example.com/logo2.png",
     name: "Future Robotics",
     industries: ["Robotics", "AI"],
     sectors: ["Robotics Technology", "Machine Learning", "Automation"],
@@ -64,7 +69,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "50 days"
   },
   {
-    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75d000ec3144c0f/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    logo: "https://example.com/logo3.png",
     name: "HealthTech Innovations",
     industries: ["Healthcare & Lifesciences", "AI"],
     sectors: ["Healthcare Technology", "Medical Devices Biomedical", "Data Science"],
@@ -72,7 +77,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "100 days"
   },
   {
-    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75c0019987dba73/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
+    logo: "https://example.com/logo4.png",
     name: "GreenFuture",
     industries: ["Green Technology", "Renewable Energy"],
     sectors: ["Renewable Solar Energy", "Environmental Services & Equipment", "Clean Tech"],
@@ -103,25 +108,25 @@ const FOOTER_LINKS = {
 };
 
 export default function HomePage() {
-  // useEffect(() => {
-  //   // Add custom styles
-  //   const styleSheet = document.createElement("style");
-  //   styleSheet.textContent = driverStyles;
-  //   document.head.appendChild(styleSheet);
+  useEffect(() => {
+    // Add custom styles
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = driverStyles;
+    document.head.appendChild(styleSheet);
 
-  //   return () => {
-  //     document.head.removeChild(styleSheet);
-  //   };
-  // }, []);
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
 
-  // const startTour = () => {
-  //   const driverObj = createTourDriver();
-  //   driverObj.drive();
-  // };
+  const startTour = () => {
+    const driverObj = createTourDriver();
+    driverObj.drive();
+  };
 
   return (
     <div className="flex flex-col">
-      {/* <WelcomePopup onStartTour={startTour} /> */}
+      <WelcomePopup onStartTour={startTour} />
       
       {/* Hero Section */}
       <div className="relative min-h-[90vh]  bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
@@ -219,6 +224,7 @@ export default function HomePage() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Startup Achievements Section */}
       <div className="bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 py-20">
         <div className="container mx-auto px-4">
@@ -235,7 +241,12 @@ export default function HomePage() {
               Discover innovative startups that have grown through our platform
             </p>
           </motion.div>
-
+=======
+      {/* Startup Achievements*/}
+      <div className="bg-gradient-to-r from-indigo-500 to-blue-600 py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl text-white font-extrabold text-center mb-12">Our Achievements</h2>
+>>>>>>> 25e1f820774dd3760ad347538056ef7b497fe00f
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {STARTUP_ACHIEVEMENTS.map((item, index) => (
@@ -244,6 +255,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
+<<<<<<< HEAD
                 className="group"
               >
                 <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl 
@@ -284,13 +296,28 @@ export default function HomePage() {
                             className="bg-blue-50/50 text-blue-700 border-blue-100 hover:bg-blue-100 
                               transition-colors text-xs"
                           >
+=======
+                className="group transform hover:scale-105 transition-all duration-300"
+              >
+                <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                  <div className="p-6 bg-sky-50">
+                    <img src={item.logo} alt={item.name} className="w-20 h-20 mx-auto mb-4 object-contain" />
+                    <h3 className="text-2xl font-semibold text-gray-900 mb-2">{item.name}</h3>
 
+                    {/* Badges for Industries */}
+                    <div className="mb-2">
+                      <strong>Industries:</strong>
+                      <div className="flex space-x-2 mt-2">
+                        {item.industries.map((industry, idx) => (
+                          <Badge key={idx} variant="outline" color="sky" className="text-xs font-medium">
+>>>>>>> 25e1f820774dd3760ad347538056ef7b497fe00f
                             {industry}
                           </Badge>
                         ))}
                       </div>
                     </div>
 
+<<<<<<< HEAD
                     {/* Sectors Section */}
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center justify-between text-sm text-gray-600">
@@ -307,13 +334,21 @@ export default function HomePage() {
                             className="bg-emerald-50/50 text-emerald-700 border-emerald-100 
                               hover:bg-emerald-100 transition-colors text-xs"
                           >
-
+=======
+                    {/* Badges for Sectors */}
+                    <div className="mb-2">
+                      <strong>Sectors:</strong>
+                      <div className="flex space-x-2 mt-2">
+                        {item.sectors.map((sector, idx) => (
+                          <Badge key={idx} variant="outline" color="green" className="text-xs font-medium">
+>>>>>>> 25e1f820774dd3760ad347538056ef7b497fe00f
                             {sector}
                           </Badge>
                         ))}
                       </div>
                     </div>
 
+<<<<<<< HEAD
                     {/* Info Section */}
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
                       <div className="text-center p-2 rounded-lg bg-gray-50">
@@ -325,7 +360,14 @@ export default function HomePage() {
                         <div className="text-sm font-semibold text-gray-900">{item.joinedToFunding}</div>
                       </div>
                     </div>
-
+=======
+                    <p className="text-gray-600 text-sm mb-2">
+                      <strong>Stage:</strong> {item.stage}
+                    </p>
+                    <p className="text-gray-600 text-sm mb-2">
+                      <strong>Joined to Funding:</strong> {item.joinedToFunding}
+                    </p>
+>>>>>>> 25e1f820774dd3760ad347538056ef7b497fe00f
                   </div>
                 </div>
               </motion.div>
@@ -352,8 +394,10 @@ export default function HomePage() {
 
           <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
             <div className="aspect-video">
-              <iframe  width="100%"
-                height="100%" src="https://www.youtube.com/embed/lH2AFRvImGc?si=VKS5AvoN8d7hFnHE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+              <iframe
+                width="100%"
+                height="100%"
+                src="https://www.youtube.com/embed/lH2AFRvImGc?si=VKS5AvoN8d7hFnHE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
           </div>
 
@@ -488,7 +532,15 @@ export default function HomePage() {
         </div>
       </footer>
 
-     
+      {/* Add tour button */}
+      <Button
+        onClick={startTour}
+        className="fixed bottom-24 right-6 z-50 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-primary/25"
+        size="icon"
+        title="Start Tour"
+      >
+        <Play className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

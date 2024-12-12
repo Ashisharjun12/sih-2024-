@@ -99,17 +99,7 @@ const steps = [
       route: "/register/ipr"
     }
   },
-  {
-    title: "Skill Development",
-    description: "Access courses, workshops, and certification programs",
-    icon: GraduationCap,
-    color: "from-green-600 to-emerald-400",
-    stats: { value: "100+", label: "Training Programs" },
-    action: {
-      label: "Access Skills",
-      route: "/explore/training-programs"
-    }
-  },
+ 
   {
     title: "Market Access",
     description: "Connect with industry partners and explore indian markets",
