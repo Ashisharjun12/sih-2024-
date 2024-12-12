@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
-import FundingAgency from "@/models/funding-agency.model";
 import Timeline from "@/models/timeline.model";
+import Startup from "@/models/startup.model";
 
 export async function GET() {
     try {
@@ -12,19 +12,21 @@ export async function GET() {
                 message: "Unauthorized"
             }, { status: 401 })
         }
-        const fundingAgency = await FundingAgency.findOne({ userId: session.user.id });
-        if (!fundingAgency) {
+        const startup = await Startup.findOne({ userId: session.user.id });
+        if (!startup) {
             return NextResponse.json({
-                message: "Funding Agency not found"
+                message: "Startup not found"
             }, { status: 404 })
         }
 
-        const timelineId = await fundingAgency.timeline;
+        console.log(startup)
+        const timelineId = await startup.timeline;
         if (!timelineId) {
             return NextResponse.json({
                 message: "Timeline not found"
             }, { status: 404 })
         }
+        console.log(timelineId)
         const timeline = await Timeline.findById(timelineId);
         if (!timeline) {
             return NextResponse.json({

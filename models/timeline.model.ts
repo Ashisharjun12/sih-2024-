@@ -74,32 +74,12 @@ const timelineSchema = new mongoose.Schema({
         type:String,
         enum:["pending","accepted", "rejected"],
         default:"pending"
+    },
+    message:{
+        type:String,
+        required:true
     }
 }, { timestamps: true });
-
-timelineSchema.pre('save', function(next) {
-    // Calculate funding amounts based on the totalAmount
-    const totalAmount = this.totalAmount;
-
-    // Predefined percentage distribution
-    const fundingDistribution = {
-        preSeed: 0.10,
-        seed: 0.20,
-        seriesA: 0.20,
-        seriesB: 0.20,
-        seriesC: 0.20,
-        ipo: 0.10
-    };
-
-    this.preSeedFunding.amount = totalAmount * fundingDistribution.preSeed;
-    this.seedFunding.amount = totalAmount * fundingDistribution.seed;
-    this.seriesA.amount = totalAmount * fundingDistribution.seriesA;
-    this.seriesB.amount = totalAmount * fundingDistribution.seriesB;
-    this.seriesC.amount = totalAmount * fundingDistribution.seriesC;
-    this.ipo.amount = totalAmount * fundingDistribution.ipo;
-
-    next();
-});
 
 const Timeline = mongoose.models.Timeline || mongoose.model('Timeline', timelineSchema);
 

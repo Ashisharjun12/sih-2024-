@@ -2,9 +2,9 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectDB } from "@/lib/db";
 import FundingAgency from "@/models/funding-agency.model";
 import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
     try {
         // Get the session and check if the user is a funding agency
         const session = await getServerSession(authOptions);
@@ -23,23 +23,26 @@ export async function POST(req: NextRequest) {
 
         // Check if the funding agency has an associated timeline
         if (!fundingAgency.timeline) {
+            console.error("Doesn't have timeline")
             return NextResponse.json({ error: "Funding agency does not have an associated timeline" }, { status: 404 });
         }
 
         // Look for the first "pending" contingency form
         let form;
         for (let i = 0; i < fundingAgency.timeline.contingencyForms.length; i++) {
-            if (fundingAgency.timeline.contingencyForms[i].status === "pending") {
+            if (fundingAgency.timeline.contingencyForms[i].isAccepted === "pending") {
                 form = fundingAgency.timeline.contingencyForms[i];
-                fundingAgency.timeline.contingencyForms[i].status = "accepted";  // Mark as accepted
+                fundingAgency.timeline.contingencyForms[i].isAccepted = "accepted";  // Mark as accepted
                 break;  // Only update the first pending form
             }
         }
 
         // If no pending form was found
         if (!form) {
+            console.log("no form")
             return NextResponse.json({ error: "No pending contingency forms found" }, { status: 404 });
         }
+        console.log(form.stageOfFunding)
 
         // Update the relevant funding stage with the form's funding amount
         switch (form.stageOfFunding) {
@@ -64,6 +67,7 @@ export async function POST(req: NextRequest) {
             default:
                 return NextResponse.json({ error: "Unknown stage of funding" }, { status: 400 });
         }
+        fundingAgency.timeline.totalAmount += form.fundingAmount;
 
         // Save the updated timeline and funding agency
         await fundingAgency.timeline.save();  // Save the updated timeline

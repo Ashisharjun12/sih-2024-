@@ -11,12 +11,16 @@ import {
   ChevronLeft,
   Menu,
   TrendingUp,
-  BookPlus
-
+  BookPlus,
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const fundingAgencyLinks = [
   {
@@ -30,8 +34,8 @@ const fundingAgencyLinks = [
     icon: BookPlus,
   },
   {
-    title: "Funding Applications",
-    href: "/funding-agency/funding",
+    title: "Fundings",
+    href: "/funding-agency/funds",
     icon: FileText,
   },
   {
@@ -39,13 +43,12 @@ const fundingAgencyLinks = [
     href: "/funding-agency/metrics",
     icon: TrendingUp,
   },
-  
+
   {
     title: "Messages",
     href: "/funding-agency/messages",
     icon: MessageCircle,
   },
- 
 ];
 
 export function FundingAgencySidebar() {
@@ -55,13 +58,13 @@ export function FundingAgencySidebar() {
 
   return (
     <TooltipProvider>
-      <div className={cn(
-        "fixed top-0 left-0 h-screen bg-background z-30 shadow-lg transition-all duration-300",
-        isExpanded 
-          ? "w-64 border-r"
-          : "w-16",
-        "flex flex-col"
-      )}>
+      <div
+        className={cn(
+          "fixed top-0 left-0 h-screen bg-background z-30 shadow-lg transition-all duration-300",
+          isExpanded ? "w-64 border-r" : "w-16",
+          "flex flex-col"
+        )}
+      >
         {/* Header with Toggle Button and Title */}
         <div className="p-4 flex items-center border-b">
           <Button
@@ -70,47 +73,51 @@ export function FundingAgencySidebar() {
             onClick={() => setIsExpanded(!isExpanded)}
             className="h-8 w-8"
           >
-            {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            {isExpanded ? (
+              <ChevronLeft className="h-4 w-4" />
+            ) : (
+              <Menu className="h-4 w-4" />
+            )}
           </Button>
           <AnimatePresence mode="wait">
             {isExpanded && (
               <motion.div
                 initial={{ opacity: 0, width: 0 }}
-                animate={{ 
-                  opacity: 1, 
+                animate={{
+                  opacity: 1,
                   width: "auto",
                   transition: {
                     duration: 0.2,
-                    ease: "easeOut"
-                  }
+                    ease: "easeOut",
+                  },
                 }}
-                exit={{ 
+                exit={{
                   opacity: 0,
                   width: 0,
                   transition: {
                     duration: 0.2,
-                    ease: "easeIn"
-                  }
+                    ease: "easeIn",
+                  },
                 }}
                 className="overflow-hidden whitespace-nowrap"
               >
-                <motion.h2 
+                <motion.h2
                   className="ml-2 text-lg font-semibold"
                   initial={{ y: 10, opacity: 0 }}
-                  animate={{ 
-                    y: 0, 
+                  animate={{
+                    y: 0,
                     opacity: 1,
                     transition: {
                       delay: 0.1,
-                      duration: 0.2
-                    }
+                      duration: 0.2,
+                    },
                   }}
-                  exit={{ 
-                    y: -10, 
+                  exit={{
+                    y: -10,
                     opacity: 0,
                     transition: {
-                      duration: 0.1
-                    }
+                      duration: 0.1,
+                    },
                   }}
                 >
                   Funding Agency
@@ -127,7 +134,10 @@ export function FundingAgencySidebar() {
               const Icon = link.icon;
               return (
                 <div key={link.href} className="relative">
-                  <Tooltip delayDuration={0} open={!isExpanded && hoveredItem === link.href}>
+                  <Tooltip
+                    delayDuration={0}
+                    open={!isExpanded && hoveredItem === link.href}
+                  >
                     <TooltipTrigger asChild>
                       <Button
                         variant={pathname === link.href ? "secondary" : "ghost"}
@@ -141,10 +151,9 @@ export function FundingAgencySidebar() {
                         onMouseLeave={() => setHoveredItem(null)}
                       >
                         <Link href={link.href}>
-                          <Icon className={cn(
-                            "h-4 w-4",
-                            isExpanded && "mr-2"
-                          )} />
+                          <Icon
+                            className={cn("h-4 w-4", isExpanded && "mr-2")}
+                          />
                           {isExpanded && (
                             <motion.span
                               initial={{ opacity: 0 }}
@@ -157,8 +166,8 @@ export function FundingAgencySidebar() {
                         </Link>
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent 
-                      side="right" 
+                    <TooltipContent
+                      side="right"
                       className="animate-none"
                       sideOffset={5}
                     >
@@ -174,11 +183,11 @@ export function FundingAgencySidebar() {
 
       {/* Overlay when sidebar is expanded */}
       {isExpanded && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/20 z-20"
           onClick={() => setIsExpanded(false)}
         />
       )}
     </TooltipProvider>
   );
-} 
+}

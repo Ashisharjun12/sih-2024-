@@ -29,13 +29,13 @@ export async function POST(req: NextRequest) {
         // Look for the first "pending" contingency form
         let form;
         for (let i = 0; i < fundingAgency.timeline.contingencyForms.length; i++) {
-            if (fundingAgency.timeline.contingencyForms[i].status === "pending") {
+            if (fundingAgency.timeline.contingencyForms[i].isAccepted === "pending") {
                 form = fundingAgency.timeline.contingencyForms[i];
-                fundingAgency.timeline.contingencyForms[i].status = "rejected";  // Mark as rejected
+                fundingAgency.timeline.contingencyForms[i].isAccepted = "rejected";  // Mark as rejected
                 break;  // Only update the first pending form
             }
         }
-
+console.log(form)
         // If no pending form was found
         if (!form) {
             return NextResponse.json({ error: "No pending contingency forms found" }, { status: 404 });

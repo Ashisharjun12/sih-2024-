@@ -5,9 +5,22 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Upload, AlertCircle, CheckCircle2, Clock, Ban } from "lucide-react";
+import {
+  Loader2,
+  Upload,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Ban,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TimelineStage {
@@ -20,7 +33,7 @@ interface ContingencyForm {
   stageOfFunding: string;
   description: string;
   invoices: { public_id: string; secure_url: string }[];
-  fundingAmount: number;
+  fundingAmount: string;
   isAccepted: "pending" | "accepted" | "rejected";
 }
 
@@ -41,8 +54,8 @@ export default function FundsPage() {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     description: "",
-    fundingAmount: 0,
-    invoices: [] as File[]
+    fundingAmount: "",
+    invoices: [] as File[], // Store files here as an array
   });
   const { toast } = useToast();
 
@@ -69,22 +82,68 @@ export default function FundsPage() {
     }
   };
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setFormData((prev) => ({
+        ...prev,
+        invoices: files,
+      }));
+    }
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStage) return;
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("stageOfFunding", selectedStage);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("fundingAmount", formData.fundingAmount.toString());
-      formData.invoices.forEach((file) => {
-        formDataToSend.append("invoices", file);
-      });
+      // Upload each invoice individually to /api/upload and collect their URLs
+      const uploadedInvoices = [];
+      for (const file of formData.invoices) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
 
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          uploadedInvoices.push({
+            public_id: uploadData.public_id,
+            secure_url: uploadData.secure_url,
+          });
+        } else {
+          throw new Error("Failed to upload invoice");
+        }
+      }
+
+      // Prepare the final form data for submission
+      const dataToSubmit = {
+        stageOfFunding: selectedStage,
+        description: formData.description,
+        fundingAmount: formData.fundingAmount,
+        invoices: uploadedInvoices, // Send the URLs of the uploaded invoices
+      };
+
+      // Submit the form data
       const response = await fetch("/api/startup/timeline/form", {
         method: "POST",
-        body: formDataToSend,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataToSubmit),
       });
 
       if (response.ok) {
@@ -94,12 +153,15 @@ export default function FundsPage() {
         });
         fetchTimeline();
         setSelectedStage(null);
+        setFormData({ description: "", fundingAmount: "", invoices: [] });
+      } else {
+        throw new Error("Failed to submit contingency form");
       }
     } catch (error) {
       console.error("Error submitting form:", error);
       toast({
         title: "Error",
-        description: "Failed to submit contingency form",
+        description: error.message || "Failed to submit contingency form",
         variant: "destructive",
       });
     }
@@ -134,21 +196,33 @@ export default function FundsPage() {
     );
   }
 
-  const timelineStages = timeline ? [
-    { key: "preSeedFunding", label: "Pre-Seed Funding", data: timeline.preSeedFunding },
-    { key: "seedFunding", label: "Seed Funding", data: timeline.seedFunding },
-    { key: "seriesA", label: "Series A", data: timeline.seriesA },
-    { key: "seriesB", label: "Series B", data: timeline.seriesB },
-    { key: "seriesC", label: "Series C", data: timeline.seriesC },
-    { key: "ipo", label: "IPO", data: timeline.ipo },
-  ] : [];
+  const timelineStages = timeline
+    ? [
+        {
+          key: "preSeedFunding",
+          label: "Pre-Seed Funding",
+          data: timeline.preSeedFunding,
+        },
+        {
+          key: "seedFunding",
+          label: "Seed Funding",
+          data: timeline.seedFunding,
+        },
+        { key: "seriesA", label: "Series A", data: timeline.seriesA },
+        { key: "seriesB", label: "Series B", data: timeline.seriesB },
+        { key: "seriesC", label: "Series C", data: timeline.seriesC },
+        { key: "ipo", label: "IPO", data: timeline.ipo },
+      ]
+    : [];
 
   return (
     <div className="container py-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Funding Timeline</h1>
-          <p className="text-muted-foreground">Track your funding stages and submit contingency forms</p>
+          <p className="text-muted-foreground">
+            Track your funding stages and submit contingency forms
+          </p>
         </div>
         {timeline?.isAccepted === "accepted" && (
           <Dialog>
@@ -161,7 +235,9 @@ export default function FundsPage() {
               </DialogHeader>
               <form onSubmit={handleFormSubmit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Stage of Funding</label>
+                  <label className="text-sm font-medium">
+                    Stage of Funding
+                  </label>
                   <select
                     className="w-full p-2 border rounded-md"
                     value={selectedStage || ""}
@@ -180,16 +256,20 @@ export default function FundsPage() {
                   <label className="text-sm font-medium">Description</label>
                   <Textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={handleInputChange}
+                    name="description"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Funding Amount (₹)</label>
+                  <label className="text-sm font-medium">
+                    Funding Amount (₹)
+                  </label>
                   <Input
-                    type="number"
+                    type="text"
                     value={formData.fundingAmount}
-                    onChange={(e) => setFormData({ ...formData, fundingAmount: parseFloat(e.target.value) })}
+                    onChange={handleInputChange}
+                    name="fundingAmount"
                     required
                   />
                 </div>
@@ -198,11 +278,13 @@ export default function FundsPage() {
                   <Input
                     type="file"
                     multiple
-                    onChange={(e) => setFormData({ ...formData, invoices: Array.from(e.target.files || []) })}
+                    onChange={handleFileChange}
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">Submit Form</Button>
+                <Button type="submit" className="w-full">
+                  Submit Form
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -216,10 +298,13 @@ export default function FundsPage() {
         {/* Timeline Items */}
         <div className="space-y-12">
           {timelineStages.map((stage, index) => (
-            <div key={stage.key} className={cn(
-              "relative flex items-center",
-              index % 2 === 0 ? "flex-row" : "flex-row-reverse"
-            )}>
+            <div
+              key={stage.key}
+              className={cn(
+                "relative flex items-center",
+                index % 2 === 0 ? "flex-row" : "flex-row-reverse"
+              )}
+            >
               {/* Content */}
               <div className="w-5/12">
                 <Card className="p-4 hover:shadow-lg transition-shadow">
@@ -235,15 +320,20 @@ export default function FundsPage() {
 
                   {/* Contingency Forms */}
                   {timeline?.contingencyForms
-                    .filter(form => form.stageOfFunding === stage.key)
+                    .filter((form) => form.stageOfFunding === stage.key)
                     .map((form, formIndex) => (
-                      <div key={formIndex} className="mt-4 p-3 bg-muted rounded-lg">
+                      <div
+                        key={formIndex}
+                        className="mt-4 p-3 bg-muted rounded-lg"
+                      >
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-medium">Contingency Request</p>
-                            <p className="text-sm text-muted-foreground">{form.description}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {form.description}
+                            </p>
                             <p className="text-sm font-semibold mt-1">
-                              Amount: {formatAmount(form.fundingAmount)}
+                              Amount: {form.fundingAmount}
                             </p>
                           </div>
                           {getStatusIcon(form.isAccepted)}

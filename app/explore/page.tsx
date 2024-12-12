@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
+import { FundingAgencyCard } from "@/components/cards/funding-agency-card";
 
 interface Startup {
   _id: string;
@@ -114,7 +115,7 @@ export default function ExplorePage() {
   const [startups, setStartups] = useState<Startup[]>([]);
   const [researchers, setResearchers] = useState<Researcher[]>([]);
   const [researchPapers, setResearchPapers] = useState<ResearchPaper[]>([]);
-  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [fundingAgencies, setFundingAgencies] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -122,20 +123,20 @@ export default function ExplorePage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/explore');
+        const response = await fetch("/api/explore");
         if (!response.ok) {
-          throw new Error('Failed to fetch data');
+          throw new Error("Failed to fetch data");
         }
         const data = await response.json();
-        console.log('API Response:', data);
-        
+        console.log("API Response:", data);
+
         setStartups(data.startups);
         setResearchers(data.researchers);
         setResearchPapers(data.researchPapers);
-        console.log('Research Papers:', data.researchPapers);
-        setMentors(data.mentors);
+        setFundingAgencies(data.fundingAgencies);
+        console.log("Research Papers:", data.researchPapers);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
           description: "Failed to fetch data",
@@ -171,9 +172,8 @@ export default function ExplorePage() {
           <TabsTrigger value="startups">Startups</TabsTrigger>
           <TabsTrigger value="papers">Research Papers</TabsTrigger>
           <TabsTrigger value="researchers">Researchers</TabsTrigger>
-          <TabsTrigger value="mentors">Mentors</TabsTrigger>
+          <TabsTrigger value="fundingAgency">Funding Agencies</TabsTrigger>
         </TabsList>
-
         <TabsContent value="startups">
           {isLoading ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -200,7 +200,6 @@ export default function ExplorePage() {
             </ScrollArea>
           )}
         </TabsContent>
-
         <TabsContent value="papers">
           {isLoading ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -211,15 +210,20 @@ export default function ExplorePage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {researchPapers
-                .filter(paper => {
+                .filter((paper) => {
                   const searchLower = searchTerm.toLowerCase();
                   return (
-                      paper.title.toLowerCase().includes(searchLower) ||
-                      paper.description.toLowerCase().includes(searchLower) ||
-                      paper.stage.toLowerCase().includes(searchLower) ||
-                      paper.researcher.personalInfo.name.toLowerCase().includes(searchLower) ||
-                      paper.researcher.academicInfo.institution.toLowerCase().includes(searchLower) ||
-                      (paper.doi?.toLowerCase().includes(searchLower) || false)
+                    paper.title.toLowerCase().includes(searchLower) ||
+                    paper.description.toLowerCase().includes(searchLower) ||
+                    paper.stage.toLowerCase().includes(searchLower) ||
+                    paper.researcher.personalInfo.name
+                      .toLowerCase()
+                      .includes(searchLower) ||
+                    paper.researcher.academicInfo.institution
+                      .toLowerCase()
+                      .includes(searchLower) ||
+                    paper.doi?.toLowerCase().includes(searchLower) ||
+                    false
                   );
                 })
                 .map((paper, index) => (
@@ -235,7 +239,6 @@ export default function ExplorePage() {
             </div>
           )}
         </TabsContent>
-
         <TabsContent value="researchers">
           {isLoading ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -246,13 +249,19 @@ export default function ExplorePage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {researchers
-                .filter(researcher => {
+                .filter((researcher) => {
                   const searchLower = searchTerm.toLowerCase();
                   return (
-                    researcher.personalInfo.name.toLowerCase().includes(searchLower) ||
-                    researcher.academicInfo.institution.toLowerCase().includes(searchLower) ||
-                    researcher.academicInfo.department.toLowerCase().includes(searchLower) ||
-                    researcher.personalInfo.fieldOfResearch.some(field => 
+                    researcher.personalInfo.name
+                      .toLowerCase()
+                      .includes(searchLower) ||
+                    researcher.academicInfo.institution
+                      .toLowerCase()
+                      .includes(searchLower) ||
+                    researcher.academicInfo.department
+                      .toLowerCase()
+                      .includes(searchLower) ||
+                    researcher.personalInfo.fieldOfResearch.some((field) =>
                       field.toLowerCase().includes(searchLower)
                     )
                   );
@@ -270,8 +279,34 @@ export default function ExplorePage() {
             </div>
           )}
         </TabsContent>
-
-        {/* <TabsContent value="fundingAgency">FundingAgency</TabsContent> */}
+        <TabsContent value="fundingAgency">
+          {isLoading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="h-[300px] animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <ScrollArea className="w-full">
+              <div className="flex space-x-6 pb-4">
+                {fundingAgencies.map((fundingAgency, index) => (
+                  <div
+                    key={fundingAgency._id}
+                    onClick={() =>
+                      router.push(
+                        `/explore/fundingAgencyDetails/${fundingAgency._id}`
+                      )
+                    }
+                    className="w-[400px] flex-none"
+                  >
+                    <FundingAgencyCard agency={fundingAgency} index={index} dialogi = {false}/>
+                  </div>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );

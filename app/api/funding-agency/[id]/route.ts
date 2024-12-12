@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import User from "@/models/user.model";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import FundingAgency from "@/models/funding-agency.model";
 
-export async function GET() {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -15,7 +14,7 @@ export async function GET() {
 
     await connectDB();
 
-    const agency = await FundingAgency.find({userId:session.user.id});
+    const agency = await FundingAgency.findById(params.id);
 
     return NextResponse.json({
       success: true,

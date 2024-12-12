@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         // Parse the request body
-        const { amount, fundingAgencyId } = await req.json();
+        const { amount, fundingAgencyId, message } = await req.json();
 
         if (!amount || !fundingAgencyId) {
             return NextResponse.json({ error: "Amount and Funding Agency ID are required" }, { status: 400 });
@@ -30,10 +30,29 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Startup not found" }, { status: 404 });
         }
 
+        // Predefined percentage distribution
+        const fundingDistribution = {
+            preSeed: 0.10,
+            seed: 0.20,
+            seriesA: 0.20,
+            seriesB: 0.20,
+            seriesC: 0.20,
+            ipo: 0.10
+        };
+
+
         // Create a new Timeline and calculate funding distribution
         const newTimeline = new Timeline({
-            totalAmount: amount
+            totalAmount: amount,
+            message
         });
+        newTimeline.preSeedFunding.amount = amount * fundingDistribution.preSeed;
+        newTimeline.seedFunding.amount = amount * fundingDistribution.seed;
+        newTimeline.seriesA.amount = amount * fundingDistribution.seriesA;
+        newTimeline.seriesB.amount = amount * fundingDistribution.seriesB;
+        newTimeline.seriesC.amount = amount * fundingDistribution.seriesC;
+        newTimeline.ipo.amount = amount * fundingDistribution.ipo;
+
 
         // Automatically distribute the amount according to the percentages defined in the schema
         await newTimeline.save();
