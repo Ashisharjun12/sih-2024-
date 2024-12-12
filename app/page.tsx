@@ -13,6 +13,7 @@ import {
   MapPin,
   Mail,
   Phone,
+  Play,
 } from "lucide-react";
 import Image from "next/image";
 import { Chatbot } from "@/components/chatbot/chatbot";
