@@ -53,7 +53,7 @@ const ACHIEVEMENTS = [
 
 const STARTUP_ACHIEVEMENTS = [
   {
-    logo: "https://example.com/logo1.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75b000745931acf/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "Blink Out",
     industries: ["Robotics Technology", "AI"],
     sectors: ["Electronics"],
@@ -61,7 +61,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "25 days"
   },
   {
-    logo: "https://example.com/logo2.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75c0019987dba73/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "Future Robotics",
     industries: ["Robotics", "AI"],
     sectors: ["Robotics Technology", "Machine Learning", "Automation"],
@@ -69,7 +69,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "50 days"
   },
   {
-    logo: "https://example.com/logo3.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75d000ec3144c0f/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "HealthTech Innovations",
     industries: ["Healthcare & Lifesciences", "AI"],
     sectors: ["Healthcare Technology", "Medical Devices Biomedical", "Data Science"],
@@ -77,7 +77,7 @@ const STARTUP_ACHIEVEMENTS = [
     joinedToFunding: "100 days"
   },
   {
-    logo: "https://example.com/logo4.png",
+    logo: "https://cloud.appwrite.io/v1/storage/buckets/6751f5b2001b866143e5/files/675ab75e0009897f8bef/view?project=6751f4b40018a3ea8247&project=6751f4b40018a3ea8247&mode=admin",
     name: "GreenFuture",
     industries: ["Green Technology", "Renewable Energy"],
     sectors: ["Renewable Solar Energy", "Environmental Services & Equipment", "Clean Tech"],
@@ -106,6 +106,27 @@ const FOOTER_LINKS = {
     { label: "Disclaimer", href: "#" },
   ]
 };
+
+const AchievementCard = ({ icon, number, title }: {
+  icon: string;
+  number: string;
+  title: string;
+}) => {
+  return (
+    <div className="flex flex-col items-center p-8 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+      <div className="mb-4">
+        <Image 
+          src={icon}
+          alt={title}
+          width={48}
+          height={48}
+        />
+      </div>
+      <h3 className="text-3xl font-bold text-primary mb-2">{number}</h3>
+      <p className="text-gray-600 text-center">{title}</p>
+    </div>
+  )
+}
 
 export default function HomePage() {
   useEffect(() => {
