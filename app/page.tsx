@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowRight,
-  Play,
-  ChevronRight,
-  Star,
   Building2,
   Users,
   Target,
@@ -16,9 +13,15 @@ import {
   MapPin,
   Mail,
   Phone,
+  Play,
 } from "lucide-react";
 import Image from "next/image";
 import { Chatbot } from "@/components/chatbot/chatbot";
+import { createTourDriver } from "@/lib/driver/config";
+
+import { useEffect } from "react";
+import { WelcomePopup } from "@/components/welcome-popup";
+
 
 const ACHIEVEMENTS = [
   {
@@ -47,6 +50,41 @@ const ACHIEVEMENTS = [
   }
 ];
 
+const STARTUP_ACHIEVEMENTS = [
+  {
+    logo: "https://example.com/logo1.png",
+    name: "Blink Out",
+    industries: ["Robotics Technology", "AI"],
+    sectors: ["Electronics"],
+    stage: "Ideation",
+    joinedToFunding: "25 days"
+  },
+  {
+    logo: "https://example.com/logo2.png",
+    name: "Future Robotics",
+    industries: ["Robotics", "AI"],
+    sectors: ["Robotics Technology", "Machine Learning", "Automation"],
+    stage: "Validation",
+    joinedToFunding: "50 days"
+  },
+  {
+    logo: "https://example.com/logo3.png",
+    name: "HealthTech Innovations",
+    industries: ["Healthcare & Lifesciences", "AI"],
+    sectors: ["Healthcare Technology", "Medical Devices Biomedical", "Data Science"],
+    stage: "Validation",
+    joinedToFunding: "100 days"
+  },
+  {
+    logo: "https://example.com/logo4.png",
+    name: "GreenFuture",
+    industries: ["Green Technology", "Renewable Energy"],
+    sectors: ["Renewable Solar Energy", "Environmental Services & Equipment", "Clean Tech"],
+    stage: "Validation",
+    joinedToFunding: "35 days"
+  }
+]
+
 const FOOTER_LINKS = {
   platform: [
     { label: "About Us", href: "#" },
@@ -69,10 +107,28 @@ const FOOTER_LINKS = {
 };
 
 export default function HomePage() {
+  // useEffect(() => {
+  //   // Add custom styles
+  //   const styleSheet = document.createElement("style");
+  //   styleSheet.textContent = driverStyles;
+  //   document.head.appendChild(styleSheet);
+
+  //   return () => {
+  //     document.head.removeChild(styleSheet);
+  //   };
+  // }, []);
+
+  // const startTour = () => {
+  //   const driverObj = createTourDriver();
+  //   driverObj.drive();
+  // };
+
   return (
     <div className="flex flex-col">
+      {/* <WelcomePopup onStartTour={startTour} /> */}
+      
       {/* Hero Section */}
-      <div className="relative min-h-[90vh] bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
+      <div className="relative min-h-[90vh]  bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900">
         {/* Gujarat Map Overlay */}
         <div className="absolute inset-0 opacity-10">
           <Image
@@ -105,7 +161,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-xl text-sky-200 leading-relaxed max-w-xl">
-                Join Gujarat's premier platform for innovation and entrepreneurship. 
+                Join Gujarat's premier platform for innovation and entrepreneurship.
                 Where tradition meets technology to create tomorrow's success stories.
               </p>
 
@@ -118,7 +174,7 @@ export default function HomePage() {
                   Start Your Journey
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-               
+
               </div>
             </motion.div>
 
@@ -166,6 +222,64 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Startup Achievements*/}
+      <div className="bg-gradient-to-r from-indigo-500 to-blue-600 py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl text-white font-extrabold text-center mb-12">Our Achievements</h2>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {STARTUP_ACHIEVEMENTS.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="group transform hover:scale-105 transition-all duration-300"
+              >
+                <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                  <div className="p-6 bg-sky-50">
+                    <img src={item.logo} alt={item.name} className="w-20 h-20 mx-auto mb-4 object-contain" />
+                    <h3 className="text-2xl font-semibold text-gray-900 mb-2">{item.name}</h3>
+
+                    {/* Badges for Industries */}
+                    <div className="mb-2">
+                      <strong>Industries:</strong>
+                      <div className="flex space-x-2 mt-2">
+                        {item.industries.map((industry, idx) => (
+                          <Badge key={idx} variant="outline" color="sky" className="text-xs font-medium">
+                            {industry}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Badges for Sectors */}
+                    <div className="mb-2">
+                      <strong>Sectors:</strong>
+                      <div className="flex space-x-2 mt-2">
+                        {item.sectors.map((sector, idx) => (
+                          <Badge key={idx} variant="outline" color="green" className="text-xs font-medium">
+                            {sector}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-gray-600 text-sm mb-2">
+                      <strong>Stage:</strong> {item.stage}
+                    </p>
+                    <p className="text-gray-600 text-sm mb-2">
+                      <strong>Joined to Funding:</strong> {item.joinedToFunding}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
 
       {/* Video Section */}
       <div id="video-section" className="bg-sky-950 py-24">
@@ -226,8 +340,8 @@ export default function HomePage() {
                 <Image
                   src="/gujarat-logo.png" // Add your logo
                   alt="Gujarat Innovation Platform"
-                  width={40}
-                  height={40}
+                  width={36}
+                  height={36}
                   className="rounded-lg"
                 />
                 <h3 className="text-xl font-bold text-white">Gujarat Innovation</h3>
@@ -235,7 +349,7 @@ export default function HomePage() {
               <p className="text-sky-300">
                 Empowering innovators and entrepreneurs to build a brighter future for Gujarat.
               </p>
-              
+
             </div>
 
             {/* Quick Links */}
@@ -282,14 +396,14 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="h-5 w-5 text-sky-400" />
-                  <a href="mailto:contact@gujaratinnovation.gov.in" 
+                  <a href="mailto:contact@gujaratinnovation.gov.in"
                     className="hover:text-sky-100 transition-colors">
                     contact@gujaratinnovation.gov.in
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="h-5 w-5 text-sky-400" />
-                  <a href="tel:+91-79-23243471" 
+                  <a href="tel:+91-79-23243471"
                     className="hover:text-sky-100 transition-colors">
                     +91-79-23243471
                   </a>
@@ -319,6 +433,8 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+     
     </div>
   );
 }

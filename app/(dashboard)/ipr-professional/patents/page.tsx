@@ -40,7 +40,7 @@ interface Patent {
   title: string;
   description: string;
   filingDate: string;
-  status: "Pending" | "Accepted" | "Rejected";
+  status: "Pending" | "Accepted" | "Rejected" | "Basic Details" | "Document verified";
   owner: IPROwner;
   ownerType: "Startup" | "Researcher";
   relatedDocuments: Array<{
@@ -286,7 +286,7 @@ export default function PatentsPage() {
     return (commonWords.length * 2) / (set1.size + set2.size);
   };
 
-  const handleStatusUpdate = async (status: "Accepted" | "Rejected") => {
+  const handleStatusUpdate = async (status) => {
     if (!selectedPatent || !contract) return;
     setIsSubmitting(true);
     setTransactionInProgress(true);
@@ -313,52 +313,55 @@ export default function PatentsPage() {
 
       const data = await response.json();
 
-      // Then handle blockchain transaction
-      const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
-      const encryptedId = encrypt(id);
-      const title = data.ipr.title;
-      const decryptedId = encrypt(title);
-      const ownerId = BigInt(
-        parseInt(data.ipr.owner.details._id.toString(), 16)
-      ).toString();
-      const encryptedOwnerId = encrypt(ownerId);
+
 
       try {
         let transaction;
+        // Then handle blockchain transaction
+        const id = BigInt(parseInt(data.ipr._id.toString(), 16)).toString();
+        const encryptedId = encrypt(id);
+        const title = data.ipr.title;
+        const decryptedId = encrypt(title);
+        const ownerId = BigInt(
+          parseInt(data.ipr.owner.details._id.toString(), 16)
+        ).toString();
+        const encryptedOwnerId = encrypt(ownerId);
         if (status === "Accepted") {
           transaction = await contract.acceptPatent(encryptedId, decryptedId, encryptedOwnerId);
-        } else {
+        } else if (status === "Rejected") {
           transaction = await contract.rejectPatent(encryptedId, decryptedId, encryptedOwnerId);
         }
 
-        // Show transaction pending toast
-        toast({
-          title: "Transaction Pending",
-          description:
-            "Please wait while the transaction is being processed...",
-        });
+        if (status === "Accepted" || status === "Rejected") {
+          // Show transaction pending toast
+          toast({
+            title: "Transaction Pending",
+            description:
+              "Please wait while the transaction is being processed...",
+          });
 
-        // Wait for transaction confirmation
-        const receipt = await transaction.wait();
+          // Wait for transaction confirmation
+          const receipt = await transaction.wait();
 
-        // Update transaction hash in database
-        await fetch(
-          `/api/ipr-professional/${selectedPatent._id}/transactionHash`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              transactionHash: receipt.hash,
-            }),
-          }
-        );
+          // Update transaction hash in database
+          await fetch(
+            `/api/ipr-professional/${selectedPatent._id}/transactionHash`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                transactionHash: receipt.hash,
+              }),
+            }
+          );
 
-        toast({
-          title: "Success",
-          description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`,
-        });
+          toast({
+            title: "Success",
+            description: `Patent ${status.toLowerCase()} successfully. Transaction confirmed!`,
+          });
+        }
       } catch (error: any) {
         if (error.code === "ACTION_REJECTED") {
           toast({
@@ -481,11 +484,11 @@ export default function PatentsPage() {
                                     </Badge>
                                     {similarityData[secret._id]
                                       .titleSimilarity > 70 && (
-                                      <span className="text-xs text-red-500/80">
-                                        Similar to:{" "}
-                                        {similarityData[secret._id].similarTo}
-                                      </span>
-                                    )}
+                                        <span className="text-xs text-red-500/80">
+                                          Similar to:{" "}
+                                          {similarityData[secret._id].similarTo}
+                                        </span>
+                                      )}
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs text-muted-foreground">
@@ -534,11 +537,15 @@ export default function PatentsPage() {
                             className={cn(
                               "px-2 py-0.5",
                               secret.status === "Pending" &&
-                                "bg-yellow-500/15 text-yellow-600",
+                              "bg-yellow-500/15 text-yellow-600",
                               secret.status === "Accepted" &&
-                                "bg-teal-500/15 text-teal-600",
+                              "bg-teal-500/15 text-teal-600",
+                              secret.status === "BasicDetails" &&
+                              "bg-blue-500/15 text-teal-600",
+                              secret.status === "DocumentVerified" &&
+                              "bg-blue-500/15 text-teal-600",
                               secret.status === "Rejected" &&
-                                "bg-red-500/15 text-red-600"
+                              "bg-red-500/15 text-red-600"
                             )}
                           >
                             {secret.status}
@@ -547,7 +554,7 @@ export default function PatentsPage() {
                         <TableCell className="text-right">
                           <Button
                             variant={
-                              secret.status === "Pending"
+                              secret.status !== "Accepted"
                                 ? "default"
                                 : "secondary"
                             }
@@ -555,12 +562,12 @@ export default function PatentsPage() {
                             onClick={() => setSelectedPatent(secret)}
                             className={cn(
                               "transition-all",
-                              secret.status === "Pending"
+                              secret.status !== "Accepted"
                                 ? "bg-teal-600 hover:bg-teal-700"
                                 : ""
                             )}
                           >
-                            {secret.status === "Pending" ? "Review" : "View"}
+                            {secret.status !== "Accepted" ? "Review" : "View"}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -589,11 +596,11 @@ export default function PatentsPage() {
                       className={cn(
                         "px-2 py-0.5 whitespace-nowrap",
                         secret.status === "Pending" &&
-                          "bg-yellow-500/15 text-yellow-600",
+                        "bg-yellow-500/15 text-yellow-600",
                         secret.status === "Accepted" &&
-                          "bg-sky-500/15 text-teal-600",
+                        "bg-sky-500/15 text-teal-600",
                         secret.status === "Rejected" &&
-                          "bg-red-500/15 text-red-600"
+                        "bg-red-500/15 text-red-600"
                       )}
                     >
                       {secret.status}
@@ -666,18 +673,18 @@ export default function PatentsPage() {
                   <div className="flex justify-end pt-2">
                     <Button
                       variant={
-                        secret.status === "Pending" ? "default" : "secondary"
+                        secret.status !== "Accepted" ? "default" : "secondary"
                       }
                       size="sm"
                       onClick={() => setSelectedPatent(secret)}
                       className={cn(
                         "transition-all",
-                        secret.status === "Pending"
+                        secret.status !== "Accepted"
                           ? "bg-teal-600 hover:bg-teal-700"
                           : ""
                       )}
                     >
-                      {secret.status === "Pending" ? "Review" : "View"}
+                      {secret.status !== "Accepted" ? "Review" : "View"}
                     </Button>
                   </div>
                 </div>
@@ -787,11 +794,11 @@ export default function PatentsPage() {
                             </div>
                             {similarityData[selectedPatent._id]
                               .titleSimilarity > 70 && (
-                              <p className="text-xs text-red-500">
-                                Similar to:{" "}
-                                {similarityData[selectedPatent._id].similarTo}
-                              </p>
-                            )}
+                                <p className="text-xs text-red-500">
+                                  Similar to:{" "}
+                                  {similarityData[selectedPatent._id].similarTo}
+                                </p>
+                              )}
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm">
@@ -858,7 +865,7 @@ export default function PatentsPage() {
                       </div>
                     </div>
 
-                    {selectedPatent?.status === "Pending" ? (
+                    {selectedPatent?.status !== "Accepted" && (
                       <div className="space-y-4 pt-4">
                         <div className="space-y-2">
                           <h3 className="font-medium text-sm text-muted-foreground">
@@ -874,7 +881,7 @@ export default function PatentsPage() {
                         </div>
                         <div className="flex gap-4">
                           <Button
-                            onClick={() => handleStatusUpdate("Accepted")}
+                            onClick={() => handleStatusUpdate(selectedPatent.status === "Pending" ? "Basic Details" : selectedPatent.status === "Basic Details" ? "Document verified" : "Accepted")}
                             className="flex-1 bg-teal-600 hover:bg-teal-700"
                             disabled={
                               isSubmitting || !message || transactionInProgress
@@ -886,7 +893,7 @@ export default function PatentsPage() {
                                 Processing...
                               </>
                             ) : (
-                              "Accept"
+                              <div>  {selectedPatent?.status === "Pending" ? "Verify Basic Details" : selectedPatent?.status === "Basic Details" ? "Verify Documents" : "Accepted"}</div>
                             )}
                           </Button>
                           <Button
@@ -907,25 +914,25 @@ export default function PatentsPage() {
                           </Button>
                         </div>
                       </div>
-                    ) : (
-                      selectedPatent?.transactionHash && (
-                        <div className="space-y-2">
-                          <h3 className="font-medium text-sm text-muted-foreground">
-                            Transaction Details
-                          </h3>
-                          <div className="bg-muted/50 p-3 rounded-lg">
-                            <a
-                              href={`https://sepolia.etherscan.io/tx/${selectedPatent.transactionHash}#eventlog`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-teal-500 hover:text-teal-600 break-all"
-                            >
-                              {selectedPatent.transactionHash}
-                            </a>
-                          </div>
-                        </div>
-                      )
                     )}
+                    {selectedPatent?.status === "Accepted" && (
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-sm text-muted-foreground">
+                          Transaction Details
+                        </h3>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <a
+                            href={`https://sepolia.etherscan.io/tx/${selectedPatent.transactionHash}#eventlog`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-teal-500 hover:text-teal-600 break-all"
+                          >
+                            {selectedPatent.transactionHash}
+                          </a>
+                        </div>
+                      </div>
+                    )
+                    }
                   </div>
                 </>
               ) : (
